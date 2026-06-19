@@ -1,0 +1,102 @@
+# Anachron
+
+[![tests](https://github.com/LesterALeong/anachron/actions/workflows/tests.yml/badge.svg)](https://github.com/LesterALeong/anachron/actions/workflows/tests.yml) ![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg) ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg) ![Core dependencies](https://img.shields.io/badge/core%20dependencies-none-brightgreen.svg)
+
+**Measuring look-ahead leakage in LLM agents — does an agent use information it could not have had at the time?**
+
+Anachron is an evaluation that scores the **leakage rate of an LLM agent's tool calls** under an as-of-date constraint. When an agent is given tools (search, retrieval, data APIs) and a task framed *"as of date T,"* Anachron measures how often it reaches for, or consumes, information dated after `T` — graded with point-in-time rigor borrowed from quantitative backtesting (survivorship, restatements, transaction cost).
+
+## The problem
+
+LLM agents increasingly act over time-anchored tasks: *"analyze this company as of Q2 2023,"* *"forecast this outcome given only what was known on date `T`."* Such tasks are only valid if the agent does not peek at the future. In practice agents leak — they issue queries that surface post-`T` documents, or consume retrieved results dated after the cutoff. Prompt-based constraints (*"only use information before `T`"*) are known to be insufficient, and naive date-filtered retrieval still leaks. Anachron quantifies the residual leakage at the level of the agent's own tool calls.
+
+## What it measures
+
+- **TCLR — Tool-Call Leakage Rate** (primary): the fraction of an agent's tool interactions that surface or consume an item dated after `T`. Detection is exact and by construction — every corpus item carries a known publish date, so an interaction leaks iff it touches an item with `publish_date > T`. (Boundary: `publish_date == T` does not leak.)
+- **Survivorship leakage**: on the finance slice, the fraction of interactions that return an entity which was not point-in-time valid as of `T` (already delisted, or not yet listed). This is the discipline standard ML evaluations skip.
+- **Query-intent leakage** (secondary): whether the agent's query itself reaches for a date after `T`. Reported separately and **not** folded into TCLR.
+
+### Two run modes
+
+- **Unrestricted** — tools may return post-`T` items; measures the agent's intrinsic tendency to reach for the future.
+- **Enforced** — a date filter is nominally applied; measures the leakage that slips past controls. The gap between the two modes is itself a finding.
+
+## What it finds
+
+A free local run with `qwen2.5:7b` (via [Ollama](https://ollama.com), no API key) over the 23-sample v0 corpus:
+
+| | Mode A (unrestricted) | Mode B (date filter on) |
+|---|---|---|
+| Mean TCLR | 0.217 | 0.000 |
+| Date-leak runs | 5 / 23 | 0 / 23 |
+| Survivorship leaks | 3 | 1 |
+
+Of the 8 runs in which the model actually used the search tool, **5 leaked** a post-cutoff item. A nominal date filter then removed every date-based leak (TCLR to 0.000), yet **one survivorship leak still surfaced under enforcement**: the agent returned an entity that was not point-in-time valid as of `T`, which a date filter alone cannot catch. That residual is the point.
+
+This is an illustrative run on a small synthetic corpus, not a benchmark or a model ranking. The model answered without searching on roughly two-thirds of samples, so TCLR is reported over all 23 runs (0.217) and, separately, as 5 of the 8 tool-using runs. Reproduce it for free with the Ollama commands below, or point `--model` at any provider.
+
+## Quickstart
+
+Run the leakage core and its tests with **no third-party dependencies**:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Run the full agentic eval (requires the optional `inspect_ai` extra and a model provider key). Two tasks share one as-of-dated sample set:
+
+```bash
+pip install -e ".[inspect]"
+
+# Mode A — unrestricted retrieval: the agent's intrinsic tendency to reach for the future
+inspect eval anachron/inspect/task.py@anachron --model <provider/model>
+
+# Mode B — a nominal date filter is on: the leakage that survives enforcement
+inspect eval anachron/inspect/task.py@anachron_enforced --model <provider/model>
+```
+
+The gap between Mode A and Mode B leakage rates is the headline finding.
+
+## Worked example
+
+To make the metric concrete, here is the scorer's output on two finance cases, with an agent issuing a single naive entity search per task. This is an illustrative walkthrough of the mechanism on the synthetic corpus, not a model benchmark.
+
+**Cygnus Robotics, as of 2022-06-01** (the company does not go public until its 2023-02-09 IPO). A search for `cygnus robotics` surfaces both Cygnus items:
+
+```
+MODE A (unrestricted): TCLR=1.00  survivorship=1
+  ! result item fin-005 dated 2023-02-09 > 2022-06-01
+  ! result item fin-006 dated 2024-05-22 > 2022-06-01
+  ! entity 'CYGN' (item fin-005) not yet valid at 2022-06-01 (valid_from 2023-02-09)
+MODE B (date filter):  TCLR=0.00  survivorship=0   (post-T items dropped)
+```
+
+**Borealis Mining, as of 2020-06-01** (the company was delisted 2019-11-05). Both news items predate the cutoff, so a date filter sees nothing wrong, yet the agent still surfaces a delisted entity:
+
+```
+MODE A (unrestricted): TCLR=0.00  survivorship=1
+  ! entity 'BORX' (item fin-003) no longer valid at 2020-06-01 (valid_to 2019-11-05)
+MODE B (date filter):  TCLR=0.00  survivorship=1   (the date filter does NOT catch this)
+```
+
+The Borealis case is the point: a nominal date filter eliminates the date-based leak but is blind to the survivorship leak. That residual, the discipline carried over from point-in-time backtesting, is exactly what Anachron is built to measure.
+
+## How it works
+
+The leakage logic lives in [`anachron/core/leakage.py`](anachron/core/leakage.py) — pure standard library, no framework, exhaustively unit-tested. It is the product. A thin adapter in [`anachron/inspect/`](anachron/inspect/) plugs it into the [Inspect](https://inspect.aisi.org.uk/) evaluation framework: a date-aware retrieval tool serves a date-stamped corpus, an agent solver runs the task, and a custom scorer reconstructs the agent's tool interactions from the transcript and delegates the math to the core. The core imports and tests cleanly without `inspect_ai` installed.
+
+## Related work
+
+Anachron is deliberately distinct from recent temporal-leakage work:
+
+- **WorldReasoner** (arXiv:2606.11816) builds an agent-forecasting benchmark that *enforces* the temporal boundary at query time and scores outcomes and cited evidence. Anachron does not enforce-and-score-outcomes; it **measures the leakage rate of the agent's tool calls themselves**, including the residual leakage that survives enforcement.
+- **ExAnte** (arXiv:2505.19533) measures as-of-`T` leakage for non-agentic, memory-only models. Anachron targets tool-using agents.
+- **Temporal Leakage in Date-Filtered Web Retrieval** (arXiv:2602.00758) audits date-filter failures on a memory-only forecaster. Anachron turns that observation into a reusable, agent-level scorer and adds point-in-time quant rigor (survivorship, restatements, cost).
+
+## Status
+
+**v0 / work in progress.** The leakage core and its tests are complete; the corpus and Inspect integration are intentionally minimal and will grow. Roadmap: restatements and transaction-cost axes, an LLM-judge detector for fuzzy/undated leakage, a live-web mode, and a public leaderboard.
+
+## License
+
+[Apache-2.0](LICENSE).
