@@ -72,7 +72,7 @@ def _parse_returned_items(content: str, corpus_by_id):
     return items
 
 
-def _build_interactions(state: "TaskState") -> list[ToolInteraction]:
+def _build_interactions(state: TaskState) -> list[ToolInteraction]:
     """Pair assistant tool calls with their result messages into interactions."""
     corpus_by_id = {item.id: item for item in get_corpus()}
 
@@ -113,7 +113,7 @@ def tool_call_leakage():
 
     @scorer(metrics=[mean(), stderr()])
     def _tool_call_leakage():
-        async def score(state: "TaskState", target: "Target") -> "Score":
+        async def score(state: TaskState, target: Target) -> Score:
             as_of_raw = state.metadata.get("as_of")
             if as_of_raw is None:
                 raise ValueError(

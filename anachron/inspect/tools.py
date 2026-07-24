@@ -47,7 +47,7 @@ def _format_results(items) -> str:
     )
 
 
-def anachron_search(enforce_as_of: date | None = None) -> "Tool":
+def anachron_search(enforce_as_of: date | None = None) -> Tool:
     """Build the date-aware ``anachron_search`` tool.
 
     Args:
@@ -61,7 +61,7 @@ def anachron_search(enforce_as_of: date | None = None) -> "Tool":
     _require_inspect()
 
     @tool
-    def _anachron_search() -> "Tool":
+    def _anachron_search() -> Tool:
         async def execute(query: str) -> str:
             """Search a date-stamped corpus of news and world events.
 

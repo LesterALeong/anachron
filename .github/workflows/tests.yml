@@ -33,7 +33,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install with inspect extra
-        run: pip install -e ".[inspect]" ruff
+        # Pin ruff: an unpinned install drifts to whatever is latest, and a new
+        # release can expand the default rule set (0.16.0 added UP037), turning
+        # master red with no code change. Bump this deliberately.
+        run: pip install -e ".[inspect]" "ruff==0.16.0"
       - name: Lint
         run: ruff check .
       - name: Run full test suite
