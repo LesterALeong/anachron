@@ -14,6 +14,7 @@ LLM agents increasingly act over time-anchored tasks: *"analyze this company as 
 
 - **TCLR — Tool-Call Leakage Rate** (primary): the fraction of an agent's tool interactions that surface or consume an item dated after `T`. Detection is exact and by construction — every corpus item carries a known publish date, so an interaction leaks iff it touches an item with `publish_date > T`. (Boundary: `publish_date == T` does not leak.)
 - **Survivorship leakage**: on the finance slice, the fraction of interactions that return an entity which was not point-in-time valid as of `T` (already delisted, or not yet listed). This is the discipline standard ML evaluations skip.
+- **Restatement leakage**: interactions that consume a post-`T` *restatement* of an earlier item — revised history rather than ordinary future news. As of `T` the originally reported figure is the correct record, so this is the vendor-overwritten-history problem from backtesting. By construction a labeled subset of TCLR's result leaks; reported separately because it is the worse failure mode.
 - **Query-intent leakage** (secondary): whether the agent's query itself reaches for a date after `T`. Reported separately and **not** folded into TCLR.
 
 ### Two run modes
@@ -33,7 +34,7 @@ A free local run with `qwen2.5:7b` (via [Ollama](https://ollama.com), no API key
 
 Of the 8 runs in which the model actually used the search tool, **5 leaked** a post-cutoff item. A nominal date filter then removed every date-based leak (TCLR to 0.000), yet **one survivorship leak still surfaced under enforcement**: the agent returned an entity that was not point-in-time valid as of `T`, which a date filter alone cannot catch. That residual is the point.
 
-This is an illustrative run on a small synthetic corpus, not a benchmark or a model ranking. The model answered without searching on roughly two-thirds of samples, so TCLR is reported over all 23 runs (0.217) and, separately, as 5 of the 8 tool-using runs. Reproduce it for free with the Ollama commands below, or point `--model` at any provider.
+This is an illustrative run on a small synthetic corpus, not a benchmark or a model ranking. The model answered without searching on roughly two-thirds of samples, so TCLR is reported over all 23 runs (0.217) and, separately, as 5 of the 8 tool-using runs. Reproduce it for free with the Ollama commands below, or point `--model` at any provider. (The sample set has since grown to 27 with the restatement pairs; the table reports the original v0 run.)
 
 ## Quickstart
 
@@ -81,6 +82,18 @@ MODE B (date filter):  TCLR=0.00  survivorship=1   (the date filter does NOT cat
 
 The Borealis case is the point: a nominal date filter eliminates the date-based leak but is blind to the survivorship leak. That residual, the discipline carried over from point-in-time backtesting, is exactly what Anachron is built to measure.
 
+**Delta Pharma, as of 2021-06-01** (Q4 2020 revenue reported as $412M on 2021-02-04, restated to $377M on 2021-09-17). A search for `delta pharma` surfaces the restatement:
+
+```
+MODE A (unrestricted): TCLR=1.00  restatement=1
+  ! result item fin-009 dated 2021-09-17 > 2021-06-01
+  ! restatement item fin-009 dated 2021-09-17 > 2021-06-01 silently revises fin-008
+    (as of 2021-06-01 the originally reported figure is the correct record)
+MODE B (date filter):  TCLR=0.00  restatement=0   (the agent sees the original $412M — correct as of T)
+```
+
+The restatement case sharpens what "leak" means: the agent that consumes fin-009 is not just early to a news story, it is reporting a **figure that did not exist in that form at `T`** — the exact overwritten-history hazard that point-in-time databases exist to prevent in backtesting.
+
 ## How it works
 
 The leakage logic lives in [`anachron/core/leakage.py`](anachron/core/leakage.py) — pure standard library, no framework, exhaustively unit-tested. It is the product. A thin adapter in [`anachron/inspect/`](anachron/inspect/) plugs it into the [Inspect](https://inspect.aisi.org.uk/) evaluation framework: a date-aware retrieval tool serves a date-stamped corpus, an agent solver runs the task, and a custom scorer reconstructs the agent's tool interactions from the transcript and delegates the math to the core. The core imports and tests cleanly without `inspect_ai` installed.
@@ -95,7 +108,7 @@ Anachron is deliberately distinct from recent temporal-leakage work:
 
 ## Status
 
-**v0 / work in progress.** The leakage core and its tests are complete; the corpus and Inspect integration are intentionally minimal and will grow. Roadmap: restatements and transaction-cost axes, an LLM-judge detector for fuzzy/undated leakage, a live-web mode, and a public leaderboard.
+**v0.1 / work in progress.** The leakage core and its tests are complete, and the **restatements axis shipped in v0.1** (post-`T` revisions of earlier items scored as a distinct leak class, with restatement pairs in both corpus slices). The corpus and Inspect integration remain intentionally minimal and will grow. Roadmap: the transaction-cost axis, an LLM-judge detector for fuzzy/undated leakage, a live-web mode, and a public leaderboard.
 
 ## License
 

@@ -10,6 +10,7 @@ from anachron.core.leakage import (
     CorpusItem,
     ToolInteraction,
     is_query_leak,
+    is_restatement_leak,
     is_result_leak,
     is_survivorship_leak,
     score_interactions,
@@ -186,6 +187,60 @@ class TestSurvivorship(unittest.TestCase):
         result = score_interactions(interactions, T)
         self.assertEqual(result.survivorship_leaks, 0)
         self.assertIsNone(result.survivorship_rate)
+
+
+class TestRestatement(unittest.TestCase):
+    """Post-T restatements of earlier items are a distinct, separately-reported leak."""
+
+    def test_post_t_restatement_leaks(self):
+        it = _interaction(returned=[
+            _item("fin-rev", date(2022, 9, 1), restates_id="fin-orig")
+        ])
+        self.assertTrue(is_restatement_leak(it, T))
+
+    def test_restatement_on_t_does_not_leak(self):
+        # Boundary rule matches the other axes: equality is not a leak.
+        it = _interaction(returned=[_item("fin-rev", T, restates_id="fin-orig")])
+        self.assertFalse(is_restatement_leak(it, T))
+
+    def test_pre_t_restatement_does_not_leak(self):
+        # A revision already published as of T is the legitimate record.
+        it = _interaction(returned=[
+            _item("fin-rev", date(2021, 6, 1), restates_id="fin-orig")
+        ])
+        self.assertFalse(is_restatement_leak(it, T))
+
+    def test_post_t_item_without_restates_id_is_not_restatement_leak(self):
+        it = _interaction(returned=[_item("fin-news", date(2022, 9, 1))])
+        self.assertFalse(is_restatement_leak(it, T))
+
+    def test_restatement_leak_is_subset_of_result_leaks(self):
+        # Every restatement leak is by construction also a result leak.
+        it = _interaction(returned=[
+            _item("fin-rev", date(2022, 9, 1), restates_id="fin-orig")
+        ])
+        self.assertTrue(is_restatement_leak(it, T))
+        self.assertTrue(is_result_leak(it, T))
+
+    def test_score_counts_and_offender_names_both_items(self):
+        interactions = [
+            _interaction(returned=[
+                _item("fin-rev", date(2022, 9, 1), restates_id="fin-orig")
+            ]),
+            _interaction(returned=[_item("clean", date(2021, 1, 1))]),
+        ]
+        result = score_interactions(interactions, T)
+        self.assertEqual(result.restatement_leaks, 1)
+        self.assertEqual(result.result_leaks, 1)  # subset: same interaction
+        self.assertLessEqual(result.restatement_leaks, result.result_leaks)
+        restatement_offenders = [o for o in result.offenders if "revises" in o]
+        self.assertEqual(len(restatement_offenders), 1)
+        self.assertIn("fin-rev", restatement_offenders[0])
+        self.assertIn("fin-orig", restatement_offenders[0])
+
+    def test_empty_run_reports_zero_restatement_leaks(self):
+        result = score_interactions([], T)
+        self.assertEqual(result.restatement_leaks, 0)
 
 
 class TestOffenders(unittest.TestCase):

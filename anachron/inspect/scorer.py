@@ -128,6 +128,7 @@ def tool_call_leakage():
                 f"TCLR={result.tclr:.3f} "
                 f"({result.result_leaks}/{result.total_interactions} interactions leaked); "
                 f"query_leaks={result.query_leaks}; "
+                f"restatement_leaks={result.restatement_leaks}; "
                 f"survivorship_leaks={result.survivorship_leaks}"
             )
             if result.offenders:
@@ -142,6 +143,7 @@ def tool_call_leakage():
                     "total_interactions": result.total_interactions,
                     "result_leaks": result.result_leaks,
                     "query_leaks": result.query_leaks,
+                    "restatement_leaks": result.restatement_leaks,
                     "survivorship_leaks": result.survivorship_leaks,
                     "survivorship_rate": result.survivorship_rate,
                     "offenders": result.offenders,

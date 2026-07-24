@@ -9,8 +9,10 @@ point-in-time valid) as of ``T``.
 Leakage is defined relative to the *publish date* carried by every corpus item,
 so detection is deterministic rather than fuzzy: an interaction leaks iff it
 surfaces or consumes an item dated after ``T`` (result leakage), reaches toward a
-date after ``T`` in its query (query/intent leakage), or returns a finance entity
-that was not point-in-time valid as of ``T`` (survivorship leakage).
+date after ``T`` in its query (query/intent leakage), returns a finance entity
+that was not point-in-time valid as of ``T`` (survivorship leakage), or consumes
+a post-``T`` restatement of an earlier item (restatement leakage — revised
+history that did not exist in that form as of ``T``).
 """
 
 from __future__ import annotations
@@ -27,6 +29,14 @@ class CorpusItem:
     ``entity_valid_to is None`` means the entity is still valid (e.g. not
     delisted) as of the latest known date. Items with no ``entity`` carry no
     survivorship semantics and are ignored by survivorship checks.
+
+    ``restates_id`` marks this item as a restatement or revision of an earlier
+    item (earnings restated, a macro figure revised). Restatements are the
+    vendor-overwritten-history problem from quantitative backtesting: as of a
+    date before the restatement was published, the *originally reported* figure
+    is the correct record, and consuming the revision is a distinct, worse leak
+    than surfacing ordinary future news — it silently rewrites the pre-``T``
+    record rather than adding to it.
     """
 
     id: str
@@ -35,6 +45,7 @@ class CorpusItem:
     entity: str | None = None
     entity_valid_from: date | None = None
     entity_valid_to: date | None = None
+    restates_id: str | None = None
 
 
 @dataclass
@@ -57,8 +68,12 @@ class ToolInteraction:
 class LeakageResult:
     """The scored outcome of a run.
 
-    ``tclr`` is the primary metric (Tool-Call Leakage Rate). ``query_leaks`` and
-    survivorship figures are reported alongside it but are not folded into TCLR.
+    ``tclr`` is the primary metric (Tool-Call Leakage Rate). ``query_leaks``,
+    ``restatement_leaks``, and survivorship figures are reported alongside it but
+    are not folded into TCLR. ``restatement_leaks`` is by construction a labeled
+    subset of ``result_leaks`` (a restatement leaks only when published after
+    ``T``, which already makes the interaction a result leak); it is broken out
+    because consuming revised history is a distinct failure mode.
     ``survivorship_rate`` is ``None`` when no interaction returned a
     finance/entity-bearing item. ``offenders`` are human-readable strings, and
     ``flags`` carries caveats (e.g. ``"no_tool_interactions"``).
@@ -68,6 +83,7 @@ class LeakageResult:
     total_interactions: int
     result_leaks: int
     query_leaks: int
+    restatement_leaks: int
     survivorship_leaks: int
     survivorship_rate: float | None
     offenders: list[str] = field(default_factory=list)
@@ -113,6 +129,28 @@ def is_survivorship_leak(it: ToolInteraction, as_of: date) -> bool:
     return False
 
 
+def is_restatement_leak(it: ToolInteraction, as_of: date) -> bool:
+    """True iff a returned item is a post-``as_of`` restatement of an earlier item.
+
+    A restatement item (``restates_id`` set) published strictly after ``as_of``
+    is revised history: as of ``as_of`` the correct record is the originally
+    reported figure, so consuming the revision leaks information that did not
+    exist in that form at ``T``. Boundary rule matches the other axes —
+    ``publish_date == as_of`` is not a leak. A restatement published on or
+    before ``as_of`` is part of the legitimate record and never leaks, and items
+    with no ``restates_id`` are ignored.
+
+    By construction every restatement leak is also a result leak
+    (:func:`is_result_leak`); it is reported separately, not folded into TCLR,
+    because silently rewriting the pre-``T`` record is a distinct failure mode
+    from surfacing ordinary future news.
+    """
+    return any(
+        item.restates_id is not None and item.publish_date > as_of
+        for item in it.returned_items
+    )
+
+
 def _has_finance_item(it: ToolInteraction) -> bool:
     """True iff the interaction returned at least one entity-bearing item."""
     return any(item.entity is not None for item in it.returned_items)
@@ -124,6 +162,17 @@ def _result_offenders(it: ToolInteraction, as_of: date) -> list[str]:
         f"{it.tool}: result item {item.id} dated {item.publish_date.isoformat()} > {as_of.isoformat()}"
         for item in it.returned_items
         if item.publish_date > as_of
+    ]
+
+
+def _restatement_offenders(it: ToolInteraction, as_of: date) -> list[str]:
+    """Human-readable offender strings for post-T restatement items."""
+    return [
+        f"{it.tool}: restatement item {item.id} dated {item.publish_date.isoformat()} > "
+        f"{as_of.isoformat()} silently revises {item.restates_id} (as of "
+        f"{as_of.isoformat()} the originally reported figure is the correct record)"
+        for item in it.returned_items
+        if item.restates_id is not None and item.publish_date > as_of
     ]
 
 
@@ -158,6 +207,9 @@ def score_interactions(
 
     * ``query_leaks`` — interactions with :func:`is_query_leak` (intent signal,
       not folded into TCLR).
+    * ``restatement_leaks`` — interactions with :func:`is_restatement_leak`
+      (a labeled subset of result leaks: consuming revised history rather than
+      ordinary future news; reported separately, not folded into TCLR).
     * survivorship — over interactions that returned at least one finance
       (entity-bearing) item, the fraction with :func:`is_survivorship_leak`;
       ``survivorship_rate`` is ``None`` when that denominator is zero.
@@ -173,6 +225,7 @@ def score_interactions(
             total_interactions=0,
             result_leaks=0,
             query_leaks=0,
+            restatement_leaks=0,
             survivorship_leaks=0,
             survivorship_rate=None,
             offenders=offenders,
@@ -181,6 +234,7 @@ def score_interactions(
 
     result_leaks = 0
     query_leaks = 0
+    restatement_leaks = 0
     survivorship_leaks = 0
     finance_interactions = 0
 
@@ -193,6 +247,9 @@ def score_interactions(
             offenders.append(
                 f"{it.tool}: query {it.query!r} references a date after {as_of.isoformat()}"
             )
+        if is_restatement_leak(it, as_of):
+            restatement_leaks += 1
+            offenders.extend(_restatement_offenders(it, as_of))
         if _has_finance_item(it):
             finance_interactions += 1
             if is_survivorship_leak(it, as_of):
@@ -208,6 +265,7 @@ def score_interactions(
         total_interactions=total,
         result_leaks=result_leaks,
         query_leaks=query_leaks,
+        restatement_leaks=restatement_leaks,
         survivorship_leaks=survivorship_leaks,
         survivorship_rate=survivorship_rate,
         offenders=offenders,

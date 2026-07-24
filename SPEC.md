@@ -26,6 +26,8 @@ The broad idea of temporal or look-ahead leakage is not new (ExAnte, Look-Ahead-
 
 **Survivorship Leakage (finance slice):** the fraction of tasks where the agent's universe or data includes entities that were not point-in-time valid as of T (delisted, not yet listed, or index-membership anachronisms).
 
+**Restatement Leakage (shipped v0.1):** interactions that consume a post-T restatement of an earlier item (``restates_id`` on the corpus item). As of T the originally reported figure is the correct record; consuming the revision is the vendor-overwritten-history hazard from backtesting. By construction a labeled subset of result leaks; reported separately, not folded into TCLR.
+
 **Two run modes:**
 - **Unrestricted:** tools may return post-T items. Measures the agent's intrinsic tendency to reach for the future.
 - **Enforced:** a date-filter layer is nominally applied. Measures the residual leakage that slips past controls. The gap between the two modes is itself a reportable finding.
@@ -44,7 +46,9 @@ In scope:
 - A scorer emitting TCLR (exact, by construction) and Survivorship Leakage on the finance slice, with the offending calls surfaced in the explanation and metadata.
 - Runs against a handful of frontier models (the Claude, GPT, and Gemini families) via an agentic solver.
 
-Later phases: live-web retrieval; LLM-judge and semantic leakage detection; the restatements and transaction-cost axes (designed for, not yet shipped); multi-step subagent and handoff trace coverage; a hosted leaderboard.
+Shipped since v0: the restatements axis (v0.1) — ``restates_id`` corpus links, an exact ``is_restatement_leak`` predicate, restatement pairs in both corpus slices, and as-of samples spanning the restatement windows.
+
+Later phases: live-web retrieval; LLM-judge and semantic leakage detection; the transaction-cost axis (designed for, not yet shipped); multi-step subagent and handoff trace coverage; a hosted leaderboard.
 
 ## 6. Architecture (Inspect)
 
@@ -56,6 +60,7 @@ Later phases: live-web retrieval; LLM-judge and semantic leakage detection; the 
 
 ## 7. Roadmap
 
-- **v0:** a working Inspect eval, a short technical write-up, and a public release.
-- **Next:** a restatements axis and an LLM-judge detector for fuzzy leakage.
+- **v0:** a working Inspect eval, a short technical write-up, and a public release. *(done)*
+- **v0.1:** the restatements axis. *(done)*
+- **Next:** an LLM-judge detector for fuzzy leakage.
 - **Later:** a live-web mode and the transaction-cost axis.

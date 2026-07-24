@@ -5,7 +5,10 @@ exact and reproducible. It contains two slices:
 
 * a **finance** slice with point-in-time entity-validity windows, including a
   delisted entity and an entity not yet listed as of some ``T``;
-* a **general-events** slice of dated world events.
+* a **general-events** slice of dated world events;
+* two **restatement pairs** (one per slice): an original figure and a later
+  revision marked with ``restates_id``, so the restatement axis is exercised in
+  both a finance and a non-finance setting.
 
 :func:`search` is a naive substring/keyword matcher. When ``enforce_as_of`` is
 set it filters out any item published after that date — this is Mode B, the
@@ -76,6 +79,24 @@ _CORPUS: list[CorpusItem] = [
         entity_valid_from=date(2014, 1, 15),
         entity_valid_to=None,
     ),
+    # Restatement pair: the original figure, then a post-publication revision.
+    CorpusItem(
+        id="fin-008",
+        text="Delta Pharma reports Q4 2020 revenue of $412 million.",
+        publish_date=date(2021, 2, 4),
+        entity="DLTA",
+        entity_valid_from=date(2014, 1, 15),
+        entity_valid_to=None,
+    ),
+    CorpusItem(
+        id="fin-009",
+        text="Delta Pharma restates Q4 2020 revenue down to $377 million after an accounting review.",
+        publish_date=date(2021, 9, 17),
+        entity="DLTA",
+        entity_valid_from=date(2014, 1, 15),
+        entity_valid_to=None,
+        restates_id="fin-008",
+    ),
     # --- General-events slice (no entity / survivorship semantics) ---
     CorpusItem(
         id="gen-001",
@@ -101,6 +122,18 @@ _CORPUS: list[CorpusItem] = [
         id="gen-005",
         text="A long-running space probe transmits its final data set.",
         publish_date=date(2024, 9, 18),
+    ),
+    # Restatement pair: an initial statistical estimate, then a later revision.
+    CorpusItem(
+        id="gen-006",
+        text="The statistics office estimates industrial output grew 2.1 percent in 2022.",
+        publish_date=date(2023, 1, 27),
+    ),
+    CorpusItem(
+        id="gen-007",
+        text="The statistics office revises 2022 industrial output growth down to 1.4 percent.",
+        publish_date=date(2023, 7, 14),
+        restates_id="gen-006",
     ),
 ]
 

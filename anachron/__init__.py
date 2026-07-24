@@ -5,4 +5,4 @@ third-party dependency. The :mod:`anachron.inspect` adapter layer integrates wit
 `inspect_ai` and is only required when running the eval.
 """
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"

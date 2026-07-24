@@ -53,8 +53,8 @@ class TestTaskBuild(unittest.TestCase):
     def test_both_tasks_build_with_expected_sample_count(self):
         from anachron.inspect.task import anachron, anachron_enforced
 
-        self.assertEqual(len(anachron().dataset), 23)
-        self.assertEqual(len(anachron_enforced().dataset), 23)
+        self.assertEqual(len(anachron().dataset), 27)
+        self.assertEqual(len(anachron_enforced().dataset), 27)
 
 
 if __name__ == "__main__":

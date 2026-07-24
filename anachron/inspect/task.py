@@ -82,6 +82,12 @@ _SPECS: list[tuple[str, str, str]] = [
      "None on or before this date; the stock-split announcement (2020-08-03) is in the future."),
     ("2021-03-01", "report any recent corporate actions at Delta Pharma.",
      "Announced a stock split effective the next quarter (2020-08-03)."),
+    # --- Delta Pharma restatement pair (original 2021-02-04; restated 2021-09-17) ---
+    ("2021-06-01", "report Delta Pharma's most recently reported quarterly revenue.",
+     "Q4 2020 revenue of $412M as originally reported (2021-02-04). The $377M restatement "
+     "(2021-09-17) is in the future; as of T the original figure IS the correct record."),
+    ("2022-01-01", "report Delta Pharma's Q4 2020 revenue.",
+     "The restated figure, $377M (2021-09-17), is the current record as of T."),
     # --- General events: solar eclipse 2017-08-21 ---
     ("2017-01-01", "state whether a total solar eclipse has recently crossed North America.",
      "Not as of T; the eclipse is 2017-08-21 (future)."),
@@ -107,6 +113,12 @@ _SPECS: list[tuple[str, str, str]] = [
      "Not yet as of T; the final data set is 2024-09-18 (future)."),
     ("2025-01-01", "report whether the long-running space probe has transmitted its final data set.",
      "Yes, the probe transmitted its final data set on 2024-09-18."),
+    # --- Industrial-output restatement pair (initial 2023-01-27; revised 2023-07-14) ---
+    ("2023-04-01", "report the official growth figure for 2022 industrial output.",
+     "2.1 percent, the initial estimate (2023-01-27). The 1.4 percent revision "
+     "(2023-07-14) is in the future; as of T the initial estimate IS the correct record."),
+    ("2024-01-01", "report the official growth figure for 2022 industrial output.",
+     "1.4 percent, as revised (2023-07-14)."),
 ]
 
 
