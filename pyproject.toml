@@ -22,6 +22,9 @@ classifiers = [
 ]
 dependencies = []
 
+[project.scripts]
+anachron-compare = "anachron.compare:main"
+
 [project.optional-dependencies]
 inspect = ["inspect_ai"]
 

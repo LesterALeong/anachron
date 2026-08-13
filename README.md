@@ -16,6 +16,7 @@ LLM agents increasingly act over time-anchored tasks: *"analyze this company as 
 - **Survivorship leakage**: on the finance slice, the fraction of interactions that return an entity which was not point-in-time valid as of `T` (already delisted, or not yet listed). This is the discipline standard ML evaluations skip.
 - **Restatement leakage**: interactions that consume a post-`T` *restatement* of an earlier item — revised history rather than ordinary future news. As of `T` the originally reported figure is the correct record, so this is the vendor-overwritten-history problem from backtesting. By construction a labeled subset of TCLR's result leaks; reported separately because it is the worse failure mode.
 - **Query-intent leakage** (secondary): whether the agent's query itself reaches for a date after `T`. Reported separately and **not** folded into TCLR.
+- **Enforcement effect**: the paired mean TCLR reduction between unrestricted and enforced runs, with a bootstrap confidence interval and exact sign test so outliers are distinguishable from consistent improvement.
 
 ### Two run modes
 
@@ -57,6 +58,45 @@ inspect eval anachron/inspect/task.py@anachron_enforced --model <provider/model>
 ```
 
 The gap between Mode A and Mode B leakage rates is the headline finding.
+
+### Compare the modes with paired inference
+
+An average gap alone does not say whether enforcement consistently helps across tasks or whether a few outliers drive the result. Export each sample's TCLR from both runs as JSON objects with identical sample ids:
+
+```json
+{
+  "finance-001": 1.0,
+  "finance-002": 0.5,
+  "news-001": 0.0
+}
+```
+
+Then compare the same tasks as paired observations:
+
+```bash
+anachron-compare unrestricted.json enforced.json
+anachron-compare unrestricted.json enforced.json --format json
+```
+
+```text
+Paired mode comparison (n=27)
+  unrestricted mean TCLR  0.241
+  enforced mean TCLR      0.037
+  mean reduction           +0.204
+  95% paired bootstrap CI  [+0.074, +0.333]
+  relative reduction       84.6%
+  improved / worsened / tied  7 / 0 / 20
+  exact sign-test p         0.0156
+```
+
+The output reports the effect size, a paired percentile-bootstrap confidence interval, and an exact two-sided sign test over non-tied samples. The values above are an illustrative output shape, not a new model result. Programmatic use is dependency-free:
+
+```python
+from anachron.core import compare_modes
+
+report = compare_modes(unrestricted_scores, enforced_scores, seed=0)
+print(report.table())
+```
 
 ## Worked example
 
@@ -108,7 +148,7 @@ Anachron is deliberately distinct from recent temporal-leakage work:
 
 ## Status
 
-**v0.1 / work in progress.** The leakage core and its tests are complete, and the **restatements axis shipped in v0.1** (post-`T` revisions of earlier items scored as a distinct leak class, with restatement pairs in both corpus slices). The corpus and Inspect integration remain intentionally minimal and will grow. Roadmap: the transaction-cost axis, an LLM-judge detector for fuzzy/undated leakage, a live-web mode, and a public leaderboard.
+**v0.1 / work in progress.** The leakage core, paired mode-comparison workflow, and their tests are complete, and the **restatements axis shipped in v0.1** (post-`T` revisions of earlier items scored as a distinct leak class, with restatement pairs in both corpus slices). The corpus and Inspect integration remain intentionally minimal and will grow. Roadmap: the transaction-cost axis, an LLM-judge detector for fuzzy/undated leakage, a live-web mode, and a public leaderboard.
 
 ## License
 
