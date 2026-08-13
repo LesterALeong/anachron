@@ -51,11 +51,15 @@ class ModeComparison:
                 f"  unrestricted mean TCLR  {self.unrestricted_mean:.3f}",
                 f"  enforced mean TCLR      {self.enforced_mean:.3f}",
                 f"  mean reduction           {self.mean_reduction:+.3f}",
-                f"  {interval_level:g}% paired bootstrap CI  "
-                f"[{self.ci_low:+.3f}, {self.ci_high:+.3f}]",
+                (
+                    f"  {interval_level:g}% paired bootstrap CI  "
+                    f"[{self.ci_low:+.3f}, {self.ci_high:+.3f}]"
+                ),
                 f"  relative reduction       {relative}",
-                f"  improved / worsened / tied  {self.improved_samples} / "
-                f"{self.worsened_samples} / {self.unchanged_samples}",
+                (
+                    f"  improved / worsened / tied  {self.improved_samples} / "
+                    f"{self.worsened_samples} / {self.unchanged_samples}"
+                ),
                 f"  exact sign-test p         {self.sign_test_p_value:.4f}",
             ]
         )

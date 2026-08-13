@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from anachron.core.comparison import compare_modes
 
@@ -13,7 +13,7 @@ from anachron.core.comparison import compare_modes
 def _load_scores(path: str) -> dict[str, float]:
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
-        raise ValueError(f"{path} must contain a JSON object mapping sample ids to TCLR scores")
+        raise TypeError(f"{path} must contain a JSON object mapping sample ids to TCLR scores")
     return payload
 
 
