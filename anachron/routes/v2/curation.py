@@ -12,13 +12,15 @@ from typing import Any
 from anachron.routes.v2.manifest import prepare_pending_draft as _prepare_pending_draft
 
 
-def prepare_pending_draft(*, phase: str, contract_path: str | Path, sampling_frame_path: str | Path, revalidation_receipt_paths: list[str | Path], source_mapping_input_path: str | Path, output_path: str | Path, predecessor_evidence: Any = None) -> dict[str, Any]:
+def prepare_pending_draft(*, phase: str, repository: str | Path, contract_path: str | Path, sampling_frame_path: str | Path, revalidation_receipt_paths: list[str | Path], excerpt_receipt_paths: list[str | Path], source_mapping_input_path: str | Path, output_path: str | Path, predecessor_evidence: Any = None) -> dict[str, Any]:
     """Create, but never approve, one path-bound phase pending draft."""
     return _prepare_pending_draft(
         phase=phase,
+        repository=repository,
         contract_path=contract_path,
         sampling_frame_path=sampling_frame_path,
         revalidation_receipt_paths=revalidation_receipt_paths,
+        excerpt_receipt_paths=excerpt_receipt_paths,
         source_mapping_input_path=source_mapping_input_path,
         output_path=output_path,
         predecessor_evidence=predecessor_evidence,

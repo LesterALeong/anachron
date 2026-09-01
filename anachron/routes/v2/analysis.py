@@ -246,7 +246,7 @@ def analyze_audit(plan: dict[str, Any], packet: dict[str, Any], first: Any, seco
 def source_code_hashes(root: str | Path) -> dict[str, str]:
     """Hash every v2 source file, including this analysis module."""
     directory = Path(root)
-    names = ("schema.py", "manifest.py", "retrieval.py", "runtime.py", "runner.py", "scoring.py", "analysis.py", "source_integrity.py", "sources.py", "curation.py", "human_review.py")
+    names = ("schema.py", "manifest.py", "retrieval.py", "runtime.py", "runner.py", "scoring.py", "analysis.py", "source_integrity.py", "source_excerpt.py", "sources.py", "curation.py", "human_review.py")
     return {name: "sha256:" + hashlib.sha256((directory / name).read_bytes()).hexdigest() for name in names}
 
 
@@ -367,8 +367,6 @@ def build_private_audit_join(
     *,
     phase: str,
     private_blind_key: bytes,
-    questions: dict[str, str],
-    alias_rubrics: dict[str, list[str]],
     instructions: str,
 ) -> PrivateAuditJoin:
     """Select the frozen audit slice privately, then derive a blind public packet."""
@@ -394,11 +392,15 @@ def build_private_audit_join(
         raise AnalysisValidationError("validated execution audit slice is not route-balanced")
     packet_items: list[dict[str, Any]] = []
     join: dict[str, dict[str, Any]] = {}
+    pairs = {pair.get("item_id"): pair for pair in execution._source_pairs}
     for row in sorted(selected, key=lambda value: value["trajectory_id"]):
-        topic = row["topic_id"]
-        question, aliases = questions.get(topic), alias_rubrics.get(topic)
-        if not isinstance(question, str) or not question or not isinstance(aliases, list) or not aliases or not all(isinstance(alias, str) and alias for alias in aliases):
-            raise AnalysisValidationError("audit packet requires a question and sealed alias rubric for each topic")
+        pair = pairs.get(row["topic_id"])
+        if not isinstance(pair, dict):
+            raise AnalysisValidationError("audit packet requires manifest-owned source pairs")
+        question = pair.get("question")
+        aliases = [*pair.get("pre_aliases", []), *pair.get("post_aliases", [])]
+        if not isinstance(question, str) or not question or not aliases or not all(isinstance(alias, str) and alias for alias in aliases):
+            raise AnalysisValidationError("audit packet requires sealed manifest question and aliases")
         digest = hashlib.sha256(private_blind_key + b"\0" + row["trajectory_id"].encode("utf-8")).hexdigest()[:24]
         audit_id = "audit:" + digest
         if audit_id in join:
@@ -618,10 +620,10 @@ def validate_finite_set_result(result: FiniteSetResult, *, expected_phase: str) 
 _ANALYSIS_ROOT_BASE_FILES = {
     "pending_draft.json", "source_decisions.json", "source_gate.json", "manifest.json",
     "freeze_receipt.json", "closure_lock.json", "schedule.json", "session_calibrations.json",
-    "sealed_aliases.json", "journal.jsonl",
+    "journal.jsonl",
 }
 _ANALYSIS_ROOT_AUDIT_FILES = {
-    "audit_blind_key.bin", "questions.json", "alias_rubrics.json", "instructions.txt",
+    "audit_blind_key.bin", "instructions.txt",
     "rater-a.json", "rater-b.json",
 }
 
@@ -673,7 +675,6 @@ def replay_phase_root(analysis_root: str | Path, frozen_root: str | Path, *, pha
             closure_lock=closure, schedule=_analysis_root_object(root, "schedule.json"),
             session_calibration_receipts=_analysis_root_object(root, "session_calibrations.json").get("receipts"),
             journal_path=_analysis_root_file(root, "journal.jsonl"),
-            sealed_aliases=_analysis_root_object(root, "sealed_aliases.json"),
         )
     except (AdmissionError, OSError, ValueError) as error:
         raise AnalysisValidationError("analysis root execution replay failed") from error
@@ -684,8 +685,6 @@ def replay_phase_root(analysis_root: str | Path, frozen_root: str | Path, *, pha
         else:
             private = build_private_audit_join(
                 execution, phase=phase, private_blind_key=_analysis_root_file(root, "audit_blind_key.bin").read_bytes(),
-                questions=_analysis_root_object(root, "questions.json"),
-                alias_rubrics=_analysis_root_object(root, "alias_rubrics.json"),
                 instructions=_analysis_root_file(root, "instructions.txt").read_text(encoding="utf-8"),
             )
             audit = validate_public_audit(private, _analysis_root_object(root, "rater-a.json"), _analysis_root_object(root, "rater-b.json"))

@@ -185,7 +185,13 @@ def request_sha256(request: dict[str, Any]) -> str:
     return canonical_json_sha256(request)
 
 
-def classify_response(result: TransportResult, *, requested_model: str, expected_answer: str) -> dict[str, Any]:
+def classify_response(
+    result: TransportResult,
+    *,
+    requested_model: str,
+    answer_rules: dict[str, Any],
+    expected_citation_id: str,
+) -> dict[str, Any]:
     """Classify a response without masking transport or response-object failures."""
     receipt = bytes_receipt(result.response_bytes)
     if result.status != "ok":
@@ -201,7 +207,11 @@ def classify_response(result: TransportResult, *, requested_model: str, expected
             raise ValueError
     except (UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError, ValueError):
         return {"status": "malformed_response", "response": receipt, "envelope_valid": False, "score": None}
-    score = score_response(message["content"], expected_answer=expected_answer)
+    score = score_response(
+        message["content"],
+        answer_rules=answer_rules,
+        expected_citation_id=expected_citation_id,
+    )
     status = "invalid_output" if score["answer_label"] == "invalid_output" else "ok"
     return {"status": status, "response": receipt, "envelope_valid": True, "score": score}
 
@@ -237,7 +247,16 @@ def session_calibration_receipt(
     validate_loopback_endpoint(client_binding["endpoint"], expected=contract["execution"]["endpoint"])
     if not isinstance(closure_sha256, str) or not isinstance(session_nonce, str) or not session_nonce:
         raise RuntimeValidationError("calibration closure or session binding is invalid")
-    classified = classify_response(result, requested_model=model["id"], expected_answer=contract["calibration"]["expected_answer"])
+    classified = classify_response(
+        result,
+        requested_model=model["id"],
+        answer_rules={
+            "pre_aliases": [],
+            "post_aliases": [contract["calibration"]["expected_answer"]],
+            "abstention_aliases": contract["answer_rules"]["abstention_aliases"],
+        },
+        expected_citation_id="CAL",
+    )
     if classified["status"] != "ok" or classified["score"] != {"answer_label": "post_only", "post_only": 1}:
         raise RuntimeValidationError("calibration did not produce the required deterministic score")
     receipt = {
@@ -283,7 +302,16 @@ def validate_session_calibration(
     ):
         raise RuntimeValidationError("session calibration receipt binding drifted")
     response = TransportResult("ok", validate_bytes_receipt(receipt["response"]), True)
-    classified = classify_response(response, requested_model=model_id, expected_answer=contract["calibration"]["expected_answer"])
+    classified = classify_response(
+        response,
+        requested_model=model_id,
+        answer_rules={
+            "pre_aliases": [],
+            "post_aliases": [contract["calibration"]["expected_answer"]],
+            "abstention_aliases": contract["answer_rules"]["abstention_aliases"],
+        },
+        expected_citation_id="CAL",
+    )
     if classified["status"] != "ok" or classified["score"] != receipt["expected_score"]:
         raise RuntimeValidationError("session calibration response is invalid")
     return receipt

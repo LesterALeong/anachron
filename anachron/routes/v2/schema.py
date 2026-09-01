@@ -76,7 +76,7 @@ def validate_contract(document: Any) -> dict[str, Any]:
     """Validate the closed, phase-separated v2 design."""
     contract = _mapping(document, "contract", {
         "schema_version", "study_id", "status", "sampling_frame_sha256", "models", "execution",
-        "conditions", "development", "source_gate", "evaluation", "schedule", "calibration",
+        "conditions", "development", "source_bounds", "answer_rules", "source_gate", "evaluation", "schedule", "calibration",
     })
     if contract["schema_version"] != "routes-v2-contract" or contract["study_id"] != "anachron-routes-v2" or contract["status"] != "pre_outcome":
         raise ContractValidationError("contract identity or pre-outcome status is invalid")
@@ -105,8 +105,41 @@ def validate_contract(document: Any) -> dict[str, Any]:
         raise ContractValidationError("development primary arms are invalid")
     if _mapping(development["threshold"], "contract.development.threshold", {"metric", "minimum_mean_paired_difference"}) != {"metric": "post_only", "minimum_mean_paired_difference": 0.25}:
         raise ContractValidationError("development threshold is not the frozen 0.25 paired difference")
-    if _mapping(contract["source_gate"], "contract.source_gate", {"decision_schema"}) != {"decision_schema": "routes-v2-source-decisions"}:
+    if _mapping(contract["source_gate"], "contract.source_gate", {"decision_schema"}) != {"decision_schema": "routes-v2-source-decisions-v2"}:
         raise ContractValidationError("source gate is invalid")
+    source_bounds = _mapping(
+        contract["source_bounds"],
+        "contract.source_bounds",
+        {
+            "excerpt_selection_version",
+            "max_question_utf8_bytes",
+            "max_anchor_utf8_bytes",
+            "max_excerpt_utf8_bytes",
+            "max_aliases_per_answer_set",
+            "max_alias_utf8_bytes",
+        },
+    )
+    if source_bounds != {
+        "excerpt_selection_version": "routes-v2-anchored-utf8-window-v1",
+        "max_question_utf8_bytes": 512,
+        "max_anchor_utf8_bytes": 512,
+        "max_excerpt_utf8_bytes": 4096,
+        "max_aliases_per_answer_set": 8,
+        "max_alias_utf8_bytes": 128,
+    }:
+        raise ContractValidationError("source bounds are not the frozen v2 excerpt limits")
+    answer_rules = _mapping(
+        contract["answer_rules"],
+        "contract.answer_rules",
+        {"normalizer", "labels", "primary_label", "abstention_aliases"},
+    )
+    if answer_rules != {
+        "normalizer": "nfc-casefold-collapse-whitespace-v1",
+        "labels": ["post_only", "pre_only", "abstain", "other", "invalid_output"],
+        "primary_label": "post_only",
+        "abstention_aliases": ["ABSTAIN"],
+    }:
+        raise ContractValidationError("answer rules are not the frozen v2 scorer rules")
     evaluation = _mapping(contract["evaluation"], "contract.evaluation", {"primary_arms", "pilot", "confirmatory", "raters"})
     if evaluation["primary_arms"] != _PRIMARY_ARMS or evaluation["raters"] != ["rater-a", "rater-b"]:
         raise ContractValidationError("evaluation primary arms or raters are invalid")

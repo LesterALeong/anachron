@@ -178,7 +178,12 @@ def _validate_huggingface_cache_redirect(
         or parsed.fragment
     ):
         raise SourceDiscoveryError("Hugging Face cache redirect is not the exact pinned path")
-    query = parse_qs(parsed.query, strict_parsing=True)
+    try:
+        query = parse_qs(parsed.query, strict_parsing=True)
+    except ValueError as error:
+        raise SourceDiscoveryError(
+            "Hugging Face cache redirect query is malformed"
+        ) from error
     etags = query.get("etag")
     if etags is None or len(etags) != 1 or not etags[0]:
         raise SourceDiscoveryError("Hugging Face cache redirect lacks one non-empty etag")

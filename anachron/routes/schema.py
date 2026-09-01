@@ -402,7 +402,12 @@ def _validate_run_identity(
 def _validate_revision_url(url: Any, path: str, topic: str) -> None:
     value = _require_string(url, path)
     parsed = urlparse(value)
-    query = parse_qs(parsed.query, strict_parsing=True)
+    try:
+        query = parse_qs(parsed.query, strict_parsing=True)
+    except ValueError as error:
+        raise ContractValidationError(
+            f"{path} must be an immutable English Wikipedia oldid URL"
+        ) from error
     if parsed.scheme != "https" or parsed.netloc != "en.wikipedia.org" or parsed.path != "/w/index.php":
         raise ContractValidationError(f"{path} must be an immutable English Wikipedia oldid URL")
     if set(query) != {"title", "oldid"} or len(query["title"]) != 1 or len(query["oldid"]) != 1:

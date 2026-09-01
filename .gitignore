@@ -26,8 +26,14 @@ logs/
 
 # Local Routes v1 source-discovery artifacts. These are review inputs, not sealed manifests.
 research/routes-v1/artifacts/
+research/routes-v2/curation/raw/
+research/routes-v2/artifacts/raw/
+research/routes-v2/curation/*.receipt.json
+research/routes-v2/curation/*.draft.json
 paper/routes_v1/build/
 paper/routes_v1/dist/
+paper/routes_v2/build/
+paper/routes_v2/dist/
 
 # Editor / OS
 .vscode/

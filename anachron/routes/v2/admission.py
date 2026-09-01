@@ -7,6 +7,7 @@ import hashlib
 import importlib
 import json
 import os
+import stat
 import subprocess
 import sys
 from importlib.machinery import PathFinder
@@ -20,18 +21,95 @@ class AdmissionError(ValueError):
     """Raised when an admission-chain arrow cannot be proven."""
 
 
+def _is_reparse(path: Path) -> bool:
+    """Reject a link without following it or treating a failed stat as absence."""
+    try:
+        status = path.lstat()
+    except OSError as error:
+        raise AdmissionError(f"unable to inspect raw artifact path: {path}") from error
+    attributes = getattr(status, "st_file_attributes", 0)
+    return stat.S_ISLNK(status.st_mode) or bool(attributes & 0x400)
+
+
+def _repository_root(repository: str | Path) -> Path:
+    """Resolve a repository only after every lexical path component is safe."""
+    try:
+        candidate = Path(os.path.abspath(os.fspath(repository)))
+    except (TypeError, ValueError) as error:
+        raise AdmissionError("repository path is invalid") from error
+    current = Path(candidate.anchor)
+    for component in candidate.parts[1:]:
+        current = current / component
+        if _is_reparse(current):
+            raise AdmissionError("repository path traverses a symlink or reparse point")
+    try:
+        return candidate.resolve(strict=True)
+    except OSError as error:
+        raise AdmissionError("repository path is unavailable") from error
+
+
+def phase_raw_artifact_paths(repository: str | Path, phase: str) -> list[Path]:
+    """Return only the fixed ignored raw artifacts for one frozen phase."""
+    root = _repository_root(repository)
+    if phase not in {"development", "pilot", "confirmatory"}:
+        raise AdmissionError("raw artifact phase is invalid")
+    raw_root = root / "research" / "routes-v2" / "artifacts" / "raw" / phase
+    current = root
+    for part in raw_root.relative_to(root).parts:
+        current = current / part
+        if _is_reparse(current):
+            raise AdmissionError("raw artifact root traverses a symlink or reparse point")
+    try:
+        raw_status = raw_root.lstat()
+    except OSError as error:
+        raise AdmissionError("fixed ignored raw artifact root is unavailable") from error
+    if not stat.S_ISDIR(raw_status.st_mode):
+        raise AdmissionError("fixed ignored raw artifact root is unavailable")
+    paths = []
+    for index in range({"development": 6, "pilot": 18, "confirmatory": 36}[phase]):
+        path = raw_root / f"routes-v2-{phase}-{index}.json"
+        if _is_reparse(path):
+            raise AdmissionError("raw artifact is not a regular direct-child file")
+        try:
+            status = path.lstat()
+        except OSError as error:
+            raise AdmissionError("raw artifact is not a regular direct-child file") from error
+        if not stat.S_ISREG(status.st_mode):
+            raise AdmissionError("raw artifact is not a regular direct-child file")
+        try:
+            resolved = path.resolve(strict=True)
+        except OSError as error:
+            raise AdmissionError("raw artifact cannot be resolved") from error
+        if raw_root not in resolved.parents or resolved.parent != raw_root:
+            raise AdmissionError("raw artifact escapes its fixed root")
+        relative = path.relative_to(root).as_posix()
+        if subprocess.run(["git", "-C", str(root), "ls-files", "--error-unmatch", "--", relative], capture_output=True, check=False).returncode == 0:
+            raise AdmissionError("raw artifact must not be tracked")
+        if subprocess.run(["git", "-C", str(root), "check-ignore", "--quiet", "--", relative], capture_output=True, check=False).returncode != 0:
+            raise AdmissionError("raw artifact must be ignored")
+        paths.append(path)
+    try:
+        observed_names = {path.name for path in raw_root.iterdir()}
+    except OSError as error:
+        raise AdmissionError("fixed raw artifact root cannot be enumerated") from error
+    if observed_names != {path.name for path in paths}:
+        raise AdmissionError("fixed raw artifact root contains unexpected files")
+    return paths
+
+
 class ValidatedExecution:
     """Opaque execution evidence that can only be created by admission replay."""
 
-    __slots__ = ("_artifacts", "_contract", "_outcomes", "_private_values")
+    __slots__ = ("_artifacts", "_contract", "_outcomes", "_private_values", "_source_pairs")
 
-    def __init__(self, token: object, artifacts: dict[str, Any], outcomes: tuple[dict[str, Any], ...], contract: dict[str, Any], private_values: frozenset[str]):
+    def __init__(self, token: object, artifacts: dict[str, Any], outcomes: tuple[dict[str, Any], ...], contract: dict[str, Any], private_values: frozenset[str], source_pairs: tuple[dict[str, Any], ...] = ()):
         if token is not _VALIDATED_EXECUTION_TOKEN:
             raise TypeError("ValidatedExecution must be opened by open_validated_execution")
         self._artifacts = artifacts
         self._outcomes = outcomes
         self._contract = contract
         self._private_values = private_values
+        self._source_pairs = tuple(json.loads(json.dumps(pair, ensure_ascii=False)) for pair in source_pairs)
 
     @property
     def artifacts(self) -> dict[str, Any]:
@@ -80,7 +158,8 @@ _V2_ROOTS = (
     "anachron/routes/v2/retrieval.py", "anachron/routes/v2/runner.py",
     "anachron/routes/v2/runtime.py", "anachron/routes/v2/schema.py",
     "anachron/routes/v2/scoring.py", "anachron/routes/v2/source_integrity.py",
-    "anachron/routes/v2/sources.py", "tools/render_routes_results.py",
+    "anachron/routes/v2/source_excerpt.py", "anachron/routes/v2/sources.py",
+    "tools/validate_routes_v2_source_construction.py", "tools/render_routes_results.py",
     "tools/build_routes_v2_paper.py",
 )
 
@@ -501,22 +580,6 @@ def admit_clean_checkout(repo: str | Path, freeze_receipt: dict[str, Any], closu
             raise AdmissionError("closure file differs from frozen Git blob")
 
 
-def _sealed_answers(sealed_aliases: Any, manifest: dict[str, Any]) -> dict[str, str]:
-    """Accept only one exact scored answer per sealed item, never free-form labels."""
-    expected = {pair["item_id"] for pair in manifest["pairs"]}
-    if not isinstance(sealed_aliases, dict) or set(sealed_aliases) != expected:
-        raise AdmissionError("sealed aliases must cover exactly the sealed manifest items")
-    answers: dict[str, str] = {}
-    for item_id, value in sealed_aliases.items():
-        if isinstance(value, str) and value:
-            answers[item_id] = value
-        elif isinstance(value, list) and len(value) == 1 and isinstance(value[0], str) and value[0]:
-            answers[item_id] = value[0]
-        else:
-            raise AdmissionError("sealed aliases must contain one non-empty deterministic answer")
-    return answers
-
-
 def write_phase_result_evidence(path: str | Path, result: Any, *, replay_root: str | Path, frozen_root: str | Path) -> dict[str, Any]:
     """Create the reloadable, self-hashed predecessor evidence required by later phases."""
     from anachron.routes.v2.analysis import validate_finite_set_result
@@ -594,7 +657,6 @@ def open_validated_execution(
     schedule: dict[str, Any],
     session_calibration_receipts: list[dict[str, Any]],
     journal_path: str | Path,
-    sealed_aliases: dict[str, Any],
 ) -> ValidatedExecution:
     """Replay the complete source-to-response chain into guarded finite evidence.
 
@@ -628,27 +690,32 @@ def open_validated_execution(
         checked_contract = validate_contract(contract)
         checked_frame = _validate_frame(sampling_frame, checked_contract)
         receipts = {receipt["item_id"]: receipt for receipt in pending_draft.get("revalidation_receipts", []) if isinstance(receipt, dict) and isinstance(receipt.get("item_id"), str)}
+        excerpts = {(receipt["item_id"], receipt["arm"]): receipt for receipt in pending_draft.get("excerpt_receipts", []) if isinstance(receipt, dict) and isinstance(receipt.get("item_id"), str) and receipt.get("arm") in {"pre", "post"}}
         predecessor_evidence = manifest.get("predecessor_evidence") if isinstance(manifest, dict) else None
         checked_draft = validate_pending_draft(
             pending_draft,
+            repository=repository,
             contract=checked_contract,
             sampling_frame=checked_frame,
             revalidation_receipts=receipts,
+            excerpt_receipts=excerpts,
             phase=phase,
             predecessor_evidence=predecessor_evidence,
         )
         expected_gate = source_gate_receipt(
             draft=checked_draft,
             source_decisions=source_decisions,
+            repository=repository,
             contract=checked_contract,
             sampling_frame=checked_frame,
             revalidation_receipts=receipts,
+            excerpt_receipts=excerpts,
             phase=phase,
             predecessor_evidence=predecessor_evidence,
         )
         if source_gate != expected_gate or source_gate.get("status") != "PASS" or source_gate.get("study_phase") != phase:
             raise AdmissionError("source gate is not the exact PASS receipt for the pending draft")
-        checked_manifest = validate_manifest(manifest, checked_contract)
+        checked_manifest = validate_manifest(manifest, checked_contract, repository=repository)
         if checked_manifest.get("study_phase") != phase or checked_manifest.get("source_gate_receipt") != source_gate or checked_manifest.get("pending_draft_sha256") != canonical_json_sha256(checked_draft) or freeze_receipt.get("study_phase") != phase:
             raise AdmissionError("manifest does not bind the admitted source gate and pending draft")
         from anachron.routes.v2.runner import _require_phase_prerequisite
@@ -663,7 +730,6 @@ def open_validated_execution(
             freeze_receipt=freeze_receipt,
             closure_lock=closure_lock,
         )
-        answers = _sealed_answers(sealed_aliases, checked_manifest)
         if not isinstance(session_calibration_receipts, list) or not session_calibration_receipts:
             raise AdmissionError("at least one retained session calibration receipt is required")
         calibrations: dict[str, dict[str, Any]] = {}
@@ -720,7 +786,20 @@ def open_validated_execution(
             raise AdmissionError("dispatch claim does not bind calibration for its own model and session")
         response_bytes = validate_bytes_receipt(record["response"])
         result = TransportResult(record["status"], response_bytes, record["response_object_exists"], None if record["error"]["kind"] == "none" else record["error"]["kind"])
-        replayed = classify_response(result, requested_model=trajectory["model_id"], expected_answer=answers[item_id])
+        pairs = [pair for pair in checked_manifest["pairs"] if pair["item_id"] == item_id]
+        if len(pairs) != 1:
+            raise AdmissionError("sealed manifest does not identify one replayed source pair")
+        pair = pairs[0]
+        replayed = classify_response(
+            result,
+            requested_model=trajectory["model_id"],
+            answer_rules={
+                "pre_aliases": pair["pre_aliases"],
+                "post_aliases": pair["post_aliases"],
+                "abstention_aliases": checked_manifest["answer_rules"]["abstention_aliases"],
+            },
+            expected_citation_id=packet["document"]["citation_id"],
+        )
         if replayed["status"] != record["status"] or replayed["response"] != record["response"] or replayed["envelope_valid"] != record["envelope_valid"] or replayed["score"] != record["score"]:
             raise AdmissionError("retained response bytes do not replay to the claimed terminal outcome")
         if record["trace_valid"] != (replayed["status"] == "ok" and replayed["envelope_valid"] and replayed["score"] is not None):
@@ -758,7 +837,6 @@ def open_validated_execution(
         "manifest_sha256": canonical_json_sha256(checked_manifest),
         "freeze_receipt_sha256": canonical_json_sha256(freeze_receipt),
         "schedule_sha256": canonical_json_sha256(checked_schedule),
-        "sealed_aliases_sha256": canonical_json_sha256(sealed_aliases),
         "calibration_receipts_sha256": canonical_json_sha256(session_calibration_receipts),
         "journal_sha256": "sha256:" + hashlib.sha256(Path(journal_path).read_bytes()).hexdigest(),
         "study_phase": phase,
@@ -776,4 +854,5 @@ def open_validated_execution(
             list(calibrations.values()),
             artifacts,
         ),
+        tuple(checked_manifest["pairs"]),
     )

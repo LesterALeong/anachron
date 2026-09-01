@@ -14,3 +14,7 @@ python -m tools.build_routes_v2_paper --help
 ```
 
 Direct `python tools/...` invocation is intentionally unsupported.
+
+Source construction is not paper evidence. Before any human source decision, v2
+retains only bounded, Unicode-safe excerpt receipts and full-revision hashes; the
+pending draft, model prompt, audit, and archive must not contain full raw revisions.

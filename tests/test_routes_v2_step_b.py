@@ -22,7 +22,7 @@ class TestRoutesV2StepB(unittest.TestCase):
             names = {
                 "pending_draft.json", "source_decisions.json", "source_gate.json", "manifest.json",
                 "freeze_receipt.json", "closure_lock.json", "schedule.json", "session_calibrations.json",
-                "sealed_aliases.json", "questions.json", "alias_rubrics.json", "rater-a.json", "rater-b.json",
+                "rater-a.json", "rater-b.json",
             }
             for name in names:
                 (analysis_root / name).write_text(json.dumps({}), encoding="utf-8")

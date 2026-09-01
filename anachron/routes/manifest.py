@@ -84,7 +84,10 @@ def _normalized(value: Any, path: str) -> str:
 def _oldid_url(url: Any, path: str, title: str, revision_id: int) -> None:
     value = _string(url, path)
     parsed = urlparse(value)
-    query = parse_qs(parsed.query, strict_parsing=True)
+    try:
+        query = parse_qs(parsed.query, strict_parsing=True)
+    except ValueError as error:
+        raise ManifestValidationError(f"{path} must be an immutable oldid URL") from error
     if (
         parsed.scheme != "https"
         or parsed.netloc != "en.wikipedia.org"

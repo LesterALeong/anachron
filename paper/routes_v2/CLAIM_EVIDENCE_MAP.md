@@ -11,3 +11,7 @@ be pooled into the paper effect. The study's 6/18/36 title/year phase sets are
 disjoint and each has exact tracked-parent membership proof. It is not a general
 estimate, a model ranking, a live-web result, or a reproduction of ExAnte.
 Routes v1 is BLOCKED and excluded from this paper.
+
+The source-construction boundary is an engineering control, not an empirical claim:
+the protocol freezes unique-anchor UTF-8 excerpts at no more than 4096 bytes and
+binds their full-revision hashes, human review projections, and manifest aliases.

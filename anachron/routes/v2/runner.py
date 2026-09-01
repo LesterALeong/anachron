@@ -8,7 +8,7 @@ import os
 import secrets
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Self
+from typing import Any
 
 from anachron.routes.v2.admission import (
     AdmissionError,
@@ -194,7 +194,7 @@ class ExecutionJournal:
         except FileNotFoundError:
             pass
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> ExecutionJournal:  # noqa: PYI034 - Self requires Python 3.11.
         return self
 
     def __exit__(self, *_: object) -> None:
@@ -356,7 +356,7 @@ class ExecutionSession:
             self._closed = True
             self._journal.close()
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> ExecutionSession:  # noqa: PYI034 - Self requires Python 3.11.
         return self
 
     def __exit__(self, *_: object) -> None:
@@ -385,14 +385,16 @@ class ExecutionSession:
         self._calibrations[model_id] = validate_session_calibration(load_json_object(path), self._contract, inventory=self._inventory, client_binding=self._client_binding, closure_sha256=self._schedule["closure_sha256"], session_nonce=self._session_nonce, model_id=model_id)
         return self._calibrations[model_id]
 
-    def dispatch_next(self, *, expected_answers: dict[str, str]) -> dict[str, Any]:
+    def dispatch_next(self) -> dict[str, Any]:
         """Calibrate once, then persist claim before the only permitted scientific chat call."""
         trajectory, attempt = self._journal.next_trajectory()
-        if trajectory["item_id"] not in expected_answers:
-            raise RunnerValidationError("expected answers do not cover the next frozen item")
         if trajectory["condition"] in {"post_truthful", "post_misdated_eligible"}:
             primary_packets(self._manifest, self._contract, trajectory["item_id"])
         packet = delivery_packet(self._manifest, self._contract, item_id=trajectory["item_id"], condition=trajectory["condition"])
+        pairs = [pair for pair in self._manifest["pairs"] if pair["item_id"] == trajectory["item_id"]]
+        if len(pairs) != 1:
+            raise RunnerValidationError("sealed manifest does not identify one next source pair")
+        pair = pairs[0]
         request = build_request(packet, self._contract, model_id=trajectory["model_id"], seed=trajectory["seed"])
         packet_sha256 = canonical_json_sha256(packet)
         calibration = self._ensure_calibration(trajectory["model_id"])
@@ -404,7 +406,16 @@ class ExecutionSession:
             "delivery": {"packet_sha256": packet_sha256, "model_visible_packet_sha256": packet_sha256, "delivered_evidence_sha256": delivered_evidence_sha256(packet)},
         })
         result = self._chat(request)
-        classified = classify_response(result, requested_model=trajectory["model_id"], expected_answer=expected_answers[trajectory["item_id"]])
+        classified = classify_response(
+            result,
+            requested_model=trajectory["model_id"],
+            answer_rules={
+                "pre_aliases": pair["pre_aliases"],
+                "post_aliases": pair["post_aliases"],
+                "abstention_aliases": self._manifest["answer_rules"]["abstention_aliases"],
+            },
+            expected_citation_id=packet["document"]["citation_id"],
+        )
         error_kind = result.error_kind or ("none" if classified["status"] == "ok" else classified["status"])
         return self._journal.append_terminal({
             "schema_version": "routes-v2-journal-record", "record_type": "terminal_outcome", "run_id": self._session_nonce, "session_nonce": self._session_nonce,
@@ -459,9 +470,10 @@ def _require_phase_prerequisite(phase: str, prerequisite_result: Any, *, predece
 
 def admit_execution_session(*, phase: str, prerequisite_result: Any = None, predecessor_evidence: Any = None, repository: str | Path, contract: dict[str, Any], manifest: dict[str, Any], source_gate: dict[str, Any], freeze_receipt: dict[str, Any], closure_lock: dict[str, Any], schedule_path: str | Path, journal_path: str | Path, calibration_path: str | Path, client: Any, session_nonce: str | None = None) -> ExecutionSession:
     """Admit a fresh client-bound session; no detached calibration/client authority exists."""
-    if validate_manifest(manifest, contract)["study_phase"] != phase or freeze_receipt.get("study_phase") != phase:
+    checked_manifest = validate_manifest(manifest, contract, repository=repository)
+    if checked_manifest["study_phase"] != phase or freeze_receipt.get("study_phase") != phase:
         raise RunnerValidationError("execution phase does not match its manifest and freeze receipt")
-    if phase != "development" and predecessor_evidence != manifest.get("predecessor_evidence"):
+    if phase != "development" and predecessor_evidence != checked_manifest.get("predecessor_evidence"):
         raise RunnerValidationError("execution predecessor evidence must exactly match the sealed manifest")
     _require_phase_prerequisite(phase, prerequisite_result, predecessor_evidence=predecessor_evidence)
     try:
@@ -474,7 +486,7 @@ def admit_execution_session(*, phase: str, prerequisite_result: Any = None, pred
         validate_loaded_code_closure(repository, closure_lock)
     except AdmissionError as error:
         raise RunnerValidationError(f"clean pushed provenance admission failed: {error}") from error
-    schedule = create_schedule(schedule_path, manifest, contract, source_gate=source_gate, freeze_receipt=freeze_receipt, closure_lock=closure_lock)
+    schedule = create_schedule(schedule_path, checked_manifest, contract, source_gate=source_gate, freeze_receipt=freeze_receipt, closure_lock=closure_lock)
     inventory = client.inventory(contract["execution"]["timeout_seconds"])
     validate_inventory(contract, inventory)
     nonce = session_nonce or secrets.token_hex(24)
@@ -482,7 +494,7 @@ def admit_execution_session(*, phase: str, prerequisite_result: Any = None, pred
         raise RunnerValidationError("session nonce is invalid")
     journal = ExecutionJournal(journal_path, schedule)
     try:
-        return ExecutionSession(client=client, contract=contract, manifest=validate_manifest(manifest, contract), schedule=schedule, journal=journal, inventory=inventory, client_binding=client_binding, calibration_path=calibration_path, session_nonce=nonce)
+        return ExecutionSession(client=client, contract=contract, manifest=checked_manifest, schedule=schedule, journal=journal, inventory=inventory, client_binding=client_binding, calibration_path=calibration_path, session_nonce=nonce)
     except BaseException:
         journal.close()
         raise

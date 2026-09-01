@@ -60,6 +60,15 @@ class TestRoutesV2Downstream(unittest.TestCase):
                 + [model["id"] for model in contract["models"]]
                 + [model["digest"] for model in contract["models"]]
             ),
+            tuple(
+                {
+                    "item_id": topic["title"],
+                    "question": "What is the answer?",
+                    "pre_aliases": ["OLD"],
+                    "post_aliases": ["VALUE"],
+                }
+                for topic in specification["topics"]
+            ),
         )
 
     def test_audit_payload_redacts_exact_private_values_but_allows_ordinary_text(self):
@@ -98,13 +107,10 @@ class TestRoutesV2Downstream(unittest.TestCase):
         for phase, expected_population in (("pilot", 36), ("confirmatory", 144)):
             with self.subTest(phase=phase):
                 execution = self._audit_execution(phase)
-                topics = execution._contract["evaluation"][phase]["topics"]
                 private = build_private_audit_join(
                     execution,
                     phase=phase,
                     private_blind_key=b"audit-fixture-private-key",
-                    questions={topic["title"]: "What is the answer?" for topic in topics},
-                    alias_rubrics={topic["title"]: ["VALUE"] for topic in topics},
                     instructions="Choose the matching alias.",
                 )
                 packet = private._packet

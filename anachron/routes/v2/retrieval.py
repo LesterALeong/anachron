@@ -43,16 +43,16 @@ def delivery_packet(manifest: dict[str, Any], contract: dict[str, Any], *, item_
         raise RetrievalValidationError("condition is not declared by the v2 contract")
     pair = _pair(checked, item_id)
     if condition == "strict_pre_truthful":
-        content = pair["pre_content"]
+        content = pair["pre_excerpt"]["text"]
         citation_id = pair["pre_opaque_citation_id"]
         date = pair["strict_document_date"]
     elif condition == "post_truthful":
-        content = pair["post_content"]
-        citation_id = pair["opaque_citation_id"]
+        content = pair["post_excerpt"]["text"]
+        citation_id = pair["post_opaque_citation_id"]
         date = pair["truthful_document_date"]
     else:
-        content = pair["post_content"]
-        citation_id = pair["opaque_citation_id"]
+        content = pair["post_excerpt"]["text"]
+        citation_id = pair["post_opaque_citation_id"]
         date = pair["misdated_eligible_document_date"]
     packet = {
         "question": pair["question"],
