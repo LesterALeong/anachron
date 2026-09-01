@@ -1,0 +1,149 @@
+{
+  "schema_version": "routes-v1",
+  "created_at": "2026-09-01T00:00:00Z",
+  "study": {
+    "id": "anachron-routes-v1",
+    "primary_estimand": "paired_topic_cluster_difference_in_post_only_rate_misdated_minus_strict",
+    "scope_statement": "This study evaluates only English Wikipedia revision routes. It makes no generality claim beyond that single source family or the two evaluated Qwen generations."
+  },
+  "upstreams": {
+    "exante_github": {
+      "url": "https://github.com/yachuan/ExAnte/tree/71165289f1302c6cac97101f777c383b7d4d1263",
+      "revision": "71165289f1302c6cac97101f777c383b7d4d1263",
+      "artifact_url": "https://raw.githubusercontent.com/yachuan/ExAnte/71165289f1302c6cac97101f777c383b7d4d1263/wiki/README.md"
+    },
+    "exante_huggingface": {
+      "url": "https://huggingface.co/datasets/yachuanliu/ExAnte/tree/4e30593e1aff7360fef5aee865117c5c8e05114e",
+      "revision": "4e30593e1aff7360fef5aee865117c5c8e05114e",
+      "artifact_url": "https://huggingface.co/datasets/yachuanliu/ExAnte/resolve/4e30593e1aff7360fef5aee865117c5c8e05114e/exante_wiki.csv"
+    }
+  },
+  "models": [
+    {
+      "id": "qwen2.5:7b",
+      "digest": "sha256:2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730"
+    },
+    {
+      "id": "qwen3:14b-q4_K_M",
+      "digest": "sha256:a8cc1361f3145dc01f6d77c6c82c9116b9ffe3c97b34716fe20418455876c40e"
+    }
+  ],
+  "conditions": ["no_tool", "strict", "misdated"],
+  "source_selection": {
+    "post_snapshot_horizon_days": 365,
+    "snippet_max_chars": 4000,
+    "snippet_context_chars_each_side": 800
+  },
+  "execution": {
+    "seeds": [17, 29],
+    "temperature": 0.2,
+    "num_predict": 160,
+    "think": false,
+    "request_timeout_seconds": 120,
+    "retry_policy": {
+      "max_retries": 1,
+      "retryable_status": "transport_failure_before_response",
+      "non_replaceable_statuses": [
+        "timeout_after_dispatch",
+        "malformed_response",
+        "returned_error",
+        "invalid_output"
+      ]
+    }
+  },
+  "sampling": {
+    "pilot_topic_count": 20,
+    "extension_topic_count": 40,
+    "pilot_models": ["qwen2.5:7b"],
+    "full_models": ["qwen2.5:7b", "qwen3:14b-q4_K_M"],
+    "topics": {
+      "pilot": [
+        {"title": "YouTube", "cutoff_year": 2013},
+        {"title": "Facebook", "cutoff_year": 2012},
+        {"title": "Google", "cutoff_year": 2015},
+        {"title": "Apple", "cutoff_year": 2007},
+        {"title": "Donald Trump", "cutoff_year": 2015},
+        {"title": "United Kingdom", "cutoff_year": 2016},
+        {"title": "Joe Biden", "cutoff_year": 2020},
+        {"title": "United States Senate", "cutoff_year": 2014},
+        {"title": "Climate change", "cutoff_year": 2015},
+        {"title": "COVID-19 pandemic", "cutoff_year": 2019},
+        {"title": "Solar eclipse", "cutoff_year": 2017},
+        {"title": "Mars", "cutoff_year": 2012},
+        {"title": "Game of Thrones", "cutoff_year": 2011},
+        {"title": "Taylor Swift", "cutoff_year": 2014},
+        {"title": "Star Wars", "cutoff_year": 2012},
+        {"title": "Cristiano Ronaldo", "cutoff_year": 2018},
+        {"title": "New York City", "cutoff_year": 2012},
+        {"title": "Wikipedia", "cutoff_year": 2015},
+        {"title": "Manchester United F.C.", "cutoff_year": 2013},
+        {"title": "2016 United States presidential election", "cutoff_year": 2016}
+      ],
+      "extension": [
+        {"title": "Elon Musk", "cutoff_year": 2012},
+        {"title": "Search", "cutoff_year": 2013},
+        {"title": "New York Stock Exchange", "cutoff_year": 2008},
+        {"title": "Walt Disney World", "cutoff_year": 2017},
+        {"title": "United States Capitol", "cutoff_year": 2021},
+        {"title": "London Underground", "cutoff_year": 2012},
+        {"title": "New York City Subway", "cutoff_year": 2015},
+        {"title": "Suez Canal", "cutoff_year": 2021},
+        {"title": "Barack Obama", "cutoff_year": 2008},
+        {"title": "Vladimir Putin", "cutoff_year": 2014},
+        {"title": "India", "cutoff_year": 2014},
+        {"title": "Brazil", "cutoff_year": 2016},
+        {"title": "Ukraine", "cutoff_year": 2014},
+        {"title": "China", "cutoff_year": 2012},
+        {"title": "Israel", "cutoff_year": 2011},
+        {"title": "Germany", "cutoff_year": 2015},
+        {"title": "Black hole", "cutoff_year": 2015},
+        {"title": "Jupiter", "cutoff_year": 2011},
+        {"title": "Earth", "cutoff_year": 2014},
+        {"title": "Ceres (dwarf planet)", "cutoff_year": 2015},
+        {"title": "Evolution", "cutoff_year": 2005},
+        {"title": "Coronavirus", "cutoff_year": 2019},
+        {"title": "Earthquake", "cutoff_year": 2011},
+        {"title": "Pacific Ocean", "cutoff_year": 2011},
+        {"title": "Breaking Bad", "cutoff_year": 2013},
+        {"title": "The Big Bang Theory", "cutoff_year": 2014},
+        {"title": "Harry Potter", "cutoff_year": 2007},
+        {"title": "List of Marvel Cinematic Universe films", "cutoff_year": 2008},
+        {"title": "Beyoncé", "cutoff_year": 2013},
+        {"title": "Justin Bieber", "cutoff_year": 2010},
+        {"title": "Stranger Things", "cutoff_year": 2016},
+        {"title": "Avengers: Endgame", "cutoff_year": 2019},
+        {"title": "Lionel Messi", "cutoff_year": 2014},
+        {"title": "LeBron James", "cutoff_year": 2010},
+        {"title": "Tom Brady", "cutoff_year": 2020},
+        {"title": "FC Barcelona", "cutoff_year": 2012},
+        {"title": "2018 FIFA World Cup", "cutoff_year": 2018},
+        {"title": "Golden State Warriors", "cutoff_year": 2015},
+        {"title": "New York Yankees", "cutoff_year": 2017},
+        {"title": "Real Madrid C.F.", "cutoff_year": 2010}
+      ]
+    }
+  },
+  "labels": ["pre_only", "post_only", "mixed", "abstain_or_other", "invalid_output"],
+  "analysis": {
+    "analysis_seed": 20260901,
+    "cluster_unit": "topic",
+    "primary_contrast": {"treatment": "misdated", "control": "strict", "outcome": "post_only"},
+    "interval": {"method": "paired_topic_cluster_bootstrap", "confidence_level": 0.95, "resamples": 10000},
+    "secondary_outcomes": ["citation_effect", "trace_validity"]
+  },
+  "pilot_gates": {
+    "minimum_source_valid_pairs": 18,
+    "minimum_forced_retrieval_trace_validity": 0.9,
+    "minimum_blinded_two_rater_kappa": 0.7,
+    "primary_point_estimate_must_be_positive": true,
+    "primary_ci_lower_bound_must_be_positive": true,
+    "secondary_outcomes_cannot_rescue_primary_failure": true
+  },
+  "full_gates": {
+    "minimum_source_valid_pairs": 36,
+    "maximum_invalid_output_fraction": 0.1,
+    "per_model_primary_point_estimate_must_be_positive": true,
+    "pooled_primary_ci_lower_bound_minimum": 0.05,
+    "pilot_data_excluded_from_confirmatory": true
+  }
+}

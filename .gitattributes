@@ -1,0 +1,21 @@
+# Routes v2 binds raw working-tree bytes to Git blobs. Keep governed text LF on
+# every platform, including a Windows core.autocrlf=true checkout.
+*.py text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.md text eol=lf
+*.tex text eol=lf
+*.bib text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.txt text eol=lf
+*.csv text eol=lf
+.gitattributes text eol=lf
+
+# Generated submission packages are byte artifacts, never text-normalized.
+*.pdf binary
+*.tar binary
+*.tar.gz binary
+*.gz binary
+*.zip binary

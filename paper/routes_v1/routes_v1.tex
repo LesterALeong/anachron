@@ -1,0 +1,112 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage[numbers]{natbib}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue,pdftitle={Anachron Routes: A Pre-Registered Study of Temporal Evidence Transmission Through Frozen Wikipedia Revisions},pdfauthor={Lester Leong}}
+\newcommand{\routes}{\textsc{Routes}}
+\newcommand{\todoresult}[1]{\textit{[Generated result pending: #1]}}
+
+\title{BLOCKED Historical Scaffold: Anachron \routes{} v1}
+\author{Lester Leong\\Independent Researcher}
+\date{September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{center}\textbf{BLOCKED AND UNEXECUTED. Do not submit, send, or use this v1 manuscript for outreach.}\end{center}
+
+\begin{abstract}
+Time-bounded evaluation of language-model agents requires more than a prompt that states an as-of date: the evidence route must also respect that date. This paper describes a pre-registered, controlled study of whether a forced post-cutoff Wikipedia revision reaches an agent's final answer more often than an otherwise matched pre-cutoff revision. For each topic, the intervention compares a no-tool condition, retrieval of the last eligible English Wikipedia revision at or before the cutoff year, and retrieval of the last revision at a fixed one-year post-cutoff horizon. The study uses immutable revision URLs, structured traces, blinded answer-route labels, and paired topic-cluster bootstrap inference. At the time of this preprint, no model trajectory has been run and no source pair has received the required human curation approval. The audited candidate registry contains 20 pilot and 40 confirmatory candidates; 18 and 36 respectively are executable after source and semantic screening, yielding a contingent schedule of 108 pilot and 432 confirmatory trajectories. This manuscript records the design, provenance, analysis gates, and limitations without reporting experimental results.
+\end{abstract}
+
+\section{Introduction}
+
+Temporal reasoning is central to retrospective forecasting, historical question answering, and any agent asked to act on an information set fixed at a past date. Recent work shows that explicit temporal instructions do not by themselves establish ex-ante reasoning \citep{liu-etal-2026-exante}, and that date-filtered web search can return material that directly reveals post-cutoff answers \citep{el-lahib-etal-2026-temporal}. A valid evaluation therefore needs to distinguish what the model says from which evidence route the system actually exposed.
+
+\routes{} isolates one narrow mechanism: \emph{transmission through a forced retrieval route}. It does not test whether an answer was stored in model parameters, and it does not estimate leakage on the open web. Each trial supplies a controlled answer-changing pair of immutable English Wikipedia revisions. The strict route returns the last revision at or before the cutoff; the misdated route returns the last revision at or before a fixed cutoff-plus-365-day horizon and is required to be post-cutoff. The primary question is whether post-only answers are more frequent under the latter route.
+
+The contribution is a reproducible intervention design, not a benchmark claim or a model ranking. The source family is deliberately singular, each revision is hash-bound, model output is recorded as a structured trace, and inference is clustered at the topic level. These choices make failures observable but also sharply constrain interpretation.
+
+\section{Related work}
+
+\paragraph{Ex-ante inference and temporal retrieval.}
+ExAnte evaluates ex-ante inference over several tasks, including Wikipedia question answering, and reports temporal-constraint failures under explicit cutoffs \citep{liu-etal-2026-exante}. \routes{} uses pinned ExAnte metadata only as a title-year sampling frame; it does not reproduce ExAnte, reuse its labels, or claim a comparison with its reported scores. El Lahib et al. audit date-filtered search engines and motivate frozen, time-stamped evidence for retrospective evaluation \citep{el-lahib-etal-2026-temporal}. \routes{} replaces live search with forced immutable revisions, allowing the evidence route itself to be manipulated.
+
+\paragraph{Temporally valid agent evaluation.}
+WorldReasoner evaluates forecasting agents using a temporal gateway, source quality, and reasoning quality alongside outcomes \citep{chi-etal-2026-worldreasoner}. Its scope is resolved event forecasting. In contrast, \routes{} focuses on a controlled answer-route mechanism in revision pairs and does not make forecasting-quality claims. Look-Ahead-Bench studies look-ahead bias in finance-oriented point-in-time LLM workflows \citep{benhenda-2026-lookahead}. That setting is complementary; this study contains no financial data or alpha claim.
+
+\paragraph{Changing knowledge.}
+TemporalWiki constructs a lifelong benchmark from changing Wikipedia and Wikidata snapshots \citep{jang-etal-2022-temporalwiki}, while EvolvingQA examines updating and removing outdated world knowledge in a lifelong-learning setting \citep{kim-etal-2024-carpe}. When Facts Change studies conflicts between model knowledge and retrieved context for temporally changing facts \citep{wallat-etal-2026-facts}. \routes{} does not measure continual learning, factual accuracy over time, or parametric knowledge conflict. It asks only whether a known post-cutoff source route changes the answer class relative to a matched strict route.
+
+\section{Intervention}
+
+Each topic has a cutoff year $y$ and two audited revisions. The \texttt{strict} condition returns the last revision timestamped no later than 23:59:59 UTC on 31 December $y$. The \texttt{misdated} condition returns the last revision no later than the same boundary plus 365 days and must be strictly after the cutoff. The \texttt{no\_tool} condition exposes no retrieval tool. In the retrieval conditions, the runner supplies exactly one immutable \texttt{oldid} URL and records the returned revision identity in a structured trace.
+
+The response schema requires an answer field and a trace with model, seed, condition, topic identity, timestamps, source URL, and digests. It rejects a malformed or substituted trace rather than silently repairing it. The study calls a response \emph{post-only} when the answer matches the post-revision aliases and not the pre-revision aliases. The other frozen labels are \texttt{pre\_only}, \texttt{mixed}, \texttt{abstain\_or\_other}, and \texttt{invalid\_output}. The term ``off-trace'' is reserved for a response that cannot be attributed to the forced route; it is not evidence of parametric leakage.
+
+\section{Data and provenance}
+
+The only evidence source is English Wikipedia revision history. Candidate title-year pairs are checked against pinned ExAnte GitHub and Hugging Face revisions, with raw source hashes recorded in the repository's sampling frame. The pair constructor fetches immutable revision metadata and raw text, verifies the declared time boundary, requires exact unique anchors in the relevant revision, and derives a bounded evidence snippet deterministically around each anchor.
+
+The frozen registry began with 20 pilot and 40 confirmatory candidates. Source and semantic screening currently leaves 18 pilot and 36 confirmatory executable pairs. These are \emph{audited candidates}, not approved dataset rows: both curation decision files remain pending human validation, and no run may begin until that approval is recorded. If every executable pair is approved, the schedule contains $18\times3\times2=108$ pilot trajectories and $36\times3\times2\times2=432$ confirmatory trajectories, or 540 in total. No trajectory has been executed as of this manuscript version.
+
+Raw Wikipedia revision text and diffs are local discovery inputs and are not distributed in the paper bundle. A sealed runtime manifest retains immutable URLs, revision metadata, snippets, attribution, semantic mapping, and content hashes, but no raw revision text. Wikipedia content is governed by its applicable CC BY-SA terms; the code is Apache-2.0 and third-party notices are retained separately.
+
+\section{Frozen protocol}
+
+The pilot uses \texttt{qwen2.5:7b}, two seeds (17 and 29), temperature 0.2, a 160-token limit, and a 120-second request timeout. The confirmatory stage uses the same settings with \texttt{qwen2.5:7b} and \texttt{qwen3:14b-q4\_K\_M}. Exact local model digests are pinned in the machine-readable contract. The two Qwen generations are not distinct model families; any completed analysis will not support a cross-family generality claim.
+
+At most one retry is allowed only after a transport failure before any response bytes are received. A timeout after dispatch, malformed response, returned error, or invalid output is retained as a nonreplaceable outcome. The pilot and confirmatory samples are disjoint. Pilot data are never pooled into the confirmatory primary interval.
+
+The pilot may advance only if at least 18 of 20 source-valid pairs remain, forced-retrieval trace validity is at least 0.90, blinded two-rater Cohen's $\kappa$ is at least 0.70, and the primary effect and lower endpoint of its 95\% interval are positive. The confirmatory gates require at least 36 of 40 source-valid pairs, invalid-output fraction at most 0.10, a positive primary point estimate for each evaluated model, and a pooled confirmatory lower confidence bound of at least 0.05. These gates were frozen before model execution; a failure is not permission to redefine them.
+
+\section{Metrics and inference}
+
+The primary estimand is the paired topic-cluster difference in post-only rate:
+\[
+\widehat{\Delta}=\widehat{p}_{\mathrm{post\mbox{-}only}}(\texttt{misdated})-
+\widehat{p}_{\mathrm{post\mbox{-}only}}(\texttt{strict}).
+\]
+The confidence interval is a percentile paired topic-cluster bootstrap with 10,000 resamples at 95\% confidence. Resampling occurs by topic, preserving the conditions and seeds within a topic cluster. Citation and trace-validity effects are secondary outcomes; they cannot rescue a failed primary gate. The no-tool trace-validity denominator is reported separately because it has no forced retrieval requirement.
+
+Human route labels are blinded to condition. Two raters independently label each output, and agreement is summarized with Cohen's $\kappa$ before adjudication. The project retains the output records, blinding map, rater decisions, adjudication log, and analysis receipt. Until these artifacts exist, no empirical result or direction of effect is claimed.
+
+\input{generated/results_placeholder.tex}
+
+\section{Reproducibility}
+
+The repository contains the frozen contract, source-selection rules, curation review packets, schema validation, retry policy, runner, and analysis implementation. Reproduction requires the exact pinned upstream revisions, a locally saved discovery directory for provenance re-validation, the sealed curation manifest, the declared model digests, and the run manifest. The paper bundle intentionally excludes raw discovery data, model outputs, credentials, code, and build artifacts. It is a source-only preprint package rather than a replication archive.
+
+\section{Ethics, licensing, and AI assistance}
+
+The study uses public revision histories but may reproduce short evidentiary snippets. It retains source URLs and attributions, does not distribute raw revision archives, and documents the boundary between Apache-2.0 project code and Wikipedia-derived material. The task contains no human-subject intervention. Human raters should be informed that their labels are used to assess model-output routing and should not be asked to reveal personal data.
+
+This manuscript, the protocol text, and code were prepared with assistance from language-model tools under the author's direction. All empirical claims are deliberately withheld pending the frozen source-curation, execution, and independent human-audit stages. The author is responsible for reviewing the final text, sources, and all eventual results.
+
+\section{Limitations}
+
+\routes{} studies one source family, English Wikipedia, and a hand-audited set of answer-changing revision pairs. Its forced route is not a realistic search engine or multi-step agent environment. The intervention establishes exposure to a particular revision, not the causal mechanism by which a model generated an answer. Exact alias matching can miss paraphrases, while human labels introduce rater variability. The models are two Qwen generations only; the design cannot establish model-family or provider generality. Finally, the current candidate registry is not yet human-approved, so even the executable pair counts are a pre-execution planning state rather than a released dataset.
+
+\section{Discussion and conclusion}
+
+This pre-results manuscript specifies a test for a narrow but important failure mode: whether a post-cutoff revision, when deliberately supplied, reaches the final answer more often than a matched eligible revision. The design makes source identities, route traces, retries, labels, and statistical gates inspectable before outcomes exist. Its value will depend on executing the frozen plan without loosening these constraints. Until then, this document should be read as a protocol-bearing preprint scaffold, not evidence that any model leaks or that any mitigation succeeds.
+
+\appendix
+\section{Source, retry, and audit details}
+
+\subsection{Source eligibility}
+For each title-year pair, source eligibility requires a strict revision, a post-horizon revision, immutable numeric \texttt{oldid} URLs, timestamps satisfying the frozen boundaries, exactly one occurrence of each declared anchor in its corresponding revision, disjoint normalized answer aliases, and a deterministic evidence snippet no longer than 4,000 characters. Source ineligibility and semantic rejection are retained as explicit decisions; they are not replaced by newly selected topics.
+
+\subsection{Retry accounting}
+Every dispatched request has a stable trajectory identifier. A retry may occur once only if transport fails before any response bytes. The runner writes the attempted status, count, timestamps, request digest, and response or error classification. It never fills a failed record with a later response. This rule separates operational failure from an apparently plausible substitute result.
+
+\subsection{Human audit}
+Before source sealing, a human validator must personally inspect each immutable revision and affirm or reject its mapping. After execution, two blinded raters independently label outputs. The condition map is withheld during initial labeling. A record of rater identifiers, canonical UTC timestamps, decisions, disagreements, and adjudications supports calculation of the frozen agreement gate. Neither source validation nor output labels may be inferred from this manuscript.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+\end{document}

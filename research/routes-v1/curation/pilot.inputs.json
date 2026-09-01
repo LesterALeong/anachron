@@ -1,0 +1,214 @@
+{
+  "schema_version": "routes-v1-curation-input",
+  "study_phase": "pilot",
+  "rejected_topics": [
+    {
+      "title": "COVID-19 pandemic",
+      "reason": "source-ineligible: no frozen discovery artifact is available for the declared pilot topic."
+    },
+    {
+      "title": "Mars",
+      "reason": "semantic-ineligible: the discovered changes are structural or caption changes, not a disjoint, explicitly supported historical-state fact."
+    }
+  ],
+  "entries": [
+    {
+      "title": "YouTube",
+      "question": "Who was listed as YouTube's CEO?",
+      "pre_answer_aliases": ["Salar Kamangar"],
+      "post_answer_aliases": ["Susan Wojcicki"],
+      "pre_anchor": "|key_people       = [[Salar Kamangar]] (CEO)<br />Chad Hurley (Advisor)",
+      "post_anchor": "|key_people       = [[Susan Wojcicki]] (CEO)<br />Chad Hurley (Advisor)",
+      "change_type": "event_status",
+      "semantic_strength": "clean",
+      "notes": "A directly changed infobox officeholder field; each anchor occurs exactly once in its assigned snapshot."
+    },
+    {
+      "title": "Facebook",
+      "question": "What active-user count was listed for Facebook?",
+      "pre_answer_aliases": ["1 billion", "one billion"],
+      "post_answer_aliases": ["1.19 billion", "1.19bn"],
+      "pre_anchor": "| num_users       = 1 billion",
+      "post_anchor": "| num_users = 1.19 billion",
+      "change_type": "count_or_statistic",
+      "semantic_strength": "clean",
+      "notes": "A directly changed infobox active-user count; the question intentionally asks for the listed count, not an inferred current count."
+    },
+    {
+      "title": "Google",
+      "question": "What employee count was listed in Google's infobox?",
+      "pre_answer_aliases": ["59,976", "59976"],
+      "post_answer_aliases": ["57,100", "57100"],
+      "pre_anchor": "| num_employees    = 59,976 (Q3 2015)",
+      "post_anchor": "| num_employees    = 57,100 (Q2 2015)",
+      "change_type": "correction",
+      "semantic_strength": "weaker",
+      "notes": "Revision-level statistic change only: the post snapshot reports an older quarter (Q2 2015) than the strict snapshot (Q3 2015), so it is not a clean time-forward state transition."
+    },
+    {
+      "title": "Apple",
+      "question": "According to the commerce section, about what share of 2005 global apple output did China produce?",
+      "pre_answer_aliases": ["two-fifth", "two fifths", "40 percent", "40%"],
+      "post_answer_aliases": ["35 percent", "35%"],
+      "pre_anchor": "[[China]] produced about two-fifth of this total.",
+      "post_anchor": "[[People's Republic of China|China]] produced about 35% of this total.",
+      "change_type": "correction",
+      "semantic_strength": "clean",
+      "notes": "A narrowly scorable revision to an explicitly stated historical production-share statistic."
+    },
+    {
+      "title": "Donald Trump",
+      "question": "What was Donald Trump's stated status in the 2016 U.S. presidential election?",
+      "pre_answer_aliases": ["candidate for President of the United States", "candidate"],
+      "post_answer_aliases": ["President-elect of the United States", "president-elect"],
+      "pre_anchor": "candidate for President of the United States",
+      "post_anchor": "[[President-elect of the United States]]. He is scheduled to [[Inauguration of Donald Trump|take office]]",
+      "change_type": "event_status",
+      "semantic_strength": "clean",
+      "notes": "A clear election-status transition; anchors were checked as unique and cross-snapshot disjoint."
+    },
+    {
+      "title": "United Kingdom",
+      "question": "What population estimate did the United Kingdom infobox report?",
+      "pre_answer_aliases": ["65,110,000", "65110000"],
+      "post_answer_aliases": ["65,648,000", "65648000"],
+      "pre_anchor": "| population_estimate = 65,110,000",
+      "post_anchor": "| population_estimate = {{increase}} 65,648,000",
+      "change_type": "estimate",
+      "semantic_strength": "weaker",
+      "notes": "A changed infobox estimate rather than a discrete event or officeholder transition."
+    },
+    {
+      "title": "Joe Biden",
+      "question": "What U.S. presidential role did the article give Joe Biden?",
+      "pre_answer_aliases": ["President-elect of the United States", "president-elect"],
+      "post_answer_aliases": ["46th president of the United States", "46th president"],
+      "pre_anchor": "{{short description|President-elect of the United States; 47th Vice President of the United States}}",
+      "post_anchor": "{{Short description|46th president of the United States}}",
+      "change_type": "event_status",
+      "semantic_strength": "clean",
+      "notes": "A direct transition from president-elect to inaugurated president in the article's short description."
+    },
+    {
+      "title": "United States Senate",
+      "question": "Who was listed as the Senate Majority Leader?",
+      "pre_answer_aliases": ["Harry Reid"],
+      "post_answer_aliases": ["Mitch McConnell"],
+      "pre_anchor": "| leader3        = [[Harry Reid]]",
+      "post_anchor": "| leader3        = [[Mitch McConnell]]",
+      "change_type": "event_status",
+      "semantic_strength": "clean",
+      "notes": "A directly changed leadership field in the Senate infobox."
+    },
+    {
+      "title": "Climate change",
+      "question": "Through what year did the displayed global mean surface-temperature series extend?",
+      "pre_answer_aliases": ["2014"],
+      "post_answer_aliases": ["2015"],
+      "pre_anchor": "caption1=Global mean surface temperature change from 1880 to 2014",
+      "post_anchor": "caption1=Global mean surface temperature change from 1880 to 2015",
+      "change_type": "count_or_statistic",
+      "semantic_strength": "clean",
+      "notes": "A directly changed, date-bounded chart-caption statistic."
+    },
+    {
+      "title": "Solar eclipse",
+      "question": "What date did the article identify as the next solar eclipse?",
+      "pre_answer_aliases": ["February 15, 2018", "2018-02-15"],
+      "post_answer_aliases": ["August 11, 2018", "2018-08-11"],
+      "pre_anchor": "The next solar eclipse will occur on February 15, 2018.",
+      "post_anchor": "The next solar eclipse occurred on [[Solar eclipse of August 11, 2018|August 11, 2018]].",
+      "change_type": "event_status",
+      "semantic_strength": "clean",
+      "notes": "A directly changed future-event statement with distinct dates in the two snapshots."
+    },
+    {
+      "title": "Game of Thrones",
+      "question": "How many seasons had aired, according to the infobox?",
+      "pre_answer_aliases": ["1", "one"],
+      "post_answer_aliases": ["2", "two"],
+      "pre_anchor": "|num_seasons = 1",
+      "post_anchor": "|num_seasons = 2 <!-- Only update after a new season begins -->",
+      "change_type": "count_or_statistic",
+      "semantic_strength": "clean",
+      "notes": "An explicit season count with an article comment confirming update only after a new season begins."
+    },
+    {
+      "title": "Taylor Swift",
+      "question": "Which tour was named in the infobox photo caption?",
+      "pre_answer_aliases": ["Red Tour", "The Red Tour"],
+      "post_answer_aliases": ["1989 World Tour", "The 1989 World Tour"],
+      "pre_anchor": "Swift performing in [[St. Louis]], Missouri, during the 2013 [[The Red Tour|Red Tour]]",
+      "post_anchor": "Swift performing at [[Ford Field]] in [[Detroit]] during [[The 1989 World Tour]] in May 2015",
+      "change_type": "article_state",
+      "semantic_strength": "weaker",
+      "notes": "A directly scorable current-tour caption change, but it is a photo-caption/article-state update rather than a durable biographical fact."
+    },
+    {
+      "title": "Star Wars",
+      "question": "How did the film list identify Episode VII?",
+      "pre_answer_aliases": ["VII (2015)", "Episode VII (2015)"],
+      "post_answer_aliases": ["Development of Star Wars Episode VII"],
+      "pre_anchor": "*{{nowrap|''[[Star Wars sequel trilogy#Episode VII|VII]]'' (2015)}}",
+      "post_anchor": "* {{nowrap|''[[Development of Star Wars Episode VII|VII]]''}}",
+      "change_type": "article_state",
+      "semantic_strength": "weaker",
+      "notes": "A film-list development-status wording change; it is retained as a weaker, explicitly flagged article-state item."
+    },
+    {
+      "title": "Cristiano Ronaldo",
+      "question": "How many Portugal national-team appearances were listed?",
+      "pre_answer_aliases": ["154"],
+      "post_answer_aliases": ["164"],
+      "pre_anchor": "| nationalcaps6 = 154",
+      "post_anchor": "| nationalcaps6 = 164",
+      "change_type": "count_or_statistic",
+      "semantic_strength": "clean",
+      "notes": "A directly changed cumulative national-team appearance count."
+    },
+    {
+      "title": "New York City",
+      "question": "What population estimate did the New York City infobox report?",
+      "pre_answer_aliases": ["8,244,910", "8244910"],
+      "post_answer_aliases": ["8,336,697", "8336697"],
+      "pre_anchor": "population_est          = 8244910",
+      "post_anchor": "population_est          = 8,336,697",
+      "change_type": "estimate",
+      "semantic_strength": "clean",
+      "notes": "A directly changed infobox estimate with distinct values and explicit estimate years in the surrounding source text."
+    },
+    {
+      "title": "Wikipedia",
+      "question": "About how many articles did the article say Wikipedia had across all languages?",
+      "pre_answer_aliases": ["37 million", "over 37 million"],
+      "post_answer_aliases": ["40 million", "more than 40 million"],
+      "pre_anchor": "over [[Special:Statistics|37 million articles]] in over 250 different languages",
+      "post_anchor": "more than 40 million articles in more than 250 different languages",
+      "change_type": "count_or_statistic",
+      "semantic_strength": "clean",
+      "notes": "A directly changed cross-language article-count statement."
+    },
+    {
+      "title": "Manchester United F.C.",
+      "question": "Who was listed as Manchester United's manager?",
+      "pre_answer_aliases": ["David Moyes"],
+      "post_answer_aliases": ["Louis van Gaal"],
+      "pre_anchor": "| manager  = [[David Moyes]]",
+      "post_anchor": "| manager  = [[Louis van Gaal]]",
+      "change_type": "event_status",
+      "semantic_strength": "clean",
+      "notes": "A directly changed club-manager field in the infobox."
+    },
+    {
+      "title": "2016 United States presidential election",
+      "question": "How did the article describe Donald Trump's presidential status?",
+      "pre_answer_aliases": ["expected to take office", "would take office"],
+      "post_answer_aliases": ["took office"],
+      "pre_anchor": "Trump is expected to [[Inauguration of Donald Trump|take office]] as the [[List of Presidents of the United States|45th President]]",
+      "post_anchor": "Trump [[Inauguration of Donald Trump|took office]] as the [[List of Presidents of the United States|45th President]]",
+      "change_type": "event_status",
+      "semantic_strength": "clean",
+      "notes": "A direct transition from a future inauguration to an accomplished inauguration."
+    }
+  ]
+}

@@ -24,6 +24,11 @@ htmlcov/
 logs/
 *.eval
 
+# Local Routes v1 source-discovery artifacts. These are review inputs, not sealed manifests.
+research/routes-v1/artifacts/
+paper/routes_v1/build/
+paper/routes_v1/dist/
+
 # Editor / OS
 .vscode/
 .idea/

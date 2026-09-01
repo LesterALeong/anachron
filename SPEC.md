@@ -2,19 +2,19 @@
 
 **Name:** Anachron (anachronism: using information from the wrong time). Package: `anachron`.
 
-**One line:** an Inspect-pluggable scorer that measures the leakage rate of an LLM agent's tool calls under an as-of-date constraint, that is, how often an agent reaches for or consumes information dated after the simulated "now," graded with the point-in-time rigor of quantitative backtesting (retrieval, survivorship, restatements, cost).
+**One line:** legacy v0 design notes for an Inspect-pluggable, synthetic-corpus scorer. Routes v1 is BLOCKED and unexecuted; the active pre-outcome design is schema-incompatible Routes v2 in `research/routes-v2/`.
 
 ## 1. Why this exists
 
-LLM agents increasingly operate over time-anchored tasks ("analyze this as of date T"), which are only valid if the agent does not consult the future. A check on whether an agent respects the as-of boundary belongs where evals already run, so Anachron ships as a component for UK AISI Inspect and applies to any agent and task.
+LLM agents increasingly operate over time-anchored tasks ("analyze this as of date T"), which are only valid if the agent does not consult the future. The legacy v0 design is an Inspect-compatible component for controlled, supplied traces; it is not evidence that any deployed agent or task has been evaluated.
 
-The broad idea of temporal or look-ahead leakage is not new (ExAnte, Look-Ahead-Bench, WorldReasoner). The gap Anachron fills is narrower: agentic tool-call leakage, measured as a leakage rate, with genuine point-in-time rigor (survivorship, restatements, cost) carried over from quantitative finance.
+The broad idea of temporal or look-ahead leakage is not new (ExAnte, Look-Ahead-Bench, WorldReasoner). The v0 code is a narrow synthetic-corpus mechanism for leakage-rate scoring. It does not, by itself, establish a result for live tools, arbitrary agents, or a model family. The transaction-cost axis remains a future design direction, not shipped functionality.
 
 ## 2. What makes it distinct
 
 1. The metric is the leakage rate of the agent's own tool calls and queries, not outcome accuracy or cited-evidence precision.
-2. Point-in-time across four axes: retrieval, survivorship, restatements and revisions, and transaction cost. Survivorship, restatements, and cost are the quant-grounded axes that general temporal-leakage work does not touch.
-3. It is a scorer and method, not a fixed benchmark, so it runs over any agent and task inside Inspect.
+2. The implemented v0 corpus represents retrieval, survivorship, and restatement/revision cases. Transaction cost is not implemented.
+3. It is a scorer and method, not a fixed benchmark; the Inspect adapter is designed to operate over compatible supplied traces and tasks.
 4. It scores under enforcement rather than only enforcing: it quantifies the residual leakage that remains even when nominal date filters are on.
 5. Domain-general but finance-grounded: restatements and survivorship give a concrete, hard testbed that generalizes.
 
@@ -44,7 +44,7 @@ In scope:
 - As-of-T task samples carrying `metadata={"as_of": T}`.
 - A date-aware retrieval tool that tags every result with its publish date, with an Unrestricted/Enforced switch.
 - A scorer emitting TCLR (exact, by construction) and Survivorship Leakage on the finance slice, with the offending calls surfaced in the explanation and metadata.
-- Runs against a handful of frontier models (the Claude, GPT, and Gemini families) via an agentic solver.
+- Optional execution through the Inspect adapter when a user configures a compatible provider. This repository does not report a validated frontier-model, live-tool, or multi-agent result.
 
 Shipped since v0: the restatements axis (v0.1) — ``restates_id`` corpus links, an exact ``is_restatement_leak`` predicate, restatement pairs in both corpus slices, and as-of samples spanning the restatement windows.
 
@@ -53,12 +53,22 @@ Later phases: live-web retrieval; LLM-judge and semantic leakage detection; the 
 ## 6. Architecture (Inspect)
 
 - **Sample:** `input` framed "as of T"; `metadata={"as_of": T}`.
-- **Solver:** a `react()` agent (or `use_tools(search()) + generate()`), with date-aware tools.
+- **Solver:** a legacy intended `react()` agent (or `use_tools(search()) + generate()`) integration with date-aware tools; this is an adapter design, not a reported live-agent result.
 - **Tool:** a retrieval tool over the date-stamped corpus; each result includes its publish date; Enforced mode applies a server-side date filter.
 - **Scorer:** walks the message trace, reads the assistant's tool calls and the tool results, compares item dates to T, and returns the leakage rate with `mean()` and `stderr()`.
 - **Packaging:** a setuptools entry point in the `inspect_ai` group.
 
-## 7. Roadmap
+## 7. Routes study boundary
+
+Routes v1 is blocked and unexecuted historical provenance, not an extension of
+the legacy v0 result table. Its differing source snapshots confound a source
+content intervention with visible date. Routes v2 holds post content and opaque
+citation identity fixed across its primary arms, changing only the visible
+document date. It is development-only, pre-outcome, and does not benchmark live
+search or arbitrary agent tool use. See [`research/routes-v2/PROTOCOL.md`](research/routes-v2/PROTOCOL.md)
+for its frozen boundary. No Routes version has a model outcome claim here.
+
+## 8. Roadmap
 
 - **v0:** a working Inspect eval, a short technical write-up, and a public release. *(done)*
 - **v0.1:** the restatements axis. *(done)*

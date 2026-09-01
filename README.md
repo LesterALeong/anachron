@@ -4,15 +4,19 @@
 
 **Measuring look-ahead leakage in LLM agents — does an agent use information it could not have had at the time?**
 
-Anachron is an evaluation that scores the **leakage rate of an LLM agent's tool calls** under an as-of-date constraint. When an agent is given tools (search, retrieval, data APIs) and a task framed *"as of date T,"* Anachron measures how often it reaches for, or consumes, information dated after `T` — graded with point-in-time rigor borrowed from quantitative backtesting (survivorship, restatements, transaction cost).
+Anachron contains a small synthetic v0 scorer, a blocked/unexecuted Routes v1 source-route study, and the pre-outcome Routes v2 date-presentation design. The v0 scorer records leakage in a controlled, date-stamped corpus. Routes v2 holds source content fixed and tests a visible-document-date intervention. None of the tracks establishes a live-web, general-agent, or transaction-cost result.
+
+## Research tracks and current boundary
+
+The synthetic v0 material below is a worked mechanism demonstration, not a model benchmark. Routes v1 is **BLOCKED and unexecuted** because its source-content intervention confounds the visible-date question; it is historical provenance only. Routes v2 is the active pre-outcome design, with no revalidated sources, human decisions, calibration, model outcomes, or paper claims. See [`research/routes-v2/PROTOCOL.md`](research/routes-v2/PROTOCOL.md) and [`research/routes-v2/FREEZE_ACCEPTANCE_MATRIX.md`](research/routes-v2/FREEZE_ACCEPTANCE_MATRIX.md).
 
 ## The problem
 
-LLM agents increasingly act over time-anchored tasks: *"analyze this company as of Q2 2023,"* *"forecast this outcome given only what was known on date `T`."* Such tasks are only valid if the agent does not peek at the future. In practice agents leak — they issue queries that surface post-`T` documents, or consume retrieved results dated after the cutoff. Prompt-based constraints (*"only use information before `T`"*) are known to be insufficient, and naive date-filtered retrieval still leaks. Anachron quantifies the residual leakage at the level of the agent's own tool calls.
+LLM agents increasingly act over time-anchored tasks: *"analyze this company as of Q2 2023,"* *"forecast this outcome given only what was known on date `T`."* Such tasks are only valid if the agent does not peek at the future. The synthetic v0 scorer illustrates how date-stamped retrieval traces can expose a post-cutoff interaction. It does not by itself quantify leakage for deployed agents or live retrieval systems.
 
 ## What it measures
 
-- **TCLR — Tool-Call Leakage Rate** (primary): the fraction of an agent's tool interactions that surface or consume an item dated after `T`. Detection is exact and by construction — every corpus item carries a known publish date, so an interaction leaks iff it touches an item with `publish_date > T`. (Boundary: `publish_date == T` does not leak.)
+- **TCLR - Tool-Call Leakage Rate** (v0 synthetic metric): the fraction of supplied trace interactions that surface or consume an item dated after `T`. Detection is exact and by construction - every v0 corpus item carries a known publish date, so an interaction leaks iff it touches an item with `publish_date > T`. (Boundary: `publish_date == T` does not leak.)
 - **Survivorship leakage**: on the finance slice, the fraction of interactions that return an entity which was not point-in-time valid as of `T` (already delisted, or not yet listed). This is the discipline standard ML evaluations skip.
 - **Restatement leakage**: interactions that consume a post-`T` *restatement* of an earlier item — revised history rather than ordinary future news. As of `T` the originally reported figure is the correct record, so this is the vendor-overwritten-history problem from backtesting. By construction a labeled subset of TCLR's result leaks; reported separately because it is the worse failure mode.
 - **Query-intent leakage** (secondary): whether the agent's query itself reaches for a date after `T`. Reported separately and **not** folded into TCLR.
@@ -23,7 +27,7 @@ LLM agents increasingly act over time-anchored tasks: *"analyze this company as 
 - **Unrestricted** — tools may return post-`T` items; measures the agent's intrinsic tendency to reach for the future.
 - **Enforced** — a date filter is nominally applied; measures the leakage that slips past controls. The gap between the two modes is itself a finding.
 
-## What it finds
+## Synthetic v0 illustration, not a Routes v1 result
 
 A free local run with `qwen2.5:7b` (via [Ollama](https://ollama.com), no API key) over the 23-sample v0 corpus:
 
@@ -35,7 +39,7 @@ A free local run with `qwen2.5:7b` (via [Ollama](https://ollama.com), no API key
 
 Of the 8 runs in which the model actually used the search tool, **5 leaked** a post-cutoff item. A nominal date filter then removed every date-based leak (TCLR to 0.000), yet **one survivorship leak still surfaced under enforcement**: the agent returned an entity that was not point-in-time valid as of `T`, which a date filter alone cannot catch. That residual is the point.
 
-This is an illustrative run on a small synthetic corpus, not a benchmark or a model ranking. The model answered without searching on roughly two-thirds of samples, so TCLR is reported over all 23 runs (0.217) and, separately, as 5 of the 8 tool-using runs. Reproduce it for free with the Ollama commands below, or point `--model` at any provider. (The sample set has since grown to 27 with the restatement pairs; the table reports the original v0 run.)
+This is an illustrative run on a small synthetic corpus, not a benchmark, a model ranking, proof about a live retrieval agent, or a Routes v1 result. The model answered without searching on roughly two-thirds of samples, so TCLR is reported over all 23 runs (0.217) and, separately, as 5 of the 8 tool-using runs. The sample set has since grown to 27 with the restatement pairs; the table reports the original v0 run.
 
 ## Quickstart
 
@@ -45,7 +49,7 @@ Run the leakage core and its tests with **no third-party dependencies**:
 python -m unittest discover -s tests -v
 ```
 
-Run the full agentic eval (requires the optional `inspect_ai` extra and a model provider key). Two tasks share one as-of-dated sample set:
+Run the legacy synthetic Inspect adapter (requires the optional `inspect_ai` extra and a configured provider). Two tasks share one as-of-dated sample set:
 
 ```bash
 pip install -e ".[inspect]"
@@ -57,7 +61,7 @@ inspect eval anachron/inspect/task.py@anachron --model <provider/model>
 inspect eval anachron/inspect/task.py@anachron_enforced --model <provider/model>
 ```
 
-The gap between Mode A and Mode B leakage rates is the headline finding.
+The gap between Mode A and Mode B leakage rates is an illustrative synthetic comparison, not a Routes v1 or live-agent finding.
 
 ### Compare the modes with paired inference
 
@@ -140,15 +144,15 @@ The leakage logic lives in [`anachron/core/leakage.py`](anachron/core/leakage.py
 
 ## Related work
 
-Anachron is deliberately distinct from recent temporal-leakage work:
+The v0 scorer and the separate Routes v1 protocol occupy different scopes. The repository does not yet make a validated claim about arbitrary agent tool calls, live web retrieval, or a model family comparison. With that boundary, Anachron is deliberately distinct from recent temporal-leakage work:
 
-- **WorldReasoner** (arXiv:2606.11816) builds an agent-forecasting benchmark that *enforces* the temporal boundary at query time and scores outcomes and cited evidence. Anachron does not enforce-and-score-outcomes; it **measures the leakage rate of the agent's tool calls themselves**, including the residual leakage that survives enforcement.
-- **ExAnte** (arXiv:2505.19533) measures as-of-`T` leakage for non-agentic, memory-only models. Anachron targets tool-using agents.
-- **Temporal Leakage in Date-Filtered Web Retrieval** (arXiv:2602.00758) audits date-filter failures on a memory-only forecaster. Anachron turns that observation into a reusable, agent-level scorer and adds point-in-time quant rigor (survivorship, restatements, cost).
+- **WorldReasoner** (arXiv:2606.11816) builds an agent-forecasting benchmark that *enforces* the temporal boundary at query time and scores outcomes and cited evidence. The legacy v0 code instead supplies a synthetic trace scorer; Routes v1 uses controlled revision injection and outcome labels.
+- **ExAnte** (arXiv:2505.19533) measures as-of-`T` leakage for non-agentic, memory-only models. Routes v1 uses ExAnte only as a pinned title-year sampling frame, not as a reproduced benchmark.
+- **Temporal Leakage in Date-Filtered Web Retrieval** (arXiv:2602.00758) audits date-filter failures on a memory-only forecaster. Anachron's v0 examples share the temporal-boundary motivation; no transaction-cost implementation or live-web result is claimed here.
 
 ## Status
 
-**v0.1 / work in progress.** The leakage core, paired mode-comparison workflow, and their tests are complete, and the **restatements axis shipped in v0.1** (post-`T` revisions of earlier items scored as a distinct leak class, with restatement pairs in both corpus slices). The corpus and Inspect integration remain intentionally minimal and will grow. Roadmap: the transaction-cost axis, an LLM-judge detector for fuzzy/undated leakage, a live-web mode, and a public leaderboard.
+**Work in progress.** The synthetic v0 leakage core and its paired comparison workflow are available as a controlled demonstration. Routes v1 is blocked and unexecuted. Routes v2 has a frozen contract and fail-closed pre-outcome core; it has no revalidated source draft, human decision, calibration, model outcome, or reported result. The transaction-cost axis, a live-web mode, fuzzy/undated detection, broader agent traces, and a public leaderboard are not shipped.
 
 ## License
 
