@@ -1,0 +1,43 @@
+{
+  "analysis": {
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20260902,
+    "estimand": "finite_panel_paired_visible_date_acceptance",
+    "primary_outcome": "forward_transition_post_exact"
+  },
+  "bounds": {
+    "max_document_utf8_bytes": 4096
+  },
+  "calibration": {
+    "citation_id": "CAL-DATE-SHIFT",
+    "document_content": "The calibration answer is CALIBRATION. The remaining filler exists only to make this an item-shaped bounded document.",
+    "expected_answer": "CALIBRATION",
+    "question": "What answer does the document state?"
+  },
+  "decoding": {
+    "min_p": 0.0,
+    "num_ctx": 8192,
+    "num_predict": 160,
+    "repeat_penalty": 1.0,
+    "seed": 20260902,
+    "temperature": 0,
+    "top_k": 40,
+    "top_p": 0.9
+  },
+  "endpoint": "http://127.0.0.1:11434",
+  "models": [
+    {
+      "digest": "sha256:845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "id": "qwen2.5:7b"
+    },
+    {
+      "digest": "sha256:bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+      "id": "qwen3:14b-q4_K_M"
+    }
+  ],
+  "schema_version": "date-shift-execution-plan-v3",
+  "seed": 20260902,
+  "study_id": "anachron-date-shift-v3",
+  "think": false,
+  "timeout_seconds": 120
+}

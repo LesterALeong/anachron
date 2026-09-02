@@ -1,0 +1,928 @@
+{
+  "attestation": "",
+  "attested_at_utc": null,
+  "author_id": "",
+  "decisions": [
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:00",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:845ffb60cb36ebed4ceb1c12d2047577b1b03b12271afcf1f125d9c319964287",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=YouTube&oldid=640416754"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:5a3f0da995e3039c5b66c74b88c09779e9cc453b9e432894292fe5d94251d6ff",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=YouTube&oldid=588472466"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:01",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:cb2182dc4580234dd51bf0e51905acccae893ef575d084956e2b950b0d030ea4",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Facebook&oldid=588549700"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:a936c0dd0c62244776e4a1b44f64dbcfc42f6e3c0f74b803edccdacc5a01185b",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Facebook&oldid=530466144"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI FLAG: later document reports older Q2 while pre document reports Q3; inspect chronology and semantic direction.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:02",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:16512effbe5c377f560264384b1a455de040eb54803f5f791aeefc3db6dcf8a0",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Google&oldid=756786157"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:2d0d5d19d6c7f499bfe5ff6b9158f97b662436f5a9e4ba8ebc5317750f6b9314",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Google&oldid=697454067"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:03",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:403dc3834506751332398afca27c825d47592aa1a5e71419fe23fc563b6121a0",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Apple&oldid=258352387"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:e907efc1f11448aed8c91bf04e97f11d41d56fce38500889e89db856e19b5c52",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Apple&oldid=180465150"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "FLAG: the bare alias 'candidate' is unsafe; author should inspect or reject.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:04",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:daf499428c3620832d346e4f5262239792b1d3779e5e2d5977dfd632b2a0e88c",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Donald+Trump&oldid=757472154"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:2a90f72524174e6e0b62a8e73466a074569c94a85724a46382bf7e64eab4c00d",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Donald+Trump&oldid=697659027"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:05",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:d625e0a3b283514eab97748180b6ca88f7149e82b6197e829bda73ae28ca33de",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=United+Kingdom&oldid=817948115"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:d24616ec2f02b5578200db64042d23829706d4ddd7deb612c4af8b63cb60a0a6",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=United+Kingdom&oldid=757386723"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:06",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:633ca72e17e19e0832b79e8cdd544ec79b9aa142c9b1424b111232e8c0b43d41",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Joe+Biden&oldid=1062743175"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:1aa55dfcef42ee4ce52d218dfaf63c6631ef8f8254e5286de150f2893e122815",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Joe+Biden&oldid=997524182"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:07",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:42204685033f07156acc4452bcf77a91ffa3217378f1cb4704cdda850d9f440c",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=United+States+Senate&oldid=697657080"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:5686b032308879418df45eb1c37e3ceff9db4335c81857025be791c719aac841",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=United+States+Senate&oldid=639206465"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:08",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:bcda8cfd952652727091183264aeb385b6ca3e091be545638b6c43fdda6f44ef",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Climate+change&oldid=756757966"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:2a6c5c1ba85a103cb5c168aea1cb97a8c00c2e3fd1364a1ae937fa526178678d",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Climate+change&oldid=697203072"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:10",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:178c8be6d4780430aae41dd7d4b5a72287801c6e5b02cd7ce260f9de85c062d7",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Solar+eclipse&oldid=870964759"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:c9c9abaf60b7ec5d7979147717068af4bb5ba2ee73252d2a039d7211e26918a6",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Solar+eclipse&oldid=817729124"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:12",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:ff9eaa1ebfd4642634d9fc9bfb4f2e6f849200a6e4d5af350546273a4242676b",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Game+of+Thrones&oldid=530421781"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:eb1e7d9e8a48b7d6572d3b7c669c74371eda8deca153078a0df611109ce4fd63",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Game+of+Thrones&oldid=468822587"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:13",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:fd3598045b8fba9570fdaeadfa58692a70490d858d69e59ccae6c482c1bc2522",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Taylor+Swift&oldid=697618717"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:0db33228e344c0a740f1a288fce10b0bebd24d6e59f7fc8c77781223df123966",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Taylor+Swift&oldid=640444562"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI REJECT RECOMMENDATION: same Episode VII fact; apparent difference is label/link-target only.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:14",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:cf56bde82c41d3e00a91e6a5ce4886f2afc1638129eb6c8f862da0aeabd39589",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Star+Wars&oldid=588549932"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:4e711eed25b68927cf2d021b7b6ae493cbf63b803db982e49812bacbee05ad21",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Star+Wars&oldid=530253816"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:15",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:2e695ceba7814b1b7ef5746a4bdd5395954c179ea2b7cf8ed26518415bb42512",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Cristiano+Ronaldo&oldid=933390612"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:36fa174f78e8d4d7c92843b633b1f42569dfd1fe71d3c2ee0632992dcb22c352",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Cristiano+Ronaldo&oldid=875862735"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:16",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:2f232f042a4a2a722c061f5128d93fa856a44be2b52e8a9f55ece35bf86087db",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=New+York+City&oldid=588511457"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:15dfffcc036e43daa079f9ce43a507d4420254b8b52975da6981df985660f32f",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=New+York+City&oldid=529936111"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI REJECT RECOMMENDATION: aliases overlap after normalization.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:17",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:5e2c9458cd63f5a9df5249049ff657f95ae524b83f158e51d69247158373d508",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Wikipedia&oldid=757338685"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:81514af4e8d3907d0a2abd941d5adcea741b5c8a120d7ead179a69d551d53669",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Wikipedia&oldid=697043109"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:18",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:07a1c60839887c584e8e9b8cb5990c86b2ad1410d5ac15808f87e818dc296858",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Manchester+United+F.C.&oldid=639712549"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:93c5c42da3e227683d187c2045e7ac342c2b5716fb44da5c4277c07d1617003f",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Manchester+United+F.C.&oldid=588511837"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:19",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:192200f4056da7a263c8e465f604db2ffe28353c8da411cd0582e9c23f883d6b",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=2016+United+States+presidential+election&oldid=817232065"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:eb70c534deed19d5142347c39d18a3c26bfe82270bbe32506836a4bd07c8ef46",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=2016+United+States+presidential+election&oldid=757533963"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:20",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:55375d4a93696f71100a516644ff60a97f735b887733b4654c3e84b28cc4e087",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Elon+Musk&oldid=588472983"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:27659f2a0f1600ff3c91b6ce70ad8c570ac6ea21d0eb1eaf8b0ec2fcfd6472ba",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Elon+Musk&oldid=530669195"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:22",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:f73be8758789eba82cf0b206e899160a8bdd97bb0df8c0a9286acc08a21192db",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=New+York+Stock+Exchange&oldid=334009606"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:50b552925464f64566027933352d594e886166f75a5d148ad61b29be27bb655e",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=New+York+Stock+Exchange&oldid=258911421"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:23",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:1fab42c67c48aac9d602ceb975a0d33166d88cae7c92544dd879104667060059",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Walt+Disney+World&oldid=874866200"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:5a9d0543af87b94c2eaa5eaa91940b048555330926b341030ddea2b5327defa7",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Walt+Disney+World&oldid=817804968"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI REJECT RECOMMENDATION: same attack; apparent difference is naming aliases.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:24",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:d8a02a65e109432f5e5186441a8ca78b8ad15e3497dd7e5770090b72ae950e8e",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=United+States+Capitol&oldid=1130666409"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:99b534677661a376bed4e373542bd92267de8445b4a3d529faa160b4349509f3",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=United+States+Capitol&oldid=1063051416"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:25",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:5a5cfd50d4bcd8960a8cc4dc80791db9c2c9cc4a46d32818f6c812658c0ace67",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=London+Underground&oldid=587975114"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:10f10d1d379a2a626cdd67ff610029c6ee837bcfdfc6cf17c49d9ed2f1d018bd",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=London+Underground&oldid=530539709"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:26",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:11d5de30821355a2574d2294348e1eb8691f56321bc22a7961d9280dcb72650c",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=New+York+City+Subway&oldid=757163834"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:08c25e20074f9f6b5039dc479a00f952ec165f80450676f87f339424f8921008",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=New+York+City+Subway&oldid=697558169"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:27",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:8eb457dc76d1ec6aa7a4e65da911b9b44046b5ab946a5b3067caded32ae0e02e",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Suez+Canal&oldid=1127235875"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:e3550753be48edb7ce426faaf85efcbb85e11c9664404e41ce359c6422a01775",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Suez+Canal&oldid=1062289989"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:28",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:9087dfa22fc96aa23d40333484dc5e193497f120e40e7ae370d56e2c356b5960",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Barack+Obama&oldid=335199367"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:3efd9dd2db46d46d1bb7ca2cf01ed26b84a568f7e90d6e9f42c41eb6f152459f",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Barack+Obama&oldid=261157071"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI REJECT RECOMMENDATION: pre anchor is FSB Director, not Security Council.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:29",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:79dcc8c63305ebe89c58531851ee6c9829811162ae89181238892b40b00dbf77",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Vladimir+Putin&oldid=697523060"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:c049d3f25aae9d6c81e7a1fe8c17ca77f8aa5e01251f1cb4f5d0c1897b327c2b",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Vladimir+Putin&oldid=640271046"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:30",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:65e08812d95dd0625c21e0de86ffa74d7fd3ce2e6d915a5de7498054640271cc",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=India&oldid=697479380"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:122c9a4f8ff5f46aa71627d0267562611cad7c0f3cf64f08088bed7a05746583",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=India&oldid=640297436"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:31",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:c37d78f23efee6ee7db7eeb05940f8afdd6083e23284fcb174df24ddc1a75b03",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Brazil&oldid=817452288"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:1dbc5448234033a844c7814cb30537f1ab17af5e29ff5fddad0ff2072ecfd4c8",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Brazil&oldid=757287070"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:32",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:7c7cb9b68083471182a8f725804b8409518ff837c7f5a0fe6e73cc1a56d32bdb",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Ukraine&oldid=697613307"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:915b7721d58a642fc10aa55905312a23b4a5e278584d5ffdc1807218c38dbae7",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Ukraine&oldid=640358717"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:33",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:e821e087438b4222e5d61b2419299a5f8c2cf56ef96e9a24d0ca351bea4032fe",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=China&oldid=588356041"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:5c28190a2d07bcadd360a491362f88fffd0712835855d95c9e40fe34d9e0d614",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=China&oldid=530592283"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:34",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:84948a8bb55643d90c164c235498cfd80f4a9e357b56e46b8e8c00cd6be0a6f2",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Israel&oldid=530445949"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:9910f74c0828858adecacdde819187acd54f1db1a488b0a8effa2e4a3b3173f5",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Israel&oldid=468715133"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:35",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:646b64f9e1adf5358c4759345bf0f7337c06de680eeab9babd6fefc8dc52ec72",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Germany&oldid=757139894"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:12387d4d2fc92f9b75f3e88dc9e4316ad20e35fd381ddf1ecd09463f0207f47e",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Germany&oldid=696893720"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI FLAG: no deterministic wording correction installed; inspect whether the black-hole mapping is a substantive answer change.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:36",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:0814261949961581bbef5cfc2bd4415283c5f93ee31b8b01d11be28f17c5199a",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Black+hole&oldid=755790224"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:ffe3b397852f77761142d3fea107222b4d707fd9106fcc1d1568d54bb497b3ca",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Black+hole&oldid=697150234"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:37",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:b121b93fef183b30184bf2057f6bdd9a300947a11a515c949d1ff2f608f5243b",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Jupiter&oldid=530394517"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:90e5f532e38561cbe41dd8251d914c50a4d6407aef1aa2adeff97cadf794a0c7",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Jupiter&oldid=468082513"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:38",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:1441feba61710b31ac9042452ad0ec67f2860d8b7a7f2e6382bb9f9b691321be",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Earth&oldid=697247442"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:c7c4a8ab5322cc3310abb989d874594cae884b9a0a42b66197f77f4f0b460e8c",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Earth&oldid=640446727"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI REVISE PROPOSAL: question narrowed to Dawn's fourth mapping-orbit phase; author must still decide.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:39",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:5fcb97ee088920882ea7f659d812c4907f8d29073c94deaae709e828d10a3e52",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Ceres+%28dwarf+planet%29&oldid=757414686"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:80d571a535f6316e94c728fee8e446273d902b06e3b1b6ed1581a1ea1462d7a7",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Ceres+%28dwarf+planet%29&oldid=697335645"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI FLAG: no deterministic wording correction installed; inspect whether the Evolution mapping is a substantive answer change.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:40",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:ce97b07092b734ad0b8bbccb5804e834e074f4be15450e6f2701d619e92f97ed",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Evolution&oldid=97614701"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:6317c3228fc204b560454e46a0780f416d07332f16c4843abb4ab32576de38e1",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Evolution&oldid=33411775"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI REVISE PROPOSAL: question narrowed to the infobox subdivision_ranks field; author must still decide.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:41",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:9a2e6cc28907739877551ae05c905eb07d10148511c1e454796e9fb0d99a084c",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Coronavirus&oldid=996107537"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:9231cf2a2e4b51700439c8255a54d92414a0d885d35ef3bc011f03df2274337e",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Coronavirus&oldid=930088272"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:42",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:2253988af0f97b1fa61ce4cae737a19c76f15fc79a6a0cf3f20cf2e23730daa1",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Earthquake&oldid=529923048"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:32dc10ad90717e77e018ec642e75c6f7d2f8cc4f411200aa6ac680abc0a88d4f",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Earthquake&oldid=467636943"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI REJECT RECOMMENDATION: apparent difference is rounding.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:43",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:922a37543665c2b78c5a7433e4c7a7027cba4923a9580fbd3dec42de9e3b0294",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Pacific+Ocean&oldid=529739620"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:761f9ddd1a6d5c122a1941736a7d8e190da3b0fa85d797460a4ac8b71331b486",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Pacific+Ocean&oldid=467834785"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:44",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:8fe05111a48078945bf838d80078d27b65b0f4e6d25b43248f5caa594f01dfaf",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Breaking+Bad&oldid=640081267"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:80c3316c99ca862ad961d461cafc8f6c43986aa6b17fb0567621e96db60273a2",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Breaking+Bad&oldid=587795514"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:45",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:a8dd3235f1b1707ab8ffffd8443de847f7bd9b0da62f3aeebe4c3b28ac95b1db",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=The+Big+Bang+Theory&oldid=697476951"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:03f36c7482eeeba69dbb9da61e54020e142a04bba5c6b65ec69832a677376dfc",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=The+Big+Bang+Theory&oldid=640329910"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI REJECT RECOMMENDATION: '67' still satisfies 'more than 64'.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:46",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:58f921e154c17dada67f2ef15e964f26094e07c148fcbf87972844bac81b10bc",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Harry+Potter&oldid=260460758"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:631c3d2624f2848b5dfb7b35b706f15ac6eee24841d20566aefd93542bd2a271",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Harry+Potter&oldid=181200158"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:48",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:aa355ec0e712f5759bbd0ec9f6d79d706fa8031e0da1b2b523c9977584f6d7b9",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Beyonc%C3%A9&oldid=640326615"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:258bd29b19fbe412955cfdb466ec933d5b21ac1fed3118113988056a2c5f603b",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Beyonc%C3%A9&oldid=588588943"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI FLAG: no deterministic wording correction installed; inspect whether the Bieber mapping is a substantive answer change.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:49",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:14ce382f385e8a0c3e086b8f8985182211034addbc93f3893d80c47da3818f4d",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Justin+Bieber&oldid=468815004"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:c96e83eacdf514a10948078b36b4f3fea8909e7ff4c0eb5eb4b78ff9b5bd9b3c",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Justin+Bieber&oldid=405235646"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:50",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:6e4a88163394d992156ecd8d783e1683b3762e109bd81d12aa8e4769dfb74f65",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Stranger+Things&oldid=817947800"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:b3d67881593c5cda2ceea58991834e15ed78546d8a4b8f66c9c7d181ace96c99",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Stranger+Things&oldid=757334962"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI REJECT RECOMMENDATION: apparent difference is a precision correction.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:51",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:f6689e99a4f32f16ee5df0767a5292a56892df25817ff10ed6b668bd38df5e3e",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Avengers%3A+Endgame&oldid=997113506"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:10234dcf9a00a0e078e71a6cad5b6ebf79dddedfc327478a3efa69113adb8474",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Avengers%3A+Endgame&oldid=933437438"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI FLAG: no deterministic wording correction installed; inspect whether the Messi mapping is a substantive answer change.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:52",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:be42c36e295f3a7b3936ff2d6229c1f0ff3688f851ac5b0174467c000604817f",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Lionel+Messi&oldid=697656881"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:f84dec120a6a22672d6fe99dc6597477d09bd5a71419c48c07e54917abaa358d",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Lionel+Messi&oldid=639781337"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:53",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:84aedf97f1794efb28193a9d1f3e8a15770564f500600ffe7ab63c8694b079c0",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=LeBron+James&oldid=468376229"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:57d7c838aa4aa96c4ce761c5aefdae252b3fad3cc1b8f3f8fbdec860e5882fb8",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=LeBron+James&oldid=404972765"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "AI REVISE PROPOSAL: question narrowed to the passing-attempt total; author must still decide.",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:54",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:e09c2e96aaf2c21c7fde742341b92d0ccb4ca7dbc557a54d0d4a73936dc6e128",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Tom+Brady&oldid=1062543971"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:a2c67b98f4ac9c39ec70f2793b408eff619e20525a011982e8510b39b56ae93d",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Tom+Brady&oldid=997503215"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:55",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:f2b13c265be552c76f7ebfe91076fc3c452cdbd5ce66770c702057e27683b331",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=FC+Barcelona&oldid=587520376"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:c95464e623cf416a9ab32e313cad2d9bf5a7e3477c8a45879ce1f9023506b51c",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=FC+Barcelona&oldid=530504127"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:57",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:fd66510230cdbe8303f202b8f3d85dff08b7bb090e7364e2b46006e206083675",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Golden+State+Warriors&oldid=756346597"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:94559a3cd2ca44098f8cd41893683d340a58975c148551595e9d6b8bbb120b0a",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=Golden+State+Warriors&oldid=697611832"
+        }
+      }
+    },
+    {
+      "ai_recommendation_note": "",
+      "decision": "UNRESOLVED",
+      "item_id": "date-shift:58",
+      "reason": "",
+      "reviewed_at_utc": null,
+      "source_bindings": {
+        "post": {
+          "full_content_sha256": "sha256:9ebd64a6f7f44029c813e19e8cdb8d1c605e8487aa85d27935ed98336c1973e1",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=New+York+Yankees&oldid=875183896"
+        },
+        "pre": {
+          "full_content_sha256": "sha256:0e6947c54717717facf0da3961aef90a8ca078cbe0ecfdf2b23331d18d2617cf",
+          "immutable_url": "https://en.wikipedia.org/w/index.php?title=New+York+Yankees&oldid=817686371"
+        }
+      }
+    }
+  ],
+  "proposed_frame_sha256": "sha256:7cc3021f2c8296cfba383529464a4c027ca4d8e5c361eb07b516f6ef4cfd960a",
+  "proposed_items_sha256": "sha256:233da4369de73dd9fa861c0b9fee86ec856ac7718561dff6c3b19baf59c6f87c",
+  "schema_version": "date-shift-author-audit-v1"
+}

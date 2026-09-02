@@ -1,0 +1,435 @@
+{
+  "candidates": [
+    {
+      "cutoff_year": 2013,
+      "frame_index": 0,
+      "item_id": "date-shift:00",
+      "status": "proposed",
+      "topic": "YouTube"
+    },
+    {
+      "cutoff_year": 2012,
+      "frame_index": 1,
+      "item_id": "date-shift:01",
+      "status": "proposed",
+      "topic": "Facebook"
+    },
+    {
+      "cutoff_year": 2015,
+      "frame_index": 2,
+      "item_id": "date-shift:02",
+      "status": "proposed",
+      "topic": "Google"
+    },
+    {
+      "cutoff_year": 2007,
+      "frame_index": 3,
+      "item_id": "date-shift:03",
+      "status": "proposed",
+      "topic": "Apple"
+    },
+    {
+      "cutoff_year": 2015,
+      "frame_index": 4,
+      "item_id": "date-shift:04",
+      "status": "proposed",
+      "topic": "Donald Trump"
+    },
+    {
+      "cutoff_year": 2016,
+      "frame_index": 5,
+      "item_id": "date-shift:05",
+      "status": "proposed",
+      "topic": "United Kingdom"
+    },
+    {
+      "cutoff_year": 2020,
+      "frame_index": 6,
+      "item_id": "date-shift:06",
+      "status": "proposed",
+      "topic": "Joe Biden"
+    },
+    {
+      "cutoff_year": 2014,
+      "frame_index": 7,
+      "item_id": "date-shift:07",
+      "status": "proposed",
+      "topic": "United States Senate"
+    },
+    {
+      "cutoff_year": 2015,
+      "frame_index": 8,
+      "item_id": "date-shift:08",
+      "status": "proposed",
+      "topic": "Climate change"
+    },
+    {
+      "cutoff_year": 2019,
+      "frame_index": 9,
+      "reason": "no frozen discovery artifact",
+      "status": "excluded",
+      "topic": "COVID-19 pandemic"
+    },
+    {
+      "cutoff_year": 2017,
+      "frame_index": 10,
+      "item_id": "date-shift:10",
+      "status": "proposed",
+      "topic": "Solar eclipse"
+    },
+    {
+      "cutoff_year": 2012,
+      "frame_index": 11,
+      "reason": "no sufficiently narrow answer-changing historical fact in the discovered revisions",
+      "status": "excluded",
+      "topic": "Mars"
+    },
+    {
+      "cutoff_year": 2011,
+      "frame_index": 12,
+      "item_id": "date-shift:12",
+      "status": "proposed",
+      "topic": "Game of Thrones"
+    },
+    {
+      "cutoff_year": 2014,
+      "frame_index": 13,
+      "item_id": "date-shift:13",
+      "status": "proposed",
+      "topic": "Taylor Swift"
+    },
+    {
+      "cutoff_year": 2012,
+      "frame_index": 14,
+      "item_id": "date-shift:14",
+      "status": "proposed",
+      "topic": "Star Wars"
+    },
+    {
+      "cutoff_year": 2018,
+      "frame_index": 15,
+      "item_id": "date-shift:15",
+      "status": "proposed",
+      "topic": "Cristiano Ronaldo"
+    },
+    {
+      "cutoff_year": 2012,
+      "frame_index": 16,
+      "item_id": "date-shift:16",
+      "status": "proposed",
+      "topic": "New York City"
+    },
+    {
+      "cutoff_year": 2015,
+      "frame_index": 17,
+      "item_id": "date-shift:17",
+      "status": "proposed",
+      "topic": "Wikipedia"
+    },
+    {
+      "cutoff_year": 2013,
+      "frame_index": 18,
+      "item_id": "date-shift:18",
+      "status": "proposed",
+      "topic": "Manchester United F.C."
+    },
+    {
+      "cutoff_year": 2016,
+      "frame_index": 19,
+      "item_id": "date-shift:19",
+      "status": "proposed",
+      "topic": "2016 United States presidential election"
+    },
+    {
+      "cutoff_year": 2012,
+      "frame_index": 20,
+      "item_id": "date-shift:20",
+      "status": "proposed",
+      "topic": "Elon Musk"
+    },
+    {
+      "cutoff_year": 2013,
+      "frame_index": 21,
+      "reason": "no frozen discovery artifact",
+      "status": "excluded",
+      "topic": "Search"
+    },
+    {
+      "cutoff_year": 2008,
+      "frame_index": 22,
+      "item_id": "date-shift:22",
+      "status": "proposed",
+      "topic": "New York Stock Exchange"
+    },
+    {
+      "cutoff_year": 2017,
+      "frame_index": 23,
+      "item_id": "date-shift:23",
+      "status": "proposed",
+      "topic": "Walt Disney World"
+    },
+    {
+      "cutoff_year": 2021,
+      "frame_index": 24,
+      "item_id": "date-shift:24",
+      "status": "proposed",
+      "topic": "United States Capitol"
+    },
+    {
+      "cutoff_year": 2012,
+      "frame_index": 25,
+      "item_id": "date-shift:25",
+      "status": "proposed",
+      "topic": "London Underground"
+    },
+    {
+      "cutoff_year": 2015,
+      "frame_index": 26,
+      "item_id": "date-shift:26",
+      "status": "proposed",
+      "topic": "New York City Subway"
+    },
+    {
+      "cutoff_year": 2021,
+      "frame_index": 27,
+      "item_id": "date-shift:27",
+      "status": "proposed",
+      "topic": "Suez Canal"
+    },
+    {
+      "cutoff_year": 2008,
+      "frame_index": 28,
+      "item_id": "date-shift:28",
+      "status": "proposed",
+      "topic": "Barack Obama"
+    },
+    {
+      "cutoff_year": 2014,
+      "frame_index": 29,
+      "item_id": "date-shift:29",
+      "status": "proposed",
+      "topic": "Vladimir Putin"
+    },
+    {
+      "cutoff_year": 2014,
+      "frame_index": 30,
+      "item_id": "date-shift:30",
+      "status": "proposed",
+      "topic": "India"
+    },
+    {
+      "cutoff_year": 2016,
+      "frame_index": 31,
+      "item_id": "date-shift:31",
+      "status": "proposed",
+      "topic": "Brazil"
+    },
+    {
+      "cutoff_year": 2014,
+      "frame_index": 32,
+      "item_id": "date-shift:32",
+      "status": "proposed",
+      "topic": "Ukraine"
+    },
+    {
+      "cutoff_year": 2012,
+      "frame_index": 33,
+      "item_id": "date-shift:33",
+      "status": "proposed",
+      "topic": "China"
+    },
+    {
+      "cutoff_year": 2011,
+      "frame_index": 34,
+      "item_id": "date-shift:34",
+      "status": "proposed",
+      "topic": "Israel"
+    },
+    {
+      "cutoff_year": 2015,
+      "frame_index": 35,
+      "item_id": "date-shift:35",
+      "status": "proposed",
+      "topic": "Germany"
+    },
+    {
+      "cutoff_year": 2015,
+      "frame_index": 36,
+      "item_id": "date-shift:36",
+      "status": "proposed",
+      "topic": "Black hole"
+    },
+    {
+      "cutoff_year": 2011,
+      "frame_index": 37,
+      "item_id": "date-shift:37",
+      "status": "proposed",
+      "topic": "Jupiter"
+    },
+    {
+      "cutoff_year": 2014,
+      "frame_index": 38,
+      "item_id": "date-shift:38",
+      "status": "proposed",
+      "topic": "Earth"
+    },
+    {
+      "cutoff_year": 2015,
+      "frame_index": 39,
+      "item_id": "date-shift:39",
+      "status": "proposed",
+      "topic": "Ceres (dwarf planet)"
+    },
+    {
+      "cutoff_year": 2005,
+      "frame_index": 40,
+      "item_id": "date-shift:40",
+      "status": "proposed",
+      "topic": "Evolution"
+    },
+    {
+      "cutoff_year": 2019,
+      "frame_index": 41,
+      "item_id": "date-shift:41",
+      "status": "proposed",
+      "topic": "Coronavirus"
+    },
+    {
+      "cutoff_year": 2011,
+      "frame_index": 42,
+      "item_id": "date-shift:42",
+      "status": "proposed",
+      "topic": "Earthquake"
+    },
+    {
+      "cutoff_year": 2011,
+      "frame_index": 43,
+      "item_id": "date-shift:43",
+      "status": "proposed",
+      "topic": "Pacific Ocean"
+    },
+    {
+      "cutoff_year": 2013,
+      "frame_index": 44,
+      "item_id": "date-shift:44",
+      "status": "proposed",
+      "topic": "Breaking Bad"
+    },
+    {
+      "cutoff_year": 2014,
+      "frame_index": 45,
+      "item_id": "date-shift:45",
+      "status": "proposed",
+      "topic": "The Big Bang Theory"
+    },
+    {
+      "cutoff_year": 2007,
+      "frame_index": 46,
+      "item_id": "date-shift:46",
+      "status": "proposed",
+      "topic": "Harry Potter"
+    },
+    {
+      "cutoff_year": 2008,
+      "frame_index": 47,
+      "reason": "no frozen discovery artifact",
+      "status": "excluded",
+      "topic": "List of Marvel Cinematic Universe films"
+    },
+    {
+      "cutoff_year": 2013,
+      "frame_index": 48,
+      "item_id": "date-shift:48",
+      "status": "proposed",
+      "topic": "Beyoncé"
+    },
+    {
+      "cutoff_year": 2010,
+      "frame_index": 49,
+      "item_id": "date-shift:49",
+      "status": "proposed",
+      "topic": "Justin Bieber"
+    },
+    {
+      "cutoff_year": 2016,
+      "frame_index": 50,
+      "item_id": "date-shift:50",
+      "status": "proposed",
+      "topic": "Stranger Things"
+    },
+    {
+      "cutoff_year": 2019,
+      "frame_index": 51,
+      "item_id": "date-shift:51",
+      "status": "proposed",
+      "topic": "Avengers: Endgame"
+    },
+    {
+      "cutoff_year": 2014,
+      "frame_index": 52,
+      "item_id": "date-shift:52",
+      "status": "proposed",
+      "topic": "Lionel Messi"
+    },
+    {
+      "cutoff_year": 2010,
+      "frame_index": 53,
+      "item_id": "date-shift:53",
+      "status": "proposed",
+      "topic": "LeBron James"
+    },
+    {
+      "cutoff_year": 2020,
+      "frame_index": 54,
+      "item_id": "date-shift:54",
+      "status": "proposed",
+      "topic": "Tom Brady"
+    },
+    {
+      "cutoff_year": 2012,
+      "frame_index": 55,
+      "item_id": "date-shift:55",
+      "status": "proposed",
+      "topic": "FC Barcelona"
+    },
+    {
+      "cutoff_year": 2018,
+      "frame_index": 56,
+      "reason": "no sufficiently narrow answer-changing historical fact in the discovered revisions",
+      "status": "excluded",
+      "topic": "2018 FIFA World Cup"
+    },
+    {
+      "cutoff_year": 2015,
+      "frame_index": 57,
+      "item_id": "date-shift:57",
+      "status": "proposed",
+      "topic": "Golden State Warriors"
+    },
+    {
+      "cutoff_year": 2017,
+      "frame_index": 58,
+      "item_id": "date-shift:58",
+      "status": "proposed",
+      "topic": "New York Yankees"
+    },
+    {
+      "cutoff_year": 2010,
+      "frame_index": 59,
+      "reason": "no frozen discovery artifact",
+      "status": "excluded",
+      "topic": "Real Madrid C.F."
+    }
+  ],
+  "schema_version": "date-shift-proposed-frame-v2",
+  "upstream": {
+    "github_artifact_url": "https://raw.githubusercontent.com/yachuan/ExAnte/71165289f1302c6cac97101f777c383b7d4d1263/wiki/README.md",
+    "github_revision": "71165289f1302c6cac97101f777c383b7d4d1263",
+    "github_source_sha256": "sha256:d83ad8eea161ddc7b126440db992c44fe1c11a19fe2c6854570627b45b7842a3",
+    "huggingface_artifact_url": "https://huggingface.co/datasets/yachuanliu/ExAnte/resolve/4e30593e1aff7360fef5aee865117c5c8e05114e/exante_wiki.csv",
+    "huggingface_revision": "4e30593e1aff7360fef5aee865117c5c8e05114e",
+    "huggingface_source_sha256": "sha256:e4fa111ad8e3087d80fb873a37c8b8b0579144a813f07233e8cd39fa129a88e5",
+    "legacy_sampling_frame_sha256": "sha256:904b9e119aa6c3b4765a9b1a0868b54daec4477d8b4f0dd9b69cda6a99d82e6e",
+    "source": "ExAnte Wikipedia title/year frame"
+  }
+}
