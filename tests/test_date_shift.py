@@ -28,6 +28,7 @@ from anachron.date_shift_bundle import (
     validate_execution_plan,
     validate_journal_v3,
     validate_runtime_preflight,
+    verify_bundle_derivation,
     write_create_only,
 )
 from anachron.date_shift_provenance import (
@@ -37,14 +38,13 @@ from anachron.date_shift_provenance import (
     build_audit_scaffold_release,
     verify_imported_sources,
 )
+from tools import build_date_shift_items, finalize_date_shift_audit, run_date_shift
 from tools import capture_date_shift_runtime as capture_runtime
-from tools import finalize_date_shift_audit, run_date_shift
 from tools import seal_date_shift_execution_bundle as seal_bundle
 from tools.audit_date_shift_other_outputs import redact_temporal_clues
 from tools.build_date_shift_items import (
-    _render_lossless_evidence,
+    BuildError,
     build_artifacts,
-    render_audit_workbook,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -413,27 +413,125 @@ class TestBundleConstruction(unittest.TestCase):
         finally:
             date_shift.__file__ = original
 
-    def test_real_builder_reproduces_exact_60_candidate_and_54_proposal_frame(self):
-        frame, items = build_artifacts(ROOT)
-        self.assertEqual(len(frame["candidates"]), 60)
-        self.assertEqual(len(items["proposed_items"]), 54)
-        self.assertEqual(frame, load("proposed_frame.json"))
-        self.assertEqual(items, load("proposed_items.json"))
-        workbook = render_audit_workbook(items)
-        self.assertTrue(workbook)
-        self.assertFalse(
-            any(line != line.rstrip() for line in workbook.splitlines())
-        )
-        for item in items["proposed_items"]:
-            for side in ("pre", "post"):
-                evidence = item["audit_evidence"][side]
-                rendered = _render_lossless_evidence(evidence["text"])
-                decoded = "\n".join(json.loads(line) for line in rendered.split("\n"))
-                self.assertEqual(decoded, evidence["text"])
-                self.assertEqual(
-                    "sha256:" + hashlib.sha256(decoded.encode("utf-8")).hexdigest(),
-                    evidence["sha256"],
+    def test_raw_constructor_refuses_missing_and_tampered_discovery_artifacts(self):
+        exclusions = {
+            (f"Excluded topic {index}", 2000): "fixture exclusion"
+            for index in range(6)
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary)
+            topics = [
+                {"title": f"Topic {index}", "cutoff_year": 2000}
+                for index in range(54)
+            ] + [
+                {"title": title, "cutoff_year": cutoff_year}
+                for title, cutoff_year in exclusions
+            ]
+            sampling = {
+                "topics": topics,
+                "github_revision": "fixture",
+                "github_artifact_url": "https://example.test/github",
+                "github_source_sha256": "sha256:" + "a" * 64,
+                "huggingface_revision": "fixture",
+                "huggingface_artifact_url": "https://example.test/huggingface",
+                "huggingface_source_sha256": "sha256:" + "b" * 64,
+            }
+            sampling_path = repository / "research/routes-v1/sampling_frame.json"
+            sampling_path.parent.mkdir(parents=True)
+            sampling_path.write_bytes(canonical_bytes(sampling))
+            pairs, raw_paths = {}, []
+            for index in range(54):
+                title, filename = f"Topic {index}", f"{index:02d}.json"
+                pre_content, post_content = (
+                    f"pre anchor {index}",
+                    f"post anchor {index}",
                 )
+                pre = {
+                    "revision_id": index * 2 + 1,
+                    "revision_url": "https://en.wikipedia.org/w/index.php?oldid="
+                    + str(index * 2 + 1),
+                    "timestamp": "2000-01-01T00:00:00Z",
+                    "content": pre_content,
+                    "content_sha256": bytes_sha256(pre_content.encode("utf-8")),
+                }
+                post = {
+                    "revision_id": index * 2 + 2,
+                    "revision_url": "https://en.wikipedia.org/w/index.php?oldid="
+                    + str(index * 2 + 2),
+                    "timestamp": "2001-01-01T00:00:00Z",
+                    "content": post_content,
+                    "content_sha256": bytes_sha256(post_content.encode("utf-8")),
+                }
+                raw = {
+                    "title": title,
+                    "cutoff_year": 2000,
+                    "strict_revision": pre,
+                    "post_snapshot": post,
+                }
+                raw_path = (
+                    repository
+                    / "research/routes-v1/artifacts/discovery/pilot"
+                    / filename
+                )
+                raw_path.parent.mkdir(parents=True, exist_ok=True)
+                raw_path.write_bytes(canonical_bytes(raw))
+                raw_paths.append(raw_path)
+                pairs[(title, 2000)] = (
+                    {
+                        "discovery_artifact_file": filename,
+                        "discovery_artifact_sha256": canonical_sha256(raw),
+                        "pre": {
+                            key: pre[key]
+                            for key in (
+                                "revision_id",
+                                "revision_url",
+                                "timestamp",
+                                "content_sha256",
+                            )
+                        },
+                        "post": {
+                            key: post[key]
+                            for key in (
+                                "revision_id",
+                                "revision_url",
+                                "timestamp",
+                                "content_sha256",
+                            )
+                        },
+                        "pre_anchor": pre_content,
+                        "post_anchor": post_content,
+                        "pre_answer_aliases": [f"PRE-{index}"],
+                        "post_answer_aliases": [f"POST-{index}"],
+                        "question": f"What changed for topic {index}?",
+                    },
+                    "pilot",
+                )
+            with (
+                mock.patch.object(
+                    build_date_shift_items, "_draft_pairs", return_value=pairs
+                ),
+                mock.patch.object(
+                    build_date_shift_items, "_EXCLUSIONS", exclusions
+                ),
+            ):
+                frame, items = build_artifacts(repository)
+                self.assertEqual(len(frame["candidates"]), 60)
+                self.assertEqual(len(items["proposed_items"]), 54)
+                raw_paths[0].unlink()
+                with self.assertRaisesRegex(BuildError, "cannot load JSON object"):
+                    build_artifacts(repository)
+                raw_paths[0].write_bytes(
+                    canonical_bytes(
+                        {
+                            "title": "Topic 0",
+                            "cutoff_year": 2000,
+                            "strict_revision": {},
+                            "post_snapshot": {},
+                        }
+                    )
+                )
+                with self.assertRaisesRegex(BuildError, "discovery artifact hash drifted"):
+                    build_artifacts(repository)
 
     def test_bundle_rejects_noncanonical_and_duplicate_json_bytes(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -699,10 +797,7 @@ class TestProvenanceAdmission(unittest.TestCase):
             source, destination = ROOT / relative, repository / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, destination)
-        shutil.copytree(
-            ROOT / "research" / "routes-v1",
-            repository / "research" / "routes-v1",
-        )
+        self.assertFalse((repository / "research/routes-v1/artifacts").exists())
         self._git(root, "init", "--bare", str(remote))
         self._git(repository, "remote", "add", "origin", str(remote))
         self._child(
@@ -922,6 +1017,63 @@ class TestProvenanceAdmission(unittest.TestCase):
                 self.assertEqual(completed.stderr.strip().splitlines()[-1], expected)
             finally:
                 temporary.cleanup()
+
+    def test_bundle_manifest_binds_the_admitted_scaffold_provenance(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runtime_path, audit_path = root / "runtime.json", root / "audit.json"
+            provenance = {
+                "scaffold_tag": "fixture-v1",
+                "scaffold_commit": "a" * 40,
+                "code_closure_sha256": "sha256:" + "a" * 64,
+            }
+            runtime_preflight = runtime(load("execution_plan.json"))
+            runtime_preflight["capture_provenance"] = provenance
+            write_create_only(runtime_path, runtime_preflight)
+            write_create_only(audit_path, completed_audit(1))
+            bundle_dir = root / "sealed"
+            with mock.patch.object(
+                seal_bundle, "admit_scaffold_repository", return_value=provenance
+            ):
+                self.assertEqual(
+                    seal_bundle.main(
+                        [
+                            "--repository",
+                            str(ROOT),
+                            "--author-audit",
+                            str(audit_path),
+                            "--runtime-preflight",
+                            str(runtime_path),
+                            "--bundle-dir",
+                            str(bundle_dir),
+                        ]
+                    ),
+                    0,
+                )
+            verify_bundle_derivation(load_bundle(bundle_dir), ROOT, provenance)
+            manifest_path = bundle_dir / "bundle_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["scaffold_release_sha256"] = "sha256:" + "0" * 64
+            without_id = {
+                key: value for key, value in manifest.items() if key != "bundle_id"
+            }
+            manifest["bundle_id"] = canonical_sha256(without_id)
+            manifest_path.write_bytes(canonical_bytes(manifest))
+            (bundle_dir / "publication.json").unlink()
+            write_create_only(
+                bundle_dir / "publication.json",
+                {
+                    "schema_version": "date-shift-bundle-publication-v1",
+                    "bundle_id": manifest["bundle_id"],
+                    "bundle_directory_name": bundle_dir.name,
+                    "manifest_sha256": bytes_sha256(manifest_path.read_bytes()),
+                },
+            )
+            tampered = load_bundle(bundle_dir)
+            with self.assertRaisesRegex(
+                DateShiftValidationError, "bundle manifest scaffold provenance drifted"
+            ):
+                verify_bundle_derivation(tampered, ROOT, provenance)
 
 
 class TestExternalCaptureSealAndRun(unittest.TestCase):

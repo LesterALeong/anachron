@@ -877,24 +877,26 @@ def load_bundle(bundle_dir: Path) -> dict[str, Any]:
 def verify_bundle_derivation(
     bundle: Mapping[str, Any], repository: Path, provenance: Mapping[str, Any]
 ) -> None:
-    """Rebuild every derived bundle artifact from released tracked inputs."""
-    from tools.build_date_shift_items import build_artifacts
-
-    generated_frame, generated_items = build_artifacts(repository)
+    """Rebuild bundle-only artifacts from the admitted tracked scaffold."""
     tracked_plan = load_object(repository / "research/date-shift/execution_plan.json")
     tracked_frame = load_object(repository / "research/date-shift/proposed_frame.json")
     tracked_items = load_object(repository / "research/date-shift/proposed_items.json")
     if (
-        generated_frame != tracked_frame
-        or generated_items != tracked_items
-        or bundle["execution_plan"] != tracked_plan
+        bundle["manifest"].get("scaffold_release_sha256")
+        != canonical_sha256(provenance)
+    ):
+        raise DateShiftValidationError(
+            "bundle manifest scaffold provenance drifted"
+        )
+    if (
+        bundle["execution_plan"] != tracked_plan
         or bundle["raw_artifacts"]["execution_plan.json"]
         != canonical_bytes(tracked_plan)
         or bundle["raw_artifacts"]["author_audit.json"]
         != canonical_bytes(bundle["author_audit"])
     ):
         raise DateShiftValidationError(
-            "released proposed artifacts or plan do not reproduce"
+            "released execution plan does not reproduce"
         )
     if bundle["runtime_preflight"].get("capture_provenance") != dict(provenance):
         raise DateShiftValidationError("bundle runtime provenance drifted")

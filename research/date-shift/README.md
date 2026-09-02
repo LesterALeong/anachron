@@ -18,7 +18,7 @@ Planned artifact order:
 8. One new-run-only append-only journal with calibration and loaded-backend evidence before scientific calls.
 9. Replay-derived analysis tables, then a complete manuscript, PDF, and arXiv source archive.
 
-The scaffold has deliberately no command that accepts proposed frame/items as model input. The only runner accepts `--bundle-dir` and a fresh `--run-dir`; bundle sealing is blocked until the personal audit and released-tag provenance both validate.
+The scaffold has deliberately no command that accepts proposed frame/items as model input. The only runner accepts `--bundle-dir` and a fresh `--run-dir`; bundle sealing is blocked until the personal audit and released-tag provenance both validate. Bundle derivation uses the admitted, tracked proposed frame, proposed items, and execution plan; it never requires the ignored Routes v1 raw discovery artifacts to be present in a released checkout.
 
 ## Audit-scaffold release order
 
