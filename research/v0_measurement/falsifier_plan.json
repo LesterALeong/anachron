@@ -35,7 +35,7 @@
     "requires_falsifier_receipt": false,
     "requires_human_go": false
   },
-  "protocol_version": "v0-measurement-protocol-v1",
+  "protocol_version": "v0-measurement-protocol-v2",
   "python": {
     "implementation": "CPython",
     "major": 3,
@@ -46,9 +46,9 @@
   "release": {
     "branch": "master",
     "origin": "https://github.com/LesterALeong/anachron.git",
-    "ref": "refs/tags/v0-measurement-protocol-v1",
+    "ref": "refs/tags/v0-measurement-protocol-v2",
     "remote": "origin",
-    "tag": "v0-measurement-protocol-v1"
+    "tag": "v0-measurement-protocol-v2"
   },
   "repetitions": 1,
   "sample_ids": [
@@ -63,7 +63,7 @@
     "anachron/core/leakage.py": "53b77a0e9a43b40278c337ee7c51bd136a57f60dd849b0073179ec856445db59",
     "anachron/data/corpus.py": "39f85567395dc0382cfb67248bffd26dba26376c1dbcb52d1f6cd259900ddce3",
     "anachron/data/v0_samples.py": "fc3e39107d0bd73654764d82f6235782eba1b56db682d62971fcf05c24270565",
-    "anachron/v0_measurement.py": "2b95798be420f639bee36bd3b16769170f3b2d6ed0d0b6fa8ad330303b624d71"
+    "anachron/v0_measurement.py": "aa2fa92911b40ab7ad503c0f7b2113f9ee1f7d6c068f18e79b35332ef4b8c89b"
   },
   "timeout_seconds": 120,
   "trajectory_count": 24

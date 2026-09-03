@@ -30,7 +30,7 @@ from anachron.data.v0_samples import V0Sample, v0_samples_by_id
 
 _MODES = ("unrestricted", "enforced")
 _TOOL_NAME = "anachron_search"
-_PROTOCOL_VERSION = "v0-measurement-protocol-v1"
+_PROTOCOL_VERSION = "v0-measurement-protocol-v2"
 _ISO_DATE_RE = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
 _APPROVED_MODELS = (
     ("qwen2.5:7b", "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e"),
@@ -326,8 +326,8 @@ def _validate_plan(plan: dict[str, Any]) -> None:
             raise ValueError(f"generation must freeze {key}")
     release = plan["release"]
     if release != {
-        "tag": "v0-measurement-protocol-v1",
-        "ref": "refs/tags/v0-measurement-protocol-v1",
+        "tag": "v0-measurement-protocol-v2",
+        "ref": "refs/tags/v0-measurement-protocol-v2",
         "origin": "https://github.com/LesterALeong/anachron.git",
         "branch": "master",
         "remote": "origin",

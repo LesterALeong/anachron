@@ -71,7 +71,7 @@ def setUpModule() -> None:
         ("config", "user.name", "Test"),
         ("add", "."),
         ("commit", "-m", "fixture"),
-        ("tag", "-a", "v0-measurement-protocol-v1", "-m", "fixture"),
+        ("tag", "-a", "v0-measurement-protocol-v2", "-m", "fixture"),
     ):
         subprocess.run(["git", *command], cwd=fixture, check=True, capture_output=True)
     _TEST_REPOSITORY_ROOT = fixture
@@ -110,14 +110,14 @@ def _fake_transport(base_url: str):
 def _source_admission(plan, root):
     assert _TEST_REPOSITORY_ROOT is not None
     commit = subprocess.run(
-        ["git", "rev-parse", "refs/tags/v0-measurement-protocol-v1^{}"],
+        ["git", "rev-parse", "refs/tags/v0-measurement-protocol-v2^{}"],
         cwd=_TEST_REPOSITORY_ROOT,
         check=True,
         capture_output=True,
         text=True,
     ).stdout.strip()
     tag_object = subprocess.run(
-        ["git", "rev-parse", "refs/tags/v0-measurement-protocol-v1"],
+        ["git", "rev-parse", "refs/tags/v0-measurement-protocol-v2"],
         cwd=_TEST_REPOSITORY_ROOT,
         check=True,
         capture_output=True,
@@ -554,6 +554,8 @@ class TestRawInventoryTopology(unittest.TestCase):
                 _safe_regular_files(root, "test root")
 
     def test_real_junction_is_rejected_when_supported(self):
+        if sys.platform != "win32":
+            self.skipTest("Windows junction test")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             target = root / "target"
@@ -721,7 +723,10 @@ class TestRunnerEndToEnd(unittest.TestCase):
                     , repository_root=_TEST_REPOSITORY_ROOT
                 )
             tool = next((output / "raw").glob("*.tool_result.txt"))
-            tool.write_text("No results.", encoding="utf-8")
+            original_tool_bytes = tool.read_bytes()
+            tampered_tool_bytes = original_tool_bytes + b"\nTAMPERED"
+            self.assertNotEqual(tampered_tool_bytes, original_tool_bytes)
+            tool.write_bytes(tampered_tool_bytes)
             files = []
             for path in sorted(output.rglob("*")):
                 if path.is_file() and path.name not in {"manifest.json", "manifest.sha256"}:
@@ -818,15 +823,15 @@ class TestRunnerEndToEnd(unittest.TestCase):
             git(source, "config", "user.name", "Test")
             git(source, "add", ".")
             git(source, "commit", "-m", "tracked fixture")
-            git(source, "tag", "-a", "v0-measurement-protocol-v1", "-m", "fixture")
+            git(source, "tag", "-a", "v0-measurement-protocol-v2", "-m", "fixture")
             subprocess.run(["git", "init", "--bare", str(remote)], check=True, capture_output=True)
             git(source, "remote", "add", "origin", str(remote))
             git(source, "push", "--follow-tags", "origin", "master")
             subprocess.run(["git", "clone", "--no-checkout", str(remote), str(clone)], check=True, capture_output=True)
             git(clone, "config", "core.autocrlf", "true")
-            git(clone, "checkout", "--detach", "v0-measurement-protocol-v1")
+            git(clone, "checkout", "--detach", "v0-measurement-protocol-v2")
             plan = _plan()
-            plan["release"] = {"tag": "v0-measurement-protocol-v1", "ref": "refs/tags/v0-measurement-protocol-v1", "origin": str(remote), "branch": "master", "remote": "origin"}
+            plan["release"] = {"tag": "v0-measurement-protocol-v2", "ref": "refs/tags/v0-measurement-protocol-v2", "origin": str(remote), "branch": "master", "remote": "origin"}
             plan["source_hashes"] = {relative: hashlib.sha256((clone / relative).read_bytes()).hexdigest() for relative in tracked}
             plan["registry_sha256"] = plan["source_hashes"]["anachron/data/v0_samples.py"]
             plan["corpus_sha256"] = plan["source_hashes"]["anachron/data/corpus.py"]
@@ -861,8 +866,8 @@ class TestRunnerEndToEnd(unittest.TestCase):
             git("config", "user.name", "Test")
             git("add", ".")
             git("commit", "-m", "tracked fixture")
-            git("tag", "v0-measurement-protocol-v1")
-            git("checkout", "--detach", "v0-measurement-protocol-v1")
+            git("tag", "v0-measurement-protocol-v2")
+            git("checkout", "--detach", "v0-measurement-protocol-v2")
             plan = _plan()
             plan["source_hashes"] = {
                 relative: hashlib.sha256((source / relative).read_bytes()).hexdigest()
