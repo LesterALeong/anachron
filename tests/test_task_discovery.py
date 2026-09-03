@@ -53,8 +53,20 @@ class TestTaskBuild(unittest.TestCase):
     def test_both_tasks_build_with_expected_sample_count(self):
         from anachron.inspect.task import anachron, anachron_enforced
 
-        self.assertEqual(len(anachron().dataset), 27)
-        self.assertEqual(len(anachron_enforced().dataset), 27)
+        unrestricted = anachron().dataset
+        enforced = anachron_enforced().dataset
+        self.assertEqual(len(unrestricted), 27)
+        self.assertEqual(len(enforced), 27)
+        self.assertEqual(unrestricted[0].id, "fin-acme-2021-01-future")
+        self.assertEqual(enforced[-1].id, "gen-industrial-2024-01-restatement-current")
+        self.assertEqual(
+            unrestricted[0].target,
+            "Nothing valid on or before this date; the earliest Acme item (2021-04-28) is in the future.",
+        )
+        self.assertEqual(
+            enforced[-1].target,
+            "1.4 percent, as revised (2023-07-14).",
+        )
 
 
 if __name__ == "__main__":

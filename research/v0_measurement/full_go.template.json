@@ -1,0 +1,4 @@
+{
+  "decision": "PENDING",
+  "notice": "This template is not authorization. A later human GO artifact must use the exact authorization schema enforced by anachron.v0_measurement."
+}

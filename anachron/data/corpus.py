@@ -147,6 +147,15 @@ def get_corpus() -> list[CorpusItem]:
     return list(_CORPUS)
 
 
+def format_search_results(items: list[CorpusItem]) -> str:
+    """Render date-stamped corpus results in the canonical trace format."""
+    if not items:
+        return "No results."
+    return "\n".join(
+        f"[{item.id}] ({item.publish_date.isoformat()}) {item.text}" for item in items
+    )
+
+
 def search(
     query: str,
     corpus: list[CorpusItem] | None = None,

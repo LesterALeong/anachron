@@ -10,7 +10,7 @@ so corpus growth cannot silently break the metric.
 import unittest
 from datetime import date
 
-from anachron.data.corpus import get_corpus, search
+from anachron.data.corpus import format_search_results, get_corpus, search
 
 
 class TestCorpusIntegrity(unittest.TestCase):
@@ -84,6 +84,11 @@ class TestSearchEnforcement(unittest.TestCase):
         ids = {item.id for item in results}
         self.assertIn("fin-008", ids)
         self.assertIn("fin-009", ids)
+
+    def test_shared_formatter_preserves_item_ids_and_dates(self):
+        rendered = format_search_results(search("delta pharma revenue"))
+        self.assertIn("[fin-008] (2021-02-04)", rendered)
+        self.assertIn("[fin-009] (2021-09-17)", rendered)
 
 
 if __name__ == "__main__":

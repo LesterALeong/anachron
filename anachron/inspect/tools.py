@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from anachron.data.corpus import search
+from anachron.data.corpus import format_search_results, search
 
 try:
     from inspect_ai.tool import Tool, ToolError, tool
@@ -32,19 +32,6 @@ def _require_inspect() -> None:
     """Raise a clear error if ``inspect_ai`` is not installed."""
     if not _INSPECT_AVAILABLE:
         raise ImportError(_IMPORT_HINT)
-
-
-def _format_results(items) -> str:
-    """Render corpus items as a date-stamped block the scorer can parse.
-
-    Each line carries the item id and ISO publish date so dates are recoverable
-    from the tool result without re-querying the corpus.
-    """
-    if not items:
-        return "No results."
-    return "\n".join(
-        f"[{item.id}] ({item.publish_date.isoformat()}) {item.text}" for item in items
-    )
 
 
 def anachron_search(enforce_as_of: date | None = None) -> Tool:
@@ -77,7 +64,7 @@ def anachron_search(enforce_as_of: date | None = None) -> Tool:
             if not query.strip():
                 raise ToolError("query must be a non-empty string")
             items = search(query, enforce_as_of=enforce_as_of)
-            return _format_results(items)
+            return format_search_results(items)
 
         return execute
 

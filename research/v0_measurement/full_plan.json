@@ -1,0 +1,91 @@
+{
+  "acceptance": {
+    "all_trajectories_valid": true,
+    "enforced_finance_survivorship": true,
+    "minimum_pooled_reduction": 0.2
+  },
+  "corpus_sha256": "39f85567395dc0382cfb67248bffd26dba26376c1dbcb52d1f6cd259900ddce3",
+  "endpoint": "http://127.0.0.1:11434",
+  "generation": {
+    "num_ctx": 8192,
+    "num_predict": 512,
+    "seed": 0,
+    "temperature": 0,
+    "think": false
+  },
+  "kind": "full-measurement",
+  "models": [
+    {
+      "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "name": "qwen2.5:7b"
+    },
+    {
+      "digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+      "name": "qwen3:14b-q4_K_M"
+    }
+  ],
+  "modes": [
+    "unrestricted",
+    "enforced"
+  ],
+  "no_retry": true,
+  "plan_id": "anachron-v0-full-measurement-2026-09-03",
+  "preconditions": {
+    "requires_falsifier_evidence": true,
+    "requires_falsifier_receipt": true,
+    "requires_human_go": true
+  },
+  "protocol_version": "v0-measurement-protocol-v1",
+  "python": {
+    "implementation": "CPython",
+    "major": 3,
+    "minor": 12,
+    "version": "3.12.10"
+  },
+  "registry_sha256": "fc3e39107d0bd73654764d82f6235782eba1b56db682d62971fcf05c24270565",
+  "release": {
+    "branch": "master",
+    "origin": "https://github.com/LesterALeong/anachron.git",
+    "ref": "refs/tags/v0-measurement-protocol-v1",
+    "remote": "origin",
+    "tag": "v0-measurement-protocol-v1"
+  },
+  "repetitions": 3,
+  "sample_ids": [
+    "fin-acme-2021-01-future",
+    "fin-acme-2021-06-current",
+    "fin-acme-2022-01-future",
+    "fin-acme-2023-06-current",
+    "fin-borealis-2007-06-not-listed",
+    "fin-borealis-2018-01-no-record",
+    "fin-borealis-2019-01-future",
+    "fin-borealis-2020-06-survivorship",
+    "fin-cygnus-2022-06-future-survivorship",
+    "fin-cygnus-2023-06-future",
+    "fin-cygnus-2025-01-current",
+    "fin-delta-2020-01-future",
+    "fin-delta-2021-03-current",
+    "fin-delta-2021-06-restatement",
+    "fin-delta-2022-01-restatement-current",
+    "gen-eclipse-2017-01-future",
+    "gen-eclipse-2018-01-current",
+    "gen-port-2019-01-future",
+    "gen-port-2020-01-current",
+    "gen-climate-2021-06-future",
+    "gen-climate-2022-01-current",
+    "gen-bridge-2022-01-future",
+    "gen-bridge-2023-01-current",
+    "gen-probe-2024-01-future",
+    "gen-probe-2025-01-current",
+    "gen-industrial-2023-04-restatement",
+    "gen-industrial-2024-01-restatement-current"
+  ],
+  "source_hashes": {
+    "anachron/core/leakage.py": "53b77a0e9a43b40278c337ee7c51bd136a57f60dd849b0073179ec856445db59",
+    "anachron/data/corpus.py": "39f85567395dc0382cfb67248bffd26dba26376c1dbcb52d1f6cd259900ddce3",
+    "anachron/data/v0_samples.py": "fc3e39107d0bd73654764d82f6235782eba1b56db682d62971fcf05c24270565",
+    "anachron/v0_measurement.py": "2b95798be420f639bee36bd3b16769170f3b2d6ed0d0b6fa8ad330303b624d71"
+  },
+  "timeout_seconds": 120,
+  "trajectory_count": 324
+}
