@@ -1,0 +1,10 @@
+{
+  "authorized_at_utc": "REPLACE_WITH_UTC_ISO8601_TIMESTAMP",
+  "authorized_by": "Lester Leong",
+  "decision": "PENDING",
+  "falsifier_receipt_sha256": "REPLACE_AFTER_REVIEW",
+  "full_plan_sha256": "REPLACE_AFTER_REVIEW",
+  "kind": "anachron-v3-full-measurement-authorization",
+  "schema_version": 1,
+  "statement": "I authorize this exact frozen full v3 measurement plan after reviewing the bound passing falsifier receipt."
+}

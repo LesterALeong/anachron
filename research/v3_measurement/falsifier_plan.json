@@ -1,0 +1,98 @@
+{
+  "acceptance": {
+    "minimum_pooled_reduction": 0.2
+  },
+  "calibration": {
+    "expected_response": "CALIBRATION_OK",
+    "models": 2,
+    "requests_per_model": 1
+  },
+  "controls": [
+    "fin-acme-2021-01-future",
+    "fin-borealis-2020-06-survivorship",
+    "fin-cygnus-2022-06-future-survivorship",
+    "fin-delta-2021-06-restatement",
+    "gen-eclipse-2017-01-future",
+    "gen-industrial-2023-04-restatement"
+  ],
+  "corpus_sha256": "7f1fba11c1390ccabdd4b4b043ba2f125aea99f64f2e309c805127819c9af28e",
+  "endpoint": "http://127.0.0.1:11434",
+  "generation": {
+    "num_ctx": 8192,
+    "num_predict": 512,
+    "seed": 0,
+    "temperature": 0,
+    "think": false
+  },
+  "kind": "scientific-falsifier",
+  "models": [
+    {
+      "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+      "name": "qwen2.5:7b"
+    },
+    {
+      "digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+      "name": "qwen3:14b-q4_K_M"
+    }
+  ],
+  "modes": [
+    "unrestricted",
+    "enforced"
+  ],
+  "no_retry": true,
+  "plan_id": "anachron-v3-scientific-falsifier-2026-09-03",
+  "preconditions": {
+    "requires_falsifier_evidence": false,
+    "requires_falsifier_receipt": false,
+    "requires_human_go": false
+  },
+  "primary_sample_ids": [
+    "fin-acme-2022-01-future",
+    "fin-borealis-2019-01-future",
+    "fin-delta-2022-01-restatement-current",
+    "gen-port-2019-01-future",
+    "gen-industrial-2024-01-restatement-current",
+    "fin-equinox-2021-06-delisted-before-cutoff"
+  ],
+  "protocol_version": "v3-measurement-protocol-v1",
+  "python": {
+    "implementation": "CPython",
+    "major": 3,
+    "minor": 12,
+    "version": "3.12.10"
+  },
+  "registry_sha256": "b9bffe3b03f121af84ed761c51f47e6e5dc7e9276d201b2868db93a7523a9506",
+  "release": {
+    "branch": "master",
+    "origin": "https://github.com/LesterALeong/anachron.git",
+    "ref": "refs/tags/v3-measurement-protocol-v1",
+    "remote": "origin",
+    "tag": "v3-measurement-protocol-v1"
+  },
+  "repetitions": 1,
+  "sample_ids": [
+    "fin-acme-2022-01-future",
+    "fin-borealis-2019-01-future",
+    "fin-delta-2022-01-restatement-current",
+    "gen-port-2019-01-future",
+    "gen-industrial-2024-01-restatement-current",
+    "fin-equinox-2021-06-delisted-before-cutoff"
+  ],
+  "source_hashes": {
+    ".gitattributes": "d36efd2f246561ff1f7b45ffa55e7d7e47dc7ede59ef43c5c31f63205b16d2c1",
+    "anachron/core/leakage.py": "53b77a0e9a43b40278c337ee7c51bd136a57f60dd849b0073179ec856445db59",
+    "anachron/data/v3_corpus.py": "9ee4392b2bb73c11db58a3ecd0cd7b024538b9bee515f3c47e43a947273bb020",
+    "anachron/data/v3_samples.py": "22b03773db75ad4f825d9c6d62dd55a96a39294f56ae6da23188ace678da80ad",
+    "anachron/v3_measurement.py": "59b8d427adeadfa4c1d110817ff50027ec0efa1898f08e760d8507fce15d36d3",
+    "research/v3_measurement/ACCEPTANCE_MATRIX.md": "b99b2b07386900d7d47f2fb7c89a96cae460ae45e449d4522073f0fc5ab89f88",
+    "research/v3_measurement/CLAIM_EVIDENCE_MAP.md": "f28c675892b10eca2c472f2435486855ac41e8e9d9f82facae451c854d014b7b",
+    "research/v3_measurement/PROTOCOL.md": "a48add6e74b8582a8851320ca36c58b6c087bc20917be5b499f8949fb80588ac",
+    "research/v3_measurement/README.md": "1bda0aff2807f1467bc9417ef6a2f59d721dac31b63733e2d570512d001722e5",
+    "research/v3_measurement/full_go.template.json": "09c34542e7e2aaf7d9fbb8c99e5c6b91d14f9d095b1229c1e75cbb91b0c6d4c3",
+    "tools/analyze_v3_measurement.py": "ee3165518bad06c6fc295054f5b131c92922c59cfd5b04172c47ec392405086d",
+    "tools/run_v3_measurement.py": "7660b191ca643e35332c5f47469f4cf6d00557db9ff8c54789fbdd31a56b5782",
+    "tools/seal_v3_falsifier_receipt.py": "a0a8e1c12a9ce71e3c327dd495513ca9828e65ffd639cc5e9b09b8653c7d7fd3"
+  },
+  "timeout_seconds": 120,
+  "trajectory_count": 24
+}
