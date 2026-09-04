@@ -1,0 +1,15 @@
+{
+  "frozen_protocol_matrix_sha256": "b99b2b07386900d7d47f2fb7c89a96cae460ae45e449d4522073f0fc5ab89f88",
+  "full_plan_sha256": "23b2dfc70437826579b4c97c8caf5bff59540dfb41ce2c15aa852c39f6888b90",
+  "manuscript_sha256": "898c2f0910c0bab70fba1f3ba50b06602bce17c0ac636ed479c628680860dd1b",
+  "paper_acceptance_matrix_sha256": "c304b51bf486d5dd2380a6de9b613b5d2a08d183b2323d1b8ee2a51c0e807653",
+  "protocol_commit": "cc28c9890455c5bde09ee5710c411ee229e0f9e5",
+  "protocol_tag": "v3-measurement-protocol-v1",
+  "protocol_tag_object": "1f4b5088f6dda5134fe3d21176b9274c0165d94a",
+  "schema_version": "anachron-v3-preliminary-paper-contract-v1",
+  "state": "preliminary",
+  "tectonic": {
+    "sha256": "99ffcfdbf1ebf8bdda9e791942e3d06aedb12463fddc33f07de6f5211c8bf08d",
+    "version": "0.17.0"
+  }
+}

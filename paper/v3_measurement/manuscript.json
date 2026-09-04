@@ -1,0 +1,71 @@
+{
+  "affiliation": "Independent Researcher",
+  "appendix": [
+    "Appendix A records the frozen planned cohort accounting. The planned study contains 336 trajectories: 264 primary trajectories that would support the finite-panel manuscript and 72 disclosed development trajectories that would remain separate. These are design counts, not completed observations.",
+    "The protocol tag, tag object, commit, full-plan hash, frozen measurement-matrix hash, and this preliminary-paper matrix hash are recorded in the build receipt. A receipt can show that this preview was regenerated from a particular design. It cannot authorize an experiment or establish a behavioral result."
+  ],
+  "author": "Lester Leong",
+  "banner": "PRE-FULL-RESULTS MANUSCRIPT - NO EMPIRICAL CLAIMS - NOT FOR SUBMISSION",
+  "citations": [
+    "el-lahib-2026-search-date-filter",
+    "chi-etal-2026-worldreasoner",
+    "liu-etal-2026-exante",
+    "cheng-etal-2024-dated-data",
+    "uddin-etal-2025-unseentimeqa",
+    "zhang-etal-2025-mrag",
+    "zhuang-etal-2023-toolqa",
+    "jang-etal-2022-temporalwiki",
+    "gupta-macavaney-2022-survivorship"
+  ],
+  "pages": [
+    {
+      "heading": "Abstract and 1. The question",
+      "paragraphs": [
+        "FULL STUDY NOT YET AUTHORIZED OR RUN.",
+        "This preliminary-only manuscript specifies a controlled trace-level measurement study of whether a post-cutoff item can be returned in an agent tool trace after a point-in-time constraint is applied. The protocol fixes local model builds, a finite synthetic panel, request topology, scoring rules, and provenance before any full study. It describes only planned procedures and does not report model behavior, tool outputs, or effect estimates.",
+        "The practical question is simple: when an agent is asked to reason as of an earlier date, can a permitted tool interaction return an item from after that cutoff? A date instruction is not sufficient by itself. The retrieved material must also respect the date boundary.",
+        "This paper studies a deliberately narrow version of that problem. Each planned trajectory has two requests. The first request permits one structured tool call. The terminal request has no tool declaration. The comparison changes whether the trace is unrestricted or carries an explicit point-in-time enforcement condition while preserving the same local runtime, task record, model build, and decoding configuration.",
+        "The study makes no claim about live web retrieval, answer quality, model ranking, or language models in general. Its intended claim boundary is a finite, protocol-bound panel of local Qwen builds and synthetic cases."
+      ]
+    },
+    {
+      "heading": "2. Related work and contribution boundary",
+      "paragraphs": [
+        "Temporal evaluation has several neighboring forms. TemporalWiki evaluates continually changing knowledge [[cite:jang-etal-2022-temporalwiki]]. ExAnte studies ex-ante inference from dated information [[cite:liu-etal-2026-exante]], while Dated Data traces knowledge cutoffs in language models [[cite:cheng-etal-2024-dated-data]]. UnSeenTimeQA and MRAG address time-sensitive question answering and retrieval [[cite:uddin-etal-2025-unseentimeqa]] [[cite:zhang-etal-2025-mrag]]. ToolQA provides a benchmark for tool-using question answering [[cite:zhuang-etal-2023-toolqa]].",
+        "The closest deployment concern is date-filtered retrieval: El Lahib and colleagues study temporal leakage in search-engine date-filtered web retrieval [[cite:el-lahib-2026-search-date-filter]]. WorldReasoner evaluates agentic forecasting reasoning [[cite:chi-etal-2026-worldreasoner]]. Survivorship bias is also a separate source of misleading retrieval evidence [[cite:gupta-macavaney-2022-survivorship]].",
+        "This protocol does not claim to be the first study of any of these problems. Its contribution is a controlled, finite-panel measurement design that logs raw request and response bytes and scores tool-trace leakage at multiple declared stages."
+      ]
+    },
+    {
+      "heading": "3. Frozen design",
+      "paragraphs": [
+        "The full plan schedules 336 trajectories. Of these, 264 are primary and 72 are disclosed development trajectories. Development trajectories are not pooled into the planned primary summary. Before any full experiment, the plan requires a specific protocol tag, exact local model digests, a preflight snapshot, separate calibration, an explicit personal GO, and a no-retry journal.",
+        "Table 1 is a design table. It does not contain observed outcomes. The two requested model builds are qwen2.5:7b and qwen3:14b-q4_K_M. Each scientific trajectory has a first request with a tool schema and a terminal request without tools. Exactly two tool-less calibration requests are planned, one for each model, and are excluded from scientific scoring."
+      ]
+    },
+    {
+      "heading": "4. Trace-level measurement",
+      "paragraphs": [
+        "The protocol defines Tool-Call Leakage Rate, or TCLR, operationally for this finite study as result-leak tool interactions divided by total tool interactions. A result-leak interaction returns at least one item published after the specified cutoff. TCLR is a protocol-local measurement name, not a standard metric and not a population parameter.",
+        "The planned comparison is paired by case, model, and repetition: unrestricted tool traces versus point-in-time-enforced traces. Query, restatement, and survivorship leakage are reported separately and are not folded into TCLR. The terminal answer is retained for audit only and is outside the TCLR estimand and any answer-adoption claim. A later results manuscript may report a finite-panel comparison only if a complete authorized study and independent review satisfy the frozen gates.",
+        "Figure 1 separates the tool-enabled first request from the tool-free terminal request. The terminal request is not another opportunity to call a tool."
+      ]
+    },
+    {
+      "heading": "5. Authority and evidence flow",
+      "paragraphs": [
+        "The design separates authority from evidence. The frozen protocol and full plan define what may be run. A personal GO would authorize only the named full plan. A runtime preflight and calibration would establish prerequisites. The append-only journal would record the actual trajectory bytes. The analyzer would then replay that journal into a receipt-bound summary.",
+        "Figure 2 shows this order. A later artifact cannot repair an earlier omission. In particular, an unreviewed preview does not authorize execution, and a favorable-looking local artifact cannot replace the required personal GO. The paper builder deliberately refuses evidence, receipt, GO, review, final-state, and submission inputs in preliminary mode."
+      ]
+    },
+    {
+      "heading": "6. Reproducibility and limitations",
+      "paragraphs": [
+        "The preview binds its own source, bibliography, contract, required protocol identifiers, and the Tectonic executable identity. It renders every page and checks that the warning banner remains extractable and visible. The preview TeX tree contains only a manuscript source, bibliography, and a warning note. It contains no raw traces, model responses, evidence receipts, GO record, or review record.",
+        "The planned panel is synthetic, finite, and local. It cannot establish real-world prevalence, causal internal mechanisms, performance on live-web systems, or behavior for other models. Integrity checks can show that a supplied local evidence tree is internally consistent; they cannot establish external authenticity. AI systems assisted drafting, code organization, and adversarial review. Lester Leong retains responsibility for approval, interpretation, and any future scientific claims."
+      ]
+    }
+  ],
+  "schema_version": "anachron-v3-preliminary-manuscript-v1",
+  "title": "Measuring Point-in-Time Leakage in Agent Tool Traces: A Preliminary Protocol"
+}
