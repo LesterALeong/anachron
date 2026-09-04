@@ -1,0 +1,15 @@
+{
+  "archive_sha256": "REPLACE_WITH_SOURCE_ARCHIVE_SHA256",
+  "candidate_receipt_sha256": "REPLACE_WITH_CANDIDATE_RECEIPT_SHA256",
+  "evidence_manifest_sha256": "REPLACE_WITH_EVIDENCE_MANIFEST_SHA256",
+  "findings": [],
+  "lens_id": "REPLACE_WITH_FROZEN_LENS_ID",
+  "paper_source_manifest_sha256": "REPLACE_WITH_PAPER_SOURCE_MANIFEST_SHA256",
+  "paper_pdf_sha256": "REPLACE_WITH_PAPER_PDF_SHA256",
+  "projection_sha256": "REPLACE_WITH_PROJECTION_SHA256",
+  "resolutions": [],
+  "reviewed_at_utc": "REPLACE_WITH_UTC_TIMESTAMP",
+  "reviewer": "REPLACE_WITH_INTERNAL_REVIEWER_IDENTITY",
+  "schema_version": "anachron-v3-candidate-review-v1",
+  "status": "PENDING"
+}

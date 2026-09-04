@@ -27,6 +27,7 @@ anachron-compare = "anachron.compare:main"
 
 [project.optional-dependencies]
 inspect = ["inspect_ai"]
+paper = ["PyMuPDF==1.24.14", "Pillow==10.4.0"]
 
 [project.entry-points.inspect_ai]
 anachron = "anachron._registry"
