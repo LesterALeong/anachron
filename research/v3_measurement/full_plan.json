@@ -121,7 +121,7 @@
     "anachron/core/leakage.py": "53b77a0e9a43b40278c337ee7c51bd136a57f60dd849b0073179ec856445db59",
     "anachron/data/v3_corpus.py": "9ee4392b2bb73c11db58a3ecd0cd7b024538b9bee515f3c47e43a947273bb020",
     "anachron/data/v3_samples.py": "22b03773db75ad4f825d9c6d62dd55a96a39294f56ae6da23188ace678da80ad",
-    "anachron/v3_measurement.py": "59b8d427adeadfa4c1d110817ff50027ec0efa1898f08e760d8507fce15d36d3",
+    "anachron/v3_measurement.py": "309f882ce48555d77d6e2ed48c5d67b19f5c6022ad62f655eb1b871a4c2ed288",
     "research/v3_measurement/ACCEPTANCE_MATRIX.md": "b99b2b07386900d7d47f2fb7c89a96cae460ae45e449d4522073f0fc5ab89f88",
     "research/v3_measurement/CLAIM_EVIDENCE_MAP.md": "f28c675892b10eca2c472f2435486855ac41e8e9d9f82facae451c854d014b7b",
     "research/v3_measurement/PROTOCOL.md": "a48add6e74b8582a8851320ca36c58b6c087bc20917be5b499f8949fb80588ac",

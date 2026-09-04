@@ -612,6 +612,58 @@ class TestV3Topology(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         v3_measurement._validate_chat_envelope(mutated, "response")
 
+    def test_timestamp_validators_accept_native_precision_and_reject_malformed_values(self):
+        plan, _ = _plan("falsifier_plan.json")
+        tags = json.loads(_transport("unused", "/api/tags", None, 5))
+        tags["models"][0]["modified_at"] = "2026-08-05T08:41:44.0361924-05:00"
+        tags["models"][1]["modified_at"] = "2026-08-05T08:41:44.12345678+00:00"
+        v3_measurement._validate_server_identity_responses(
+            {"version": "0.33.2"}, tags, plan
+        )
+        response = json.loads(_chat("qwen2.5:7b", "recorded final answer"))
+        response["created_at"] = "2026-09-03T00:00:00.1234567Z"
+        self.assertEqual(
+            v3_measurement._validate_terminal_final_response(response, "qwen2.5:7b"),
+            "recorded final answer",
+        )
+        v3_measurement._require_utc_timestamp(
+            "2026-09-03T00:00:00.12345678Z", "journal timestamp"
+        )
+        invalid_values = (
+            (v3_measurement._require_utc_timestamp, "2026-09-03T00:00:00.1234567+00:00"),
+            (v3_measurement._require_utc_timestamp, "2026-09-03T00:00:00.Z"),
+            (v3_measurement._require_utc_timestamp, "2026-02-30T00:00:00Z"),
+            (v3_measurement._require_utc_offset_timestamp, "2026-08-05T08:41:44.0361924Z"),
+            (v3_measurement._require_utc_offset_timestamp, "2026-08-05T08:41:44.0361924+00"),
+            (v3_measurement._require_utc_offset_timestamp, "2026-08-05T08:41:44.0361924+99:00"),
+        )
+        for validator, value in invalid_values:
+            with self.subTest(validator=validator.__name__, value=value), self.assertRaises(
+                ValueError
+            ):
+                validator(value, "timestamp")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            receipt = root / "receipt.json"
+            receipt.write_bytes(b"{}\n")
+            full_plan, full_raw = _plan("full_plan.json")
+            go = root / "go.json"
+            go.write_bytes(
+                _raw(
+                    {
+                        "schema_version": 1,
+                        "kind": _FULL_GO_KIND,
+                        "decision": "GO",
+                        "authorized_by": "Lester Leong",
+                        "authorized_at_utc": "2026-09-03T00:00:00.1234567+00:00",
+                        "statement": _FULL_GO_STATEMENT,
+                        "full_plan_sha256": hashlib.sha256(full_raw).hexdigest(),
+                        "falsifier_receipt_sha256": hashlib.sha256(receipt.read_bytes()).hexdigest(),
+                    }
+                )
+            )
+            verify_full_go(full_plan, full_raw, receipt, go)
+
     def test_chat_state_validators_reject_absent_null_nonstring_and_wrong_roles(self):
         model = "qwen2.5:7b"
         states = (

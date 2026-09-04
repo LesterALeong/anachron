@@ -31,6 +31,10 @@ _MODES = ("unrestricted", "enforced")
 _TOOL_NAME = "anachron_search"
 _PROTOCOL_VERSION = "v3-measurement-protocol-v1"
 _ISO_DATE_RE = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
+_ISO8601_TIMESTAMP_RE = re.compile(
+    r"^(?P<date_time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})"
+    r"(?P<fraction>\.\d+)?(?P<offset>Z|[+-]\d{2}:\d{2})$"
+)
 _APPROVED_MODELS = (
     ("qwen2.5:7b", "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e"),
     ("qwen3:14b-q4_K_M", "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8"),
@@ -499,25 +503,35 @@ def validate_calibration_response(response: object, model: str) -> None:
         raise ValueError("v3 calibration response is not the exact final-only transcript")
 
 
-def _require_utc_timestamp(value: object, label: str) -> None:
+def _parse_iso8601_timestamp(value: object, label: str) -> tuple[datetime, str]:
     _require_json_type(value, str, label)
-    if not value.endswith("Z"):
-        raise ValueError(f"{label} must use a UTC Z timestamp")
+    match = _ISO8601_TIMESTAMP_RE.fullmatch(value)
+    if match is None:
+        raise ValueError(f"{label} is not ISO-8601")
+    fraction = match["fraction"]
+    normalized_fraction = "" if fraction is None else f".{fraction[1:7]}"
+    offset = match["offset"]
     try:
-        parsed = datetime.fromisoformat(value[:-1] + "+00:00")
+        parsed = datetime.fromisoformat(
+            f"{match['date_time']}{normalized_fraction}"
+            f"{'+00:00' if offset == 'Z' else offset}"
+        )
     except ValueError as error:
         raise ValueError(f"{label} is not ISO-8601") from error
+    return parsed, offset
+
+
+def _require_utc_timestamp(value: object, label: str) -> None:
+    parsed, offset = _parse_iso8601_timestamp(value, label)
+    if offset != "Z":
+        raise ValueError(f"{label} must use a UTC Z timestamp")
     if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
         raise ValueError(f"{label} must be UTC")
 
 
 def _require_utc_offset_timestamp(value: object, label: str) -> None:
-    _require_json_type(value, str, label)
-    try:
-        parsed = datetime.fromisoformat(value)
-    except ValueError as error:
-        raise ValueError(f"{label} is not ISO-8601") from error
-    if parsed.tzinfo is None or parsed.utcoffset() is None:
+    parsed, offset = _parse_iso8601_timestamp(value, label)
+    if offset == "Z" or parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError(f"{label} must include a UTC offset")
 
 
@@ -1282,10 +1296,9 @@ def verify_full_go(plan: dict[str, Any], raw: bytes, receipt: Path, full_go: Pat
     _require_json_type(body["schema_version"], int, "human GO.schema_version")
     for key in required - {"schema_version"}:
         _require_json_type(body[key], str, f"human GO.{key}")
-    try:
-        authorized_at = datetime.fromisoformat(body["authorized_at_utc"])
-    except (TypeError, ValueError) as error:
-        raise ValueError("human GO timestamp is not ISO-8601") from error
+    authorized_at, _ = _parse_iso8601_timestamp(
+        body["authorized_at_utc"], "human GO timestamp"
+    )
     if (
         body["schema_version"] != 1
         or body["kind"] != _FULL_GO_KIND
