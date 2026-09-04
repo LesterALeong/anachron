@@ -60,10 +60,26 @@ jobs:
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v5
+        id: candidate-python
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install paper test dependencies
-        run: pip install -e ".[paper]"
+        run: ${{ steps.candidate-python.outputs.python-path }} -m pip install -e ".[paper]"
+      - uses: actions/setup-python@v5
+        id: protocol-python
+        with:
+          python-version: "3.12.10"
+          update-environment: false
+      - name: Verify candidate and protocol Python identities
+        shell: bash
+        env:
+          CANDIDATE_PYTHON: ${{ steps.candidate-python.outputs.python-path }}
+          EXPECTED_CANDIDATE_VERSION: ${{ matrix.python-version }}
+          PROTOCOL_PYTHON: ${{ steps.protocol-python.outputs.python-path }}
+        run: |
+          set -euo pipefail
+          "$CANDIDATE_PYTHON" -c 'import os, platform, sys; expected = tuple(map(int, os.environ["EXPECTED_CANDIDATE_VERSION"].split("."))); actual = sys.version_info[:2]; print(sys.executable, platform.python_version()); assert platform.python_implementation() == "CPython" and actual == expected'
+          "$PROTOCOL_PYTHON" -c 'import platform, sys; print(sys.executable, platform.python_version()); assert platform.python_implementation() == "CPython" and platform.python_version() == "3.12.10"'
       - name: Fetch pinned Tectonic
         shell: bash
         run: |
@@ -102,6 +118,7 @@ jobs:
       - name: Run required candidate paper gate
         env:
           ANACHRON_V3_PROTOCOL_ROOT: ${{ runner.temp }}/anachron-v3-measurement-protocol-v1
+          ANACHRON_V3_PROTOCOL_PYTHON: ${{ steps.protocol-python.outputs.python-path }}
           ANACHRON_V3_TECTONIC: ${{ runner.temp }}/tectonic/tectonic
           ANACHRON_V3_REQUIRE_PAPER_QA: "1"
-        run: python -m unittest tests.test_v3_candidate_projection tests.test_v3_candidate_paper tests.test_v3_candidate_review_release -v
+        run: ${{ steps.candidate-python.outputs.python-path }} -m unittest tests.test_v3_candidate_projection tests.test_v3_candidate_paper tests.test_v3_candidate_review_release -v
