@@ -59,8 +59,8 @@ class TestV3PreliminaryPaper(unittest.TestCase):
             changed = copy.deepcopy(original)
             changed["pages"][0]["paragraphs"].append(prohibited)
 
-            def load_override(path):
-                return changed if Path(path) == source else original_loader(path)
+            def load_override(path, expected_changed=changed):
+                return expected_changed if Path(path) == source else original_loader(path)
 
             def hash_override(path):
                 return contract["manuscript_sha256"] if Path(path) == source else original_hash(path)

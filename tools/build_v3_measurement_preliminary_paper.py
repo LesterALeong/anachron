@@ -327,7 +327,14 @@ def build_pdf(pdf_path: Path, manuscript: dict[str, Any], contract: dict[str, An
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfbase.pdfmetrics import stringWidth
     from reportlab.pdfgen.canvas import Canvas
-    from reportlab.platypus import BaseDocTemplate, Frame, PageBreak, PageTemplate, Paragraph, Spacer
+    from reportlab.platypus import (
+        BaseDocTemplate,
+        Frame,
+        PageBreak,
+        PageTemplate,
+        Paragraph,
+        Spacer,
+    )
 
     styles = _styles()
     story: list[Any] = []
