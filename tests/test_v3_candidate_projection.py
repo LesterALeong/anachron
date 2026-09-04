@@ -28,6 +28,23 @@ paper_builder = importlib.util.module_from_spec(PAPER_SPEC)
 PAPER_SPEC.loader.exec_module(paper_builder)
 TECTONIC = Path(os.environ.get("ANACHRON_V3_TECTONIC", r"C:\Users\leste\.codex\tools\tectonic-0.17.0\bin\tectonic.exe"))
 REQUIRE_PAPER_QA = os.environ.get("ANACHRON_V3_REQUIRE_PAPER_QA") == "1"
+_PROTOCOL_ENVIRONMENT_KEYS = ("LD_LIBRARY_PATH", "PYTHONHOME", "PYTHONPATH")
+
+
+def _protocol_environment() -> dict[str, str]:
+    environment = os.environ.copy()
+    for name in _PROTOCOL_ENVIRONMENT_KEYS:
+        environment.pop(name, None)
+    return environment
+
+
+def _run_protocol_python(arguments: list[str], **kwargs) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [str(PROTOCOL_PYTHON), *arguments],
+        env=_protocol_environment(),
+        check=kwargs.pop("check", False),
+        **kwargs,
+    )
 
 
 def _rows() -> list[dict]:
@@ -254,15 +271,28 @@ class TestV3CandidateProjection(unittest.TestCase):
                 common.answer_free_rows(PROTOCOL_ROOT, evidence)
             self.assertEqual(run.call_args.args[0][0], sys.executable)
 
+    def test_protocol_generation_interpreter_does_not_inherit_python_library_overrides(self):
+        completed = subprocess.CompletedProcess([], 0, stdout=b"", stderr=b"")
+        polluted = {
+            "LD_LIBRARY_PATH": "/wrong/lib",
+            "PYTHONHOME": "/wrong/home",
+            "PYTHONPATH": "/wrong/path",
+        }
+        with patch.dict(os.environ, polluted), patch.object(subprocess, "run", return_value=completed) as run:
+            _run_protocol_python(["-I", "-c", "pass"], capture_output=True, check=False)
+
+        self.assertEqual(run.call_args.args[0][0], str(PROTOCOL_PYTHON))
+        for name in _PROTOCOL_ENVIRONMENT_KEYS:
+            self.assertNotIn(name, run.call_args.kwargs["env"])
+
     def test_complete_synthetic_study_projects_through_the_frozen_snapshot(self):
         if not PROTOCOL_ROOT.is_dir() and not REQUIRE_PAPER_QA:
             self.skipTest("frozen protocol worktree is unavailable")
         self.assertTrue(PROTOCOL_ROOT.is_dir(), "required frozen protocol worktree is unavailable")
         self.assertTrue(PROTOCOL_PYTHON.is_absolute(), "protocol generation interpreter must be absolute")
         self.assertTrue(PROTOCOL_PYTHON.is_file(), "protocol generation interpreter must exist")
-        identity = subprocess.run(
+        identity = _run_protocol_python(
             [
-                str(PROTOCOL_PYTHON),
                 "-I",
                 "-c",
                 "import json, platform; print(json.dumps({'implementation': platform.python_implementation(), 'version': platform.python_version()}, sort_keys=True))",
@@ -328,8 +358,8 @@ go = output.parent / "go.json"
 go.write_bytes(_canonical_json({"schema_version": 1, "kind": _FULL_GO_KIND, "decision": "GO", "authorized_by": "Lester Leong", "authorized_at_utc": "2026-09-03T00:00:00+00:00", "statement": _FULL_GO_STATEMENT, "full_plan_sha256": hashlib.sha256(full_raw).hexdigest(), "falsifier_receipt_sha256": hashlib.sha256(receipt.read_bytes()).hexdigest()}))
 run_measurement(full_plan, output, transport=transport, repository_root=root, falsifier_evidence=falsifier, falsifier_receipt=receipt, full_go=go)
 '''
-            result = subprocess.run(
-                [str(PROTOCOL_PYTHON), "-I", "-c", driver, str(PROTOCOL_ROOT), str(output)],
+            result = _run_protocol_python(
+                ["-I", "-c", driver, str(PROTOCOL_ROOT), str(output)],
                 cwd=PROTOCOL_ROOT,
                 capture_output=True,
                 check=False,

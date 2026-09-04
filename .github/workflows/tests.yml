@@ -79,7 +79,7 @@ jobs:
         run: |
           set -euo pipefail
           "$CANDIDATE_PYTHON" -c 'import os, platform, sys; expected = tuple(map(int, os.environ["EXPECTED_CANDIDATE_VERSION"].split("."))); actual = sys.version_info[:2]; print(sys.executable, platform.python_version()); assert platform.python_implementation() == "CPython" and actual == expected'
-          "$PROTOCOL_PYTHON" -c 'import platform, sys; print(sys.executable, platform.python_version()); assert platform.python_implementation() == "CPython" and platform.python_version() == "3.12.10"'
+          env -u LD_LIBRARY_PATH -u PYTHONHOME -u PYTHONPATH "$PROTOCOL_PYTHON" -c 'import platform, sys; print(sys.executable, platform.python_version()); assert platform.python_implementation() == "CPython" and platform.python_version() == "3.12.10"'
       - name: Fetch pinned Tectonic
         shell: bash
         run: |

@@ -84,6 +84,7 @@ class TestV3CandidatePaper(unittest.TestCase):
         update = 'git update-ref refs/heads/master "$frozen"'
         worktree = 'git worktree add --detach "$protocol" v3-measurement-protocol-v1'
         protocol_python = 'ANACHRON_V3_PROTOCOL_PYTHON: ${{ steps.protocol-python.outputs.python-path }}'
+        isolated_protocol_command = 'env -u LD_LIBRARY_PATH -u PYTHONHOME -u PYTHONPATH "$PROTOCOL_PYTHON"'
         candidate_command = '${{ steps.candidate-python.outputs.python-path }} -m unittest'
         self.assertIn(origin, workflow)
         self.assertIn('https://github.com/LesterALeong/anachron|https://github.com/LesterALeong/anachron.git', workflow)
@@ -97,6 +98,7 @@ class TestV3CandidatePaper(unittest.TestCase):
         self.assertIn('python-version: "3.12.10"', workflow)
         self.assertIn('update-environment: false', workflow)
         self.assertIn(protocol_python, workflow)
+        self.assertIn(isolated_protocol_command, workflow)
         self.assertIn(candidate_command, workflow)
         self.assertLess(workflow.index(origin), workflow.index(remote_check))
         self.assertLess(workflow.index(remote_check), workflow.index(normalize))
