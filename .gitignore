@@ -35,6 +35,7 @@ paper/routes_v1/dist/
 paper/routes_v2/build/
 paper/routes_v2/dist/
 paper/date_shift/build/
+paper/v3_measurement/build/
 
 # Editor / OS
 .vscode/

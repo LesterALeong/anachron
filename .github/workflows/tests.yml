@@ -17,6 +17,8 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -29,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -41,3 +45,80 @@ jobs:
         run: ruff check .
       - name: Run full test suite
         run: python -m unittest discover -s tests -v
+
+  paper:
+    # This is deliberately separate from the zero-dependency core matrix. It
+    # exercises the generated candidate paper with the frozen protocol and the
+    # exact Linux Tectonic binary used by GitHub Actions.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        id: candidate-python
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install paper test dependencies
+        run: ${{ steps.candidate-python.outputs.python-path }} -m pip install -e ".[paper]"
+      - uses: actions/setup-python@v5
+        id: protocol-python
+        with:
+          python-version: "3.12.10"
+          update-environment: false
+      - name: Verify candidate and protocol Python identities
+        shell: bash
+        env:
+          CANDIDATE_PYTHON: ${{ steps.candidate-python.outputs.python-path }}
+          EXPECTED_CANDIDATE_VERSION: ${{ matrix.python-version }}
+          PROTOCOL_PYTHON: ${{ steps.protocol-python.outputs.python-path }}
+        run: |
+          set -euo pipefail
+          "$CANDIDATE_PYTHON" -c 'import os, platform, sys; expected = tuple(map(int, os.environ["EXPECTED_CANDIDATE_VERSION"].split("."))); actual = sys.version_info[:2]; print(sys.executable, platform.python_version()); assert platform.python_implementation() == "CPython" and actual == expected'
+          env -u LD_LIBRARY_PATH -u PYTHONHOME -u PYTHONPATH "$PROTOCOL_PYTHON" -c 'import platform, sys; print(sys.executable, platform.python_version()); assert platform.python_implementation() == "CPython" and platform.python_version() == "3.12.10"'
+      - name: Fetch pinned Tectonic
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset="tectonic-0.17.0-x86_64-unknown-linux-gnu.tar.gz"
+          url="https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.17.0/${asset}"
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/$asset" "$url"
+          echo "1a715688baf591e650c8aeb160ae934e181685eecbb38b317de30b269ac5d606  $RUNNER_TEMP/$asset" | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/tectonic"
+          tar --extract --gzip --file "$RUNNER_TEMP/$asset" --directory "$RUNNER_TEMP/tectonic"
+          test "$(sha256sum "$RUNNER_TEMP/tectonic/tectonic" | awk '{print $1}')" = "2b3a86250906c92ed0a3ae8aaa454ec55bd6cede8593b3e549640177f6aecaa3"
+          chmod +x "$RUNNER_TEMP/tectonic/tectonic"
+      - name: Create and verify clean detached frozen protocol worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          protocol="$RUNNER_TEMP/anachron-v3-measurement-protocol-v1"
+          frozen="cc28c9890455c5bde09ee5710c411ee229e0f9e5"
+          origin="$(git remote get-url origin)"
+          case "$origin" in
+            https://github.com/LesterALeong/anachron|https://github.com/LesterALeong/anachron.git) ;;
+            *) echo "unexpected origin: $origin" >&2; exit 1 ;;
+          esac
+          test "$(git ls-remote origin refs/heads/master | cut -f1)" = "$frozen"
+          git remote set-url origin https://github.com/LesterALeong/anachron.git
+          git fetch --no-tags origin refs/heads/master:refs/remotes/origin/master
+          test "$(git rev-parse refs/remotes/origin/master)" = "$frozen"
+          git update-ref refs/heads/master "$frozen"
+          test "$(git rev-parse refs/heads/master)" = "$frozen"
+          git worktree add --detach "$protocol" v3-measurement-protocol-v1
+          test "$(git -C "$protocol" rev-parse --show-toplevel)" = "$protocol"
+          test "$(git -C "$protocol" symbolic-ref -q HEAD; echo $?)" = "1"
+          test "$(git -C "$protocol" rev-parse HEAD)" = "$frozen"
+          test "$(git -C "$protocol" rev-parse refs/heads/master)" = "$frozen"
+          test "$(git -C "$protocol" ls-remote origin refs/heads/master | cut -f1)" = "$frozen"
+      - name: Run required candidate paper gate
+        env:
+          ANACHRON_V3_PROTOCOL_ROOT: ${{ runner.temp }}/anachron-v3-measurement-protocol-v1
+          ANACHRON_V3_PROTOCOL_PYTHON: ${{ steps.protocol-python.outputs.python-path }}
+          ANACHRON_V3_TECTONIC: ${{ runner.temp }}/tectonic/tectonic
+          ANACHRON_V3_REQUIRE_PAPER_QA: "1"
+        run: ${{ steps.candidate-python.outputs.python-path }} -m unittest tests.test_v3_candidate_projection tests.test_v3_candidate_paper tests.test_v3_candidate_review_release -v

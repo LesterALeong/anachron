@@ -1,0 +1,63 @@
+{
+  "author_approval_template_sha256": "3f5ecedce95df226291902bd40c2e1466f3ce409e1542074ec863702b8cbab4d",
+  "candidate_acceptance_matrix_sha256": "8ab7da130683938e72351f62b8194044468fed7327df36a85b2aea4d9fae52ce",
+  "candidate_claim_evidence_map_sha256": "62d3a53d51cea062aa1c7e79457de49ced8ea0fac44496be361c87ebb4ded84d",
+  "candidate_manuscript_template_sha256": "57d9b8739565c8a6323e62af28cab537bd5318545b84a123eb68620c150311ff",
+  "candidate_submission_metadata_sha256": "df8719a71a50b874d160ff23d16de25ed6760d6391f2a95427575b8c7ed8fabe",
+  "frozen_protocol_commit": "cc28c9890455c5bde09ee5710c411ee229e0f9e5",
+  "frozen_protocol_matrix_sha256": "b99b2b07386900d7d47f2fb7c89a96cae460ae45e449d4522073f0fc5ab89f88",
+  "frozen_protocol_tag": "v3-measurement-protocol-v1",
+  "frozen_protocol_tag_object": "1f4b5088f6dda5134fe3d21176b9274c0165d94a",
+  "full_plan_sha256": "23b2dfc70437826579b4c97c8caf5bff59540dfb41ce2c15aa852c39f6888b90",
+  "local_release_allowlist": [
+    "arxiv_metadata.json",
+    "candidate.pdf",
+    "local_release_receipt.json",
+    "source.zip"
+  ],
+  "outcome_semantics": {
+    "analysis_go": "report_only",
+    "paired_difference": "unrestricted_tclr_minus_enforced_tclr",
+    "sign_classes": [
+      "positive",
+      "zero",
+      "negative"
+    ]
+  },
+  "references_sha256": "9124a493d06eeb07c40232f4ce3f4c6d7133bfe5f86172277680b07d30aba22d",
+  "review_lens_ids": [
+    "claim-evidence-anti-fabrication",
+    "experimental-design-primary-development",
+    "trace-protocol-leakage-definition",
+    "finite-panel-statistical-reporting",
+    "reproducibility-provenance-determinism",
+    "related-work-novelty",
+    "plain-language-readability-abstract",
+    "adversarial-overclaim-limitations",
+    "authorship-ai-licensing-integrity",
+    "pdf-latex-arxiv-metadata-layout"
+  ],
+  "review_template_sha256": "e77c4602f2b850aa284249df0cc8de282c6e28de0f3a22b9f97272a430890376",
+  "schema_version": "anachron-v3-candidate-contract-v1",
+  "source_archive_allowlist": [
+    "README.md",
+    "figures/primary_tclr.tex",
+    "main.tex",
+    "references.bib"
+  ],
+  "states": [
+    "candidate",
+    "local_release"
+  ],
+  "tectonic": {
+    "linux_archive_sha256": "1a715688baf591e650c8aeb160ae934e181685eecbb38b317de30b269ac5d606",
+    "linux_executable_sha256": "2b3a86250906c92ed0a3ae8aaa454ec55bd6cede8593b3e549640177f6aecaa3",
+    "version": "0.17.0",
+    "windows_executable_sha256": "99ffcfdbf1ebf8bdda9e791942e3d06aedb12463fddc33f07de6f5211c8bf08d"
+  },
+  "topology": {
+    "development_trajectories": 72,
+    "primary_trajectories": 264,
+    "total_trajectories": 336
+  }
+}

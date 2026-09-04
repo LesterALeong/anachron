@@ -1,0 +1,92 @@
+{
+  "affiliation": "Independent Researcher",
+  "abstract_context": "This controlled note studies whether a local agent tool trace can return a post-cutoff item when asked to reason as of an earlier date. The result is limited to a finite synthetic panel and does not measure answer correctness, live-web behavior, or population prevalence.",
+  "ai_assistance_disclosure": "AI systems assisted code organization, drafting, and adversarial review. Lester Leong retains responsibility for the study design, evidence interpretation, citations, and manuscript approval.",
+  "author": "Lester Leong",
+  "citations": [
+    "cheng-etal-2024-dated-data",
+    "el-lahib-2026-search-date-filter",
+    "zhuang-etal-2023-toolqa"
+  ],
+  "generated_sections": [
+    "abstract",
+    "primary_results",
+    "primary_figure",
+    "development_appendix",
+    "scientific_gate_status"
+  ],
+  "result_field_policy": "generated_only_from_verified_projection",
+  "schema_version": "anachron-v3-candidate-manuscript-template-v1",
+  "sections": [
+    {
+      "heading": "1. Question and measurement",
+      "paragraphs": [
+        "When an agent is asked to reason as of an earlier date, its tool trace should not surface material from after that date. A date instruction alone is not enough: the retrieved material must also respect the boundary. The operational question is therefore narrower than whether an answer sounds plausible. It asks what the tool actually returned at the point where the agent could consume it.",
+        "Tool-Call Leakage Rate, or TCLR, means the share of tool interactions whose returned items were published after the requested cutoff. It is a trace-level operational measure for this study, not an answer-quality score or a population parameter. Query leakage, restatement leakage, and survivorship leakage are separately recorded diagnostics rather than ingredients added into TCLR.",
+        "The note uses a deliberately small synthetic retrieval corpus so that every request, response, search result, and score can be replayed. That design trades breadth for an auditable causal boundary: a post-cutoff item is either in a scored first-request tool result or it is not."
+        ,"The protocol records the query separately because an agent can ask for a future item even when the returned result is not itself post-cutoff. It records restatements separately because a later revision can alter what a dated item appears to say. These are useful failure descriptions, but neither diagnostic is silently folded into the reported TCLR numerator."
+        ,"The study does not ask a model to explain its reasoning or to grade its own response. It measures the first tool-bearing interaction against a known date boundary. That restriction is intentional: it makes the published claim smaller than a broad claim about temporal reasoning, but makes the scored event inspectable and reproducible."
+      ]
+    },
+    {
+      "heading": "2. Frozen finite-panel design",
+      "paragraphs": [
+        "The primary panel contains 22 purposively constructed synthetic cases spanning ordinary future items, restatements, entity-validity failures, and non-leaking controls. Each case is repeated three times for each local model and each mode. Repetitions are repeated traces, not independent cases or population draws; the 264 primary trajectories are descriptive accounting, not an inferential sample size.",
+        "Each trajectory has a tool-enabled first request and a tool-free terminal request. The paired comparison changes whether the first trace is unrestricted or point-in-time enforced while holding the local runtime, task record, model build, and decoding configuration fixed. Exactly two tool-less calibration requests are excluded from scientific scoring.",
+        "The pairing key is case, model, and repetition. The paired TCLR difference is unrestricted TCLR minus enforced TCLR. A positive value therefore means lower observed TCLR under point-in-time enforcement; zero and negative values remain valid reportable results.",
+        "In enforced mode, retrieval mechanically applies known publish_date less than or equal to the requested as-of date. Enforced TCLR is therefore structurally zero when every returned record has a known publication date. That control is a boundary check, not a discovery about date filtering: the contribution is trace instrumentation, measurement of unrestricted exposure, paired boundary validation, and separately reported restatement and survivorship diagnostics."
+        ,"The panel is finite by construction. Its case mix was selected to exercise known temporal hazards rather than sampled to estimate a population frequency. Consequently, the tables preserve the exact case, model, mode, and repeated-trace accounting instead of attaching confidence intervals or significance labels."
+        ,"The protocol distinguishes primary and development material before scoring. Only the primary panel enters the descriptive paired comparison and frozen scientific gates. Development traces are retained for transparency in the appendix, where they cannot change a primary rate, paired difference, or gate outcome."
+      ]
+    },
+    {
+      "heading": "3. Primary results",
+      "paragraphs": [
+        "This section reports only the verified primary finite-panel projection. Query leakage, restatement leakage, and survivorship leakage remain separate diagnostics and are not added to TCLR. Every displayed count and rate is generated from replayed first-response and tool-result evidence, not authored by hand."
+        ,"The table presents both model-specific and pooled rows for unrestricted and enforced modes. Counts retain their original interaction denominators even when the normalized fraction is shorter. This preserves an auditable link between the displayed rate and the finite trace inventory."
+        ,"The figure is a compact descriptive aid, not a model-comparison chart. Its scale is fixed at zero to one and its bars are calculated using integer arithmetic from the same exact fractions used in the table. The paired statement below the table gives direction without treating repeated traces as independent observations."
+      ]
+    },
+    {
+      "heading": "4. Gate status and interpretation boundary",
+      "paragraphs": [
+        "The frozen analyzer records scientific gates after replay. Their status is reported here for transparency. A false gate is a result, not a reason to erase a complete valid study.",
+        "The comparison is descriptive. It does not establish a model ranking, statistical significance, live-web behavior, or general behavior outside this finite synthetic panel. The gates are protocol checks tied to this finite design, not a claim about all language-model systems."
+        ,"All-trajectory validity records whether the frozen replay admitted the required trace topology. The minimum-reduction gate compares the pooled paired value with the pre-specified one-fifth threshold. The no-negative-model gate and the Equinox survivorship gate expose distinct protocol checks; they are displayed individually so that a reader does not need to infer a result from the aggregate flag."
+        ,"The aggregate protocol status is a replay-derived scientific summary. This manuscript reports the underlying gates so that the descriptive result remains distinct from any broader claim about model behavior."
+      ]
+    },
+    {
+      "heading": "5. Limitations and AI assistance",
+      "paragraphs": [
+        "Evidence integrity shows that a supplied local evidence tree is internally consistent; it does not establish external authenticity. Local loopback execution does not prove external no-retry behavior, and a replayable local fixture is not a substitute for observing a deployed retrieval system.",
+        "The finite synthetic panel does not imply prevalence in live retrieval systems, behavior for other models, causal internal mechanisms, or answer correctness. A low TCLR does not establish that an answer is useful, while a high TCLR does not by itself describe how a terminal answer used the item.",
+        "The terminal response is retained only for frozen evidence replay. It is deliberately outside the projected metric and absent from the manuscript, metadata, source archive, and all generated tables."
+        ,"The study also leaves open whether the same control would work under a different corpus, deployment stack, tool schema, date representation, or prompt format. The controlled corpus isolates a narrow observable event, but it cannot distinguish retrieval behavior from all of the upstream reasons a model might formulate a query."
+        ,"No claim in this note should be read as an endorsement of a model or retrieval product. The controlled corpus and paired traces support only the narrow observable event defined here."
+      ]
+    },
+    {
+      "heading": "6. Related work and reproducibility",
+      "paragraphs": [
+        "Temporal evaluation, date-filtered retrieval, and tool-use evaluation supply adjacent context, but this note makes only a controlled trace-level finite-panel claim. Dated Data studies parametric knowledge cutoffs; date-filtered retrieval evaluates leakage in live search; ToolQA evaluates general tool-using question answering [[cite:cheng-etal-2024-dated-data]] [[cite:el-lahib-2026-search-date-filter]] [[cite:zhuang-etal-2023-toolqa]]. Unlike those settings, this note isolates the agent-tool boundary in a deterministic synthetic corpus and reports exact trace-level post-cutoff return rates under paired unrestricted and enforced retrieval, excluding terminal answers.",
+        "The public code and artifact version are located at https://github.com/LesterALeong/anachron/releases/tag/v3-measurement-protocol-v1. The frozen tag identifies the deterministic protocol used for the trace-level reconstruction; the source archive contains the manuscript inputs needed to recompile the note without raw traces or terminal answers."
+        ,"Reproducibility here means deterministic reconstruction of the reported projection from the admitted local evidence boundary, not an assertion that the evidence is independently authentic. The source archive is deliberately narrower than the protected execution materials used to verify the trace closure."
+        ,"The references provide context rather than empirical support for the result table. The measurements in this note come only from the frozen replay and its manifest-bound first-response and tool-result artifacts. This division is important: prior work motivates the question, while the finite panel defines the scope of the reported observation."
+      ]
+    }
+  ],
+  "sentence_forms": {
+    "aggregate_status_false": "The aggregate protocol status is false. This does not suppress the complete finite-panel result.",
+    "aggregate_status_true": "The aggregate protocol status is true. This does not enlarge the finite-panel claim.",
+    "below_threshold": "The pooled paired reduction is below the frozen threshold of 1/5.",
+    "gate_false": "The frozen gate {gate_name} is false.",
+    "gate_true": "The frozen gate {gate_name} is true.",
+    "mixed_direction": "Per-model paired directions are mixed; the pooled finite-panel direction is reported without a model ranking.",
+    "negative": "Across the finite primary panel, the paired TCLR difference was negative: enforced traces had a higher observed TCLR than unrestricted traces.",
+    "positive": "Across the finite primary panel, the paired TCLR reduction was positive: enforced traces had a lower observed TCLR than unrestricted traces.",
+    "threshold_met": "The pooled paired reduction meets or exceeds the frozen threshold of 1/5.",
+    "zero": "Across the finite primary panel, the paired TCLR difference was zero: the observed TCLR was the same in enforced and unrestricted traces."
+  },
+  "title": "Measuring Point-in-Time Leakage in Agent Tool Traces"
+}
