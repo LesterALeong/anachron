@@ -76,6 +76,6 @@
   "schema_version": "anachron-v4-source-audit-v1",
   "source_manifest_sha256": "REPLACE_AFTER_REVIEWED_TAG_FREEZE",
   "v4_protocol_commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
-  "v4_protocol_tag": "v4-measurement-protocol-v1",
+  "v4_protocol_tag": "v4-measurement-protocol-v2",
   "v4_protocol_tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT"
 }

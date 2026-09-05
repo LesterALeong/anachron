@@ -17,6 +17,15 @@ traces then run first, and the 64-trajectory main panel runs only if both pass.
 Do not start Ollama, call a model, contact a researcher, request or transmit
 an endorsement code, upload, or submit from this contract candidate.
 
+## Release history
+
+The pre-audit `v4-measurement-protocol-v1` tag is ineligible study authority.
+Its Python 3.10 paper lane exceeded the original 30-second Tectonic cold-cache
+timeout while downloading compiler support files. No source audit, runtime
+identity, conditional GO, model call, result, or external action used that tag.
+`v4-measurement-protocol-v2` supersedes it with a bounded 120-second compiler
+allowance; only the v2 annotated tag may anchor the lifecycle below.
+
 ## Lifecycle commands
 
 Authority order is immutable: reviewed release and external source manifest

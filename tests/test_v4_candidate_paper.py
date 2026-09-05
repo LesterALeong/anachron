@@ -69,9 +69,9 @@ class V4CandidatePaperTests(unittest.TestCase):
         self._git(root, "push", "origin", "master", "refs/tags/v3-test")
         self._git(root, "checkout", "-b", "protocol/v4-recovery-v1")
         self._git(root, "commit", "--allow-empty", "-m", "v4 source")
-        self._git(root, "tag", "-a", "v4-measurement-protocol-v1", "-m", "v4")
-        self._git(root, "push", "origin", "protocol/v4-recovery-v1", "refs/tags/v4-measurement-protocol-v1")
-        self._git(root, "checkout", "--detach", "v4-measurement-protocol-v1")
+        self._git(root, "tag", "-a", "v4-measurement-protocol-v2", "-m", "v4")
+        self._git(root, "push", "origin", "protocol/v4-recovery-v1", "refs/tags/v4-measurement-protocol-v2")
+        self._git(root, "checkout", "--detach", "v4-measurement-protocol-v2")
         return temporary, root, origin, {"commit": v3_commit, "tag": "v3-test", "tag_object": v3_tag_object}
 
     @staticmethod
@@ -246,7 +246,7 @@ class V4CandidatePaperTests(unittest.TestCase):
             projection.write_bytes(builder.canonical_json_bytes(envelope))
             output = root.parent / "candidate"
             result = builder.build_candidate(root, manifest, projection, output, TECTONIC, expected_origin=str(origin), expected_v3=expected_v3)
-            self.assertEqual(result["protocol_tag"], "v4-measurement-protocol-v1")
+            self.assertEqual(result["protocol_tag"], "v4-measurement-protocol-v2")
             self.assertEqual({item.name for item in output.iterdir()}, set(builder.CANDIDATE_COMPLETION))
             self.assertEqual((output / "projection.json").read_bytes(), projection.read_bytes())
             receipt = json.loads((output / "candidate_receipt.json").read_text(encoding="utf-8"))
@@ -381,6 +381,7 @@ class V4CandidatePaperTests(unittest.TestCase):
 
     def test_bounded_compiler_timeout_nonzero_and_log_output_caps(self) -> None:
         contract, _ = builder._template(ROOT)
+        self.assertEqual(contract["resource_policy"]["tectonic_timeout_seconds"], 120)
         policy = dict(contract["resource_policy"])
         policy["tectonic_timeout_seconds"] = 1
         with tempfile.TemporaryDirectory() as temporary:

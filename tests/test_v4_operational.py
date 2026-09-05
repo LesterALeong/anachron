@@ -108,9 +108,9 @@ class _DisposableAuthorityFixture:
         self._git(self.root, "push", "origin", "master", "refs/tags/v3-measurement-protocol-v1")
         self._git(self.root, "checkout", "-b", "protocol/v4-recovery-v1")
         self._git(self.root, "commit", "--allow-empty", "-m", "v4 source")
-        self._git(self.root, "tag", "-a", "v4-measurement-protocol-v1", "-m", "v4")
-        self._git(self.root, "push", "origin", "protocol/v4-recovery-v1", "refs/tags/v4-measurement-protocol-v1")
-        self._git(self.root, "checkout", "--detach", "v4-measurement-protocol-v1")
+        self._git(self.root, "tag", "-a", "v4-measurement-protocol-v2", "-m", "v4")
+        self._git(self.root, "push", "origin", "protocol/v4-recovery-v1", "refs/tags/v4-measurement-protocol-v2")
+        self._git(self.root, "checkout", "--detach", "v4-measurement-protocol-v2")
         self.external.mkdir()
         self.packet = self._materialize_packet()
 

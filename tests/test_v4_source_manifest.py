@@ -48,9 +48,9 @@ class V4SourceManifestTests(unittest.TestCase):
         self._git(root, "push", "origin", "master", "refs/tags/v3-test")
         self._git(root, "checkout", "-b", "protocol/v4-recovery-v1")
         self._git(root, "commit", "--allow-empty", "-m", "v4 source")
-        self._git(root, "tag", "-a", "v4-measurement-protocol-v1", "-m", "v4")
-        self._git(root, "push", "origin", "protocol/v4-recovery-v1", "refs/tags/v4-measurement-protocol-v1")
-        self._git(root, "checkout", "--detach", "v4-measurement-protocol-v1")
+        self._git(root, "tag", "-a", "v4-measurement-protocol-v2", "-m", "v4")
+        self._git(root, "push", "origin", "protocol/v4-recovery-v1", "refs/tags/v4-measurement-protocol-v2")
+        self._git(root, "checkout", "--detach", "v4-measurement-protocol-v2")
         return temporary, root, origin, {"commit": v3_commit, "tag": "v3-test", "tag_object": v3_tag_object}
 
     def test_build_validate_and_reject_release_and_blob_drift(self) -> None:
@@ -72,7 +72,7 @@ class V4SourceManifestTests(unittest.TestCase):
                 )["governed_paths"],
                 list(V4_GOVERNED_SOURCE_PATHS),
             )
-            comparison = derive(root, v3_tag="v3-test", v4_tag="v4-measurement-protocol-v1")
+            comparison = derive(root, v3_tag="v3-test", v4_tag="v4-measurement-protocol-v2")
             self.assertTrue(all(not values for values in comparison["intersections"].values()))
 
             target = root / V4_GOVERNED_SOURCE_PATHS[0]
@@ -96,11 +96,11 @@ class V4SourceManifestTests(unittest.TestCase):
                 build_v4_source_manifest.validate(root, manifest, expected_origin=str(origin), expected_v3=expected_v3)
             self._git(root, "branch", "-f", "protocol/v4-recovery-v1", "HEAD")
 
-            v4_tag_object = self._git(root, "rev-parse", "refs/tags/v4-measurement-protocol-v1^{tag}")
-            self._git(root, "tag", "-f", "-a", "v4-measurement-protocol-v1", "-m", "drift", "HEAD")
+            v4_tag_object = self._git(root, "rev-parse", "refs/tags/v4-measurement-protocol-v2^{tag}")
+            self._git(root, "tag", "-f", "-a", "v4-measurement-protocol-v2", "-m", "drift", "HEAD")
             with self.assertRaises(build_v4_source_manifest.V4SourceManifestError):
                 build_v4_source_manifest.validate(root, manifest, expected_origin=str(origin), expected_v3=expected_v3)
-            self._git(root, "update-ref", "refs/tags/v4-measurement-protocol-v1", v4_tag_object)
+            self._git(root, "update-ref", "refs/tags/v4-measurement-protocol-v2", v4_tag_object)
 
             self._git(
                 origin,
@@ -161,14 +161,14 @@ class V4SourceManifestTests(unittest.TestCase):
                 "tag",
                 "-f",
                 "-a",
-                "v4-measurement-protocol-v1",
+                "v4-measurement-protocol-v2",
                 "-m",
                 "hostile v4",
             )
             comparison = derive(
                 root,
                 v3_tag=expected_v3["tag"],
-                v4_tag="v4-measurement-protocol-v1",
+                v4_tag="v4-measurement-protocol-v2",
             )
             self.assertEqual(comparison["intersections"]["entity_identifiers"], ["ACME"])
             self.assertFalse(

@@ -3,7 +3,7 @@ name: tests
 on:
   push:
     branches: [master, main, protocol/v4-recovery-v1]
-    tags: [v4-measurement-protocol-v1]
+    tags: [v4-measurement-protocol-v2]
   pull_request:
   workflow_dispatch:
 

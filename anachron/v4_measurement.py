@@ -576,7 +576,7 @@ def _source_manifest(raw: bytes) -> tuple[dict[str, str], dict[str, dict[str, st
             r"[0-9a-f]{40}", _str(release[key], f"source manifest release.{key}")
         ):
             raise V4MeasurementError("source manifest release differs")
-    if release["tag"] != "v4-measurement-protocol-v1" or not _str(
+    if release["tag"] != "v4-measurement-protocol-v2" or not _str(
         release["v3_tag"], "source manifest v3 tag"
     ):
         raise V4MeasurementError("source manifest release differs")
@@ -958,7 +958,7 @@ def _identity(
     ):
         _sha(value[field], f"runtime identity.{field}")
     if (
-        value["protocol_tag"] != "v4-measurement-protocol-v1"
+        value["protocol_tag"] != "v4-measurement-protocol-v2"
         or not re.fullmatch(r"[0-9a-f]{40}", value["protocol_commit"])
         or not re.fullmatch(r"[0-9a-f]{40}", value["protocol_tag_object"])
     ):
@@ -1024,7 +1024,7 @@ def _compatibility_plan(
             )
         )
         or value["kind"] != "anachron-v4-production-schema-compatibility-template"
-        or value["protocol_version"] != "v4-measurement-protocol-v1"
+        or value["protocol_version"] != "v4-measurement-protocol-v2"
         or value["no_retry"] is not True
         or value["excluded_from_metrics"] is not True
         or value["chat_requests_per_trace"] != 2
@@ -1119,7 +1119,7 @@ def _plan(
     ):
         raise V4MeasurementError("full plan differs")
     _str(value["plan_id"], "full plan.plan_id")
-    if value["protocol_version"] != "v4-measurement-protocol-v1":
+    if value["protocol_version"] != "v4-measurement-protocol-v2":
         raise V4MeasurementError("full plan protocol version differs")
     _models(value["models"], "full plan.models")
     release = _map(
@@ -1129,7 +1129,7 @@ def _plan(
         not re.fullmatch(
             r"[0-9a-f]{40}", _str(release["commit"], "full plan release commit")
         )
-        or release["tag"] != "v4-measurement-protocol-v1"
+        or release["tag"] != "v4-measurement-protocol-v2"
         or not re.fullmatch(
             r"[0-9a-f]{40}", _str(release["tag_object"], "full plan release tag object")
         )

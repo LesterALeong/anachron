@@ -33,7 +33,7 @@
   "comparison_projection_sha256": "REPLACE_AFTER_PROTOCOL_FREEZE",
   "compatibility_plan": {
     "path": "research/v4_measurement/compatibility_plan.template.json",
-    "sha256": "b1e81a7e0d6a4d12d5d4d7ea0ce3e2e32c18f69e14204d4eb31975ad529fff19"
+    "sha256": "c1c8b84d8dae4cccf381af56ca114c223e4c81cb32552fe2ff1a197da4aa4c85"
   },
   "completion_sets": {
     "candidate": [
@@ -108,7 +108,7 @@
   },
   "full_plan": {
     "path": "research/v4_measurement/full_plan.template.json",
-    "sha256": "a2c09bc104e8f721c3a6df153efcb065368d3af7043399ef99fb30abea7d53b2"
+    "sha256": "c95b7a8b26b9fc650b03961b64868c87f924ea5a31185b1fdbbed715d1479f5e"
   },
   "local_release_allowlist": [
     "arxiv_metadata.json",
@@ -128,7 +128,7 @@
   "projection_policy": "generated_only_from_verified_answer_free_projection",
   "protocol_identity": {
     "commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
-    "tag": "v4-measurement-protocol-v1",
+    "tag": "v4-measurement-protocol-v2",
     "tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT"
   },
   "protocol_matrix": {
@@ -149,7 +149,7 @@
     "tectonic_executable_max_bytes": 67108864,
     "tectonic_log_max_bytes": 65536,
     "tectonic_output_max_bytes": 4194304,
-    "tectonic_timeout_seconds": 30
+    "tectonic_timeout_seconds": 120
   },
   "review_lens_ids": [
     "claim-evidence-anti-fabrication",

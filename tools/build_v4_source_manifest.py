@@ -166,7 +166,7 @@ def derive(
     except V4PathError as error:
         raise V4SourceManifestError(str(error)) from error
     expected_v3 = expected_v3 or _expected_v3(root)
-    release = _release(root, "v4-measurement-protocol-v1", expected_origin, expected_v3)
+    release = _release(root, "v4-measurement-protocol-v2", expected_origin, expected_v3)
     value = {
         "governed_files": _files(root, release["commit"], V4_GOVERNED_SOURCE_PATHS),
         "governed_paths": list(V4_GOVERNED_SOURCE_PATHS),
@@ -229,7 +229,7 @@ def validate(
     if paths != list(V4_GOVERNED_SOURCE_PATHS):
         raise V4SourceManifestError("source manifest governed path topology differs")
     expected_v3 = expected_v3 or _expected_v3(root)
-    release = _release(root, "v4-measurement-protocol-v1", expected_origin, expected_v3)
+    release = _release(root, "v4-measurement-protocol-v2", expected_origin, expected_v3)
     if value["release"] != release:
         raise V4SourceManifestError("source manifest release differs")
     rows = value["governed_files"]

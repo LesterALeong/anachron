@@ -27,7 +27,7 @@ class V4CandidateProjectionTests(unittest.TestCase):
             "remote_branch": digest,
             "remote_tag_object": digest,
             "remote_tag_peeled": digest,
-            "tag": "v4-measurement-protocol-v1",
+            "tag": "v4-measurement-protocol-v2",
             "tag_object": digest,
             "tag_peeled": digest,
             "v3_commit": digest,

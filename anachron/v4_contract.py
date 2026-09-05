@@ -151,7 +151,7 @@ V4_CANDIDATE_RESOURCE_POLICY = {
     "tectonic_executable_max_bytes": 67108864,
     "tectonic_log_max_bytes": 65536,
     "tectonic_output_max_bytes": 4194304,
-    "tectonic_timeout_seconds": 30,
+    "tectonic_timeout_seconds": 120,
 }
 
 
@@ -667,7 +667,7 @@ def _validate_candidate_graph(
         raise V4ContractError("candidate contract schema version differs")
     expected_identity = {
         "commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
-        "tag": "v4-measurement-protocol-v1",
+        "tag": "v4-measurement-protocol-v2",
         "tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT",
     }
     if candidate["protocol_identity"] != expected_identity:

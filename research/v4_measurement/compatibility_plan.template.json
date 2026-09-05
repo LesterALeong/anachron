@@ -20,10 +20,10 @@
     "query": "required_nonempty_string",
     "unknown_keys": "reject"
   },
-  "protocol_version": "v4-measurement-protocol-v1",
+  "protocol_version": "v4-measurement-protocol-v2",
   "release": {
     "commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
-    "tag": "v4-measurement-protocol-v1",
+    "tag": "v4-measurement-protocol-v2",
     "tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT"
   },
   "sample_ids": [

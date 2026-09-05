@@ -248,7 +248,7 @@ class V4AuthorityContractTests(unittest.TestCase):
             candidate["protocol_identity"],
             {
                 "commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
-                "tag": "v4-measurement-protocol-v1",
+                "tag": "v4-measurement-protocol-v2",
                 "tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT",
             },
         )

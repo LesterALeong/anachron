@@ -59,15 +59,15 @@ class V4MaterializationTests(unittest.TestCase):
         self._git(root, "push", "origin", "master", "refs/tags/v3-test")
         self._git(root, "checkout", "-b", "protocol/v4-recovery-v1")
         self._git(root, "commit", "--allow-empty", "-m", "v4 source")
-        self._git(root, "tag", "-a", "v4-measurement-protocol-v1", "-m", "v4")
+        self._git(root, "tag", "-a", "v4-measurement-protocol-v2", "-m", "v4")
         self._git(
             root,
             "push",
             "origin",
             "protocol/v4-recovery-v1",
-            "refs/tags/v4-measurement-protocol-v1",
+            "refs/tags/v4-measurement-protocol-v2",
         )
-        self._git(root, "checkout", "--detach", "v4-measurement-protocol-v1")
+        self._git(root, "checkout", "--detach", "v4-measurement-protocol-v2")
         return temporary, root, origin, {
             "commit": v3_commit,
             "tag": "v3-test",
