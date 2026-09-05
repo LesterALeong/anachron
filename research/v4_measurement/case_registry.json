@@ -1,0 +1,71 @@
+{
+  "case_count": 8,
+  "cases": [
+    {
+      "as_of": "2020-06-15",
+      "case_card": "cases/fin-aster-2020-06-future.json",
+      "category": "future-information-finance",
+      "entity": "Aster Systems",
+      "entity_identifier": "ASTR",
+      "id": "fin-aster-2020-06-future"
+    },
+    {
+      "as_of": "2021-04-10",
+      "case_card": "cases/gen-archipelago-2021-04-future.json",
+      "category": "future-information-general",
+      "entity": "Northlight Observatory",
+      "entity_identifier": "NLOBS",
+      "id": "gen-archipelago-2021-04-future"
+    },
+    {
+      "as_of": "2023-03-20",
+      "case_card": "cases/fin-bramble-2023-03-current.json",
+      "category": "current-anchor-finance",
+      "entity": "Bramble Foods",
+      "entity_identifier": "BRAM",
+      "id": "fin-bramble-2023-03-current"
+    },
+    {
+      "as_of": "2024-02-15",
+      "case_card": "cases/gen-civic-2024-02-current.json",
+      "category": "current-anchor-general",
+      "entity": "Harbor Civic Library",
+      "entity_identifier": "HCLIB",
+      "id": "gen-civic-2024-02-current"
+    },
+    {
+      "as_of": "2022-04-15",
+      "case_card": "cases/fin-drift-2022-04-restatement-original.json",
+      "category": "restatement-original",
+      "entity": "Drift Medical",
+      "entity_identifier": "DRFT",
+      "id": "fin-drift-2022-04-restatement-original"
+    },
+    {
+      "as_of": "2025-01-16",
+      "case_card": "cases/gen-estuary-2025-01-restatement-later.json",
+      "category": "restatement-later",
+      "entity": "Meridian Statistics Office",
+      "entity_identifier": "MSO",
+      "id": "gen-estuary-2025-01-restatement-later"
+    },
+    {
+      "as_of": "2012-06-01",
+      "case_card": "cases/fin-fable-2012-06-not-listed.json",
+      "category": "survivorship-not-yet-listed",
+      "entity": "Fable Energy",
+      "entity_identifier": "FBLE",
+      "id": "fin-fable-2012-06-not-listed"
+    },
+    {
+      "as_of": "2026-01-12",
+      "case_card": "cases/fin-granite-2026-01-delisted.json",
+      "category": "survivorship-delisted",
+      "entity": "Granite Textiles",
+      "entity_identifier": "GRNT",
+      "id": "fin-granite-2026-01-delisted"
+    }
+  ],
+  "schema_version": "anachron-v4-case-registry-v1",
+  "source_audit_status": "PENDING"
+}

@@ -1,0 +1,22 @@
+{
+  "as_of": "2024-02-15",
+  "case_id": "gen-civic-2024-02-current",
+  "category": "current-anchor-general",
+  "corpus_records": [
+    {
+      "id": "v4-gen-civic-001",
+      "publish_date": "2023-06-30",
+      "text": "Harbor Civic Library begins a pilot for neighborhood-language collections."
+    },
+    {
+      "id": "v4-gen-civic-002",
+      "publish_date": "2024-01-22",
+      "text": "Harbor Civic Library expands its neighborhood-language collections after the pilot."
+    }
+  ],
+  "entity": "Harbor Civic Library",
+  "entity_identifier": "HCLIB",
+  "expected_mechanism": "current",
+  "expected_point_in_time_record": "v4-gen-civic-002",
+  "prompt": "What was the latest public update by 2024-02-15 on Harbor Civic Library's neighborhood-language collections?"
+}

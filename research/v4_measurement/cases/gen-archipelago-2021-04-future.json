@@ -1,0 +1,22 @@
+{
+  "as_of": "2021-04-10",
+  "case_id": "gen-archipelago-2021-04-future",
+  "category": "future-information-general",
+  "corpus_records": [
+    {
+      "id": "v4-gen-archipelago-001",
+      "publish_date": "2020-12-08",
+      "text": "Northlight Observatory begins testing a compact coastal weather instrument."
+    },
+    {
+      "id": "v4-gen-archipelago-002",
+      "publish_date": "2021-09-21",
+      "text": "Northlight Observatory opens the Archipelago weather station to public observations."
+    }
+  ],
+  "entity": "Northlight Observatory",
+  "entity_identifier": "NLOBS",
+  "expected_mechanism": "future",
+  "expected_point_in_time_record": "v4-gen-archipelago-001",
+  "prompt": "What was publicly known by 2021-04-10 about the opening of Northlight Observatory's Archipelago station?"
+}

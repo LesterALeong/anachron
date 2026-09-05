@@ -1,0 +1,81 @@
+{
+  "attestation": "I reviewed each proposed v4 synthetic case card, confirmed that the cases are fictional and distinct from the bound v3 registry, and judged the stated point-in-time record, restatement relation, or entity-validity boundary appropriate for this finite panel. This audit does not authorize any model call, outreach, upload, or submission.",
+  "audited_at_utc": "REPLACE_WITH_UTC_TIMESTAMP",
+  "audited_by": "Lester Leong",
+  "case_audits": [
+    {
+      "case_id": "fin-aster-2020-06-future",
+      "decision": "PENDING",
+      "reason": "REPLACE_WITH_CASE_SPECIFIC_REVIEW",
+      "reviewed_at_utc": "REPLACE_WITH_STRICT_UTC_ISO8601_TIMESTAMP",
+      "tag_blob_oid": "REPLACE_WITH_TAGGED_CASE_BLOB_OID",
+      "tag_blob_sha256": "REPLACE_WITH_TAGGED_CASE_BLOB_SHA256"
+    },
+    {
+      "case_id": "gen-archipelago-2021-04-future",
+      "decision": "PENDING",
+      "reason": "REPLACE_WITH_CASE_SPECIFIC_REVIEW",
+      "reviewed_at_utc": "REPLACE_WITH_STRICT_UTC_ISO8601_TIMESTAMP",
+      "tag_blob_oid": "REPLACE_WITH_TAGGED_CASE_BLOB_OID",
+      "tag_blob_sha256": "REPLACE_WITH_TAGGED_CASE_BLOB_SHA256"
+    },
+    {
+      "case_id": "fin-bramble-2023-03-current",
+      "decision": "PENDING",
+      "reason": "REPLACE_WITH_CASE_SPECIFIC_REVIEW",
+      "reviewed_at_utc": "REPLACE_WITH_STRICT_UTC_ISO8601_TIMESTAMP",
+      "tag_blob_oid": "REPLACE_WITH_TAGGED_CASE_BLOB_OID",
+      "tag_blob_sha256": "REPLACE_WITH_TAGGED_CASE_BLOB_SHA256"
+    },
+    {
+      "case_id": "gen-civic-2024-02-current",
+      "decision": "PENDING",
+      "reason": "REPLACE_WITH_CASE_SPECIFIC_REVIEW",
+      "reviewed_at_utc": "REPLACE_WITH_STRICT_UTC_ISO8601_TIMESTAMP",
+      "tag_blob_oid": "REPLACE_WITH_TAGGED_CASE_BLOB_OID",
+      "tag_blob_sha256": "REPLACE_WITH_TAGGED_CASE_BLOB_SHA256"
+    },
+    {
+      "case_id": "fin-drift-2022-04-restatement-original",
+      "decision": "PENDING",
+      "reason": "REPLACE_WITH_CASE_SPECIFIC_REVIEW",
+      "reviewed_at_utc": "REPLACE_WITH_STRICT_UTC_ISO8601_TIMESTAMP",
+      "tag_blob_oid": "REPLACE_WITH_TAGGED_CASE_BLOB_OID",
+      "tag_blob_sha256": "REPLACE_WITH_TAGGED_CASE_BLOB_SHA256"
+    },
+    {
+      "case_id": "gen-estuary-2025-01-restatement-later",
+      "decision": "PENDING",
+      "reason": "REPLACE_WITH_CASE_SPECIFIC_REVIEW",
+      "reviewed_at_utc": "REPLACE_WITH_STRICT_UTC_ISO8601_TIMESTAMP",
+      "tag_blob_oid": "REPLACE_WITH_TAGGED_CASE_BLOB_OID",
+      "tag_blob_sha256": "REPLACE_WITH_TAGGED_CASE_BLOB_SHA256"
+    },
+    {
+      "case_id": "fin-fable-2012-06-not-listed",
+      "decision": "PENDING",
+      "reason": "REPLACE_WITH_CASE_SPECIFIC_REVIEW",
+      "reviewed_at_utc": "REPLACE_WITH_STRICT_UTC_ISO8601_TIMESTAMP",
+      "tag_blob_oid": "REPLACE_WITH_TAGGED_CASE_BLOB_OID",
+      "tag_blob_sha256": "REPLACE_WITH_TAGGED_CASE_BLOB_SHA256"
+    },
+    {
+      "case_id": "fin-granite-2026-01-delisted",
+      "decision": "PENDING",
+      "reason": "REPLACE_WITH_CASE_SPECIFIC_REVIEW",
+      "reviewed_at_utc": "REPLACE_WITH_STRICT_UTC_ISO8601_TIMESTAMP",
+      "tag_blob_oid": "REPLACE_WITH_TAGGED_CASE_BLOB_OID",
+      "tag_blob_sha256": "REPLACE_WITH_TAGGED_CASE_BLOB_SHA256"
+    }
+  ],
+  "comparison_projection_sha256": "REPLACE_AFTER_PROTOCOL_FREEZE",
+  "decision": "PENDING",
+  "registry_sha256": "REPLACE_AFTER_PROTOCOL_FREEZE",
+  "registry_tag_blob_oid": "REPLACE_WITH_TAGGED_REGISTRY_BLOB_OID",
+  "registry_tag_blob_sha256": "REPLACE_WITH_TAGGED_REGISTRY_BLOB_SHA256",
+  "schema_version": "anachron-v4-source-audit-v1",
+  "source_manifest_sha256": "REPLACE_AFTER_REVIEWED_TAG_FREEZE",
+  "v4_protocol_commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
+  "v4_protocol_tag": "v4-measurement-protocol-v1",
+  "v4_protocol_tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT"
+}

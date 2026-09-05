@@ -1,0 +1,17 @@
+{
+  "abstract_sha256": "REPLACE_WITH_ABSTRACT_SHA256",
+  "ai_assistance_disclosure_sha256": "REPLACE_WITH_AI_DISCLOSURE_SHA256",
+  "approval": "PENDING",
+  "approved_at_utc": "REPLACE_WITH_UTC_TIMESTAMP",
+  "approved_by": "Lester Leong",
+  "archive_sha256": "REPLACE_WITH_SOURCE_ARCHIVE_SHA256",
+  "arxiv_metadata_sha256": "REPLACE_WITH_ARXIV_METADATA_SHA256",
+  "attestation": "I have read the exact candidate manuscript and all ten bound internal review reports. I accept responsibility for the paper's finite-panel claims, confirm the citations and attribution, confirm the AI-assistance disclosure, and approve the bound arXiv metadata for local release only. This does not authorize outreach, endorsement-code transmission, upload, or submission.",
+  "candidate_receipt_sha256": "REPLACE_WITH_CANDIDATE_RECEIPT_SHA256",
+  "paper_pdf_sha256": "REPLACE_WITH_PAPER_PDF_SHA256",
+  "projection_sha256": "REPLACE_WITH_PROJECTION_SHA256",
+  "review_set_manifest_sha256": "REPLACE_WITH_REVIEW_SET_MANIFEST_SHA256",
+  "schema_version": "anachron-v4-candidate-author-approval-v1",
+  "status": "PENDING",
+  "v3_included_count": 0
+}

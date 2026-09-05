@@ -1,0 +1,22 @@
+{
+  "as_of": "2020-06-15",
+  "case_id": "fin-aster-2020-06-future",
+  "category": "future-information-finance",
+  "corpus_records": [
+    {
+      "id": "v4-fin-aster-001",
+      "publish_date": "2020-02-18",
+      "text": "Aster Systems reports that its 2019 network-services revenue increased by six percent."
+    },
+    {
+      "id": "v4-fin-aster-002",
+      "publish_date": "2020-10-02",
+      "text": "Aster Systems announces a multi-year public-sector network contract."
+    }
+  ],
+  "entity": "Aster Systems",
+  "entity_identifier": "ASTR",
+  "expected_mechanism": "future",
+  "expected_point_in_time_record": "v4-fin-aster-001",
+  "prompt": "What contract announcement, if any, was publicly available about Aster Systems by 2020-06-15?"
+}

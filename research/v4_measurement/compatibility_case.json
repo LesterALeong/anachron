@@ -1,0 +1,22 @@
+{
+  "as_of": "2022-08-18",
+  "case_id": "compat-lantern-2022-08-schema",
+  "category": "current-anchor-general",
+  "corpus_records": [
+    {
+      "id": "v4-compat-lantern-001",
+      "publish_date": "2022-06-11",
+      "text": "Lantern Field Archive publishes a fictional schema-compatibility bulletin."
+    },
+    {
+      "id": "v4-compat-lantern-002",
+      "publish_date": "2022-07-02",
+      "text": "Lantern Field Archive adds a fictional index note for deterministic retrieval."
+    }
+  ],
+  "entity": "Lantern Field Archive",
+  "entity_identifier": "LFA",
+  "expected_mechanism": "compatibility-only",
+  "expected_point_in_time_record": "v4-compat-lantern-001",
+  "prompt": "Which fictional bulletin was available from Lantern Field Archive by 2022-08-18?"
+}

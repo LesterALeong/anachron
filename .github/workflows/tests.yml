@@ -2,8 +2,10 @@ name: tests
 
 on:
   push:
-    branches: [master, main]
+    branches: [master, main, protocol/v4-recovery-v1]
+    tags: [v4-measurement-protocol-v1]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   core:
@@ -122,3 +124,51 @@ jobs:
           ANACHRON_V3_TECTONIC: ${{ runner.temp }}/tectonic/tectonic
           ANACHRON_V3_REQUIRE_PAPER_QA: "1"
         run: ${{ steps.candidate-python.outputs.python-path }} -m unittest tests.test_v3_candidate_projection tests.test_v3_candidate_paper tests.test_v3_candidate_review_release -v
+
+  v4-paper:
+    # This lane exercises only disposable local v4 fixtures. The sole network
+    # operation is the pinned Tectonic archive download below. The fixtures
+    # invoke no protocol Python subprocess, so no second interpreter is needed.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        id: candidate-python
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install v4 paper test dependencies
+        run: ${{ steps.candidate-python.outputs.python-path }} -m pip install -e ".[paper]"
+      - name: Verify candidate CPython identity
+        shell: bash
+        env:
+          CANDIDATE_PYTHON: ${{ steps.candidate-python.outputs.python-path }}
+          EXPECTED_CANDIDATE_VERSION: ${{ matrix.python-version }}
+        run: |
+          set -euo pipefail
+          "$CANDIDATE_PYTHON" -c 'import os, platform, sys; expected = tuple(map(int, os.environ["EXPECTED_CANDIDATE_VERSION"].split("."))); actual = sys.version_info[:2]; print(sys.executable, platform.python_version()); assert platform.python_implementation() == "CPython" and actual == expected'
+      - name: Fetch v4 pinned Tectonic
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset="tectonic-0.17.0-x86_64-unknown-linux-gnu.tar.gz"
+          url="https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.17.0/${asset}"
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/$asset" "$url"
+          echo "1a715688baf591e650c8aeb160ae934e181685eecbb38b317de30b269ac5d606  $RUNNER_TEMP/$asset" | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/tectonic-v4"
+          tar --extract --gzip --file "$RUNNER_TEMP/$asset" --directory "$RUNNER_TEMP/tectonic-v4"
+          test "$(sha256sum "$RUNNER_TEMP/tectonic-v4/tectonic" | awk '{print $1}')" = "2b3a86250906c92ed0a3ae8aaa454ec55bd6cede8593b3e549640177f6aecaa3"
+          chmod +x "$RUNNER_TEMP/tectonic-v4/tectonic"
+      - name: Run disposable v4 candidate and release gates
+        shell: bash
+        env:
+          ANACHRON_V4_TECTONIC: ${{ runner.temp }}/tectonic-v4/tectonic
+          CANDIDATE_PYTHON: ${{ steps.candidate-python.outputs.python-path }}
+        run: |
+          set -euo pipefail
+          env -u LD_LIBRARY_PATH -u PYTHONHOME -u PYTHONPATH "$CANDIDATE_PYTHON" -m unittest tests.test_v4_candidate_projection tests.test_v4_candidate_paper tests.test_v4_candidate_review_release tests.test_v4_candidate_outreach tests.test_v4_ci_workflow tests.test_v4_contract tests.test_v4_source_manifest tests.test_v4_materialization -v

@@ -1,0 +1,23 @@
+{
+  "as_of": "2022-04-15",
+  "case_id": "fin-drift-2022-04-restatement-original",
+  "category": "restatement-original",
+  "corpus_records": [
+    {
+      "id": "v4-fin-drift-001",
+      "publish_date": "2022-01-24",
+      "text": "Drift Medical reports 2021 fourth-quarter revenue of 81 million credits."
+    },
+    {
+      "id": "v4-fin-drift-002",
+      "publish_date": "2022-07-19",
+      "restates": "v4-fin-drift-001",
+      "text": "Drift Medical corrects 2021 fourth-quarter revenue to 74 million credits after an accounting review."
+    }
+  ],
+  "entity": "Drift Medical",
+  "entity_identifier": "DRFT",
+  "expected_mechanism": "restatement",
+  "expected_point_in_time_record": "v4-fin-drift-001",
+  "prompt": "What fourth-quarter 2021 revenue figure for Drift Medical was public by 2022-04-15?"
+}

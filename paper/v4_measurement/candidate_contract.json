@@ -1,0 +1,208 @@
+{
+  "archive_allowlist_equality_required": true,
+  "archive_allowlist_path": "archive_allowlist.json",
+  "archive_allowlist_sha256": "e80580f20b5d7674e8eaf305de4dbfb61a0f0bf9ef677fbd1470eb187431668f",
+  "authority_binding_contract": {
+    "path": "research/v4_measurement/authority_binding_contract.json",
+    "sha256": "403e0686f3d61e6b4313eb66268809aa4666888747714d3b1f4286ecac9bc329"
+  },
+  "authority_graph": {
+    "actual_go": {
+      "candidate_receipt_must_bind": {
+        "field": "actual_go_sha256",
+        "value": "SHA-256 of the exact actual GO bytes"
+      },
+      "required_comparison_binding": {
+        "field": "comparison_projection_sha256",
+        "value": "SHA-256 of the exact tag-blob comparison bytes"
+      },
+      "required_runtime_binding": {
+        "field": "runtime_identity_sha256",
+        "value": "SHA-256 of the read-only runtime identity bytes"
+      },
+      "required_source_audit_binding": {
+        "field": "source_audit_sha256",
+        "value": "SHA-256 of the completed eight-card source-audit bytes"
+      },
+      "required_source_manifest_binding": {
+        "field": "source_manifest_sha256",
+        "value": "SHA-256 of the exact external source manifest bytes"
+      }
+    }
+  },
+  "comparison_projection_sha256": "REPLACE_AFTER_PROTOCOL_FREEZE",
+  "compatibility_plan": {
+    "path": "research/v4_measurement/compatibility_plan.template.json",
+    "sha256": "b1e81a7e0d6a4d12d5d4d7ea0ce3e2e32c18f69e14204d4eb31975ad529fff19"
+  },
+  "completion_sets": {
+    "candidate": [
+      "arxiv_metadata.json",
+      "candidate.pdf",
+      "candidate_receipt.json",
+      "paper_source_manifest.json",
+      "projection.json",
+      "qa_renders",
+      "qa_render_manifest.json",
+      "source",
+      "source.zip"
+    ],
+    "local_release": [
+      "arxiv_metadata.json",
+      "candidate.pdf",
+      "local_release_receipt.json",
+      "source.zip"
+    ],
+    "review_set": [
+      "review_set_manifest.json"
+    ],
+    "unsent_outreach": [
+      "UNSENT.md",
+      "outreach_receipt.json"
+    ]
+  },
+  "dynamic_receipt_schema": {
+    "candidate_receipt": [
+      "actual_go_sha256",
+      "arxiv_metadata_sha256",
+      "candidate_contract_sha256",
+      "evidence_manifest_sha256",
+      "paper_pdf_sha256",
+      "paper_source_manifest_sha256",
+      "projection_sha256",
+      "qa_render_manifest_sha256",
+      "source_archive_sha256",
+      "v3_included_count"
+    ],
+    "local_release_receipt": [
+      "approval_sha256",
+      "candidate_receipt_sha256",
+      "local_release_files",
+      "review_set_manifest_sha256",
+      "v3_included_count"
+    ],
+    "review_set_manifest": [
+      "archive_sha256",
+      "arxiv_metadata_sha256",
+      "candidate_contract_sha256",
+      "candidate_receipt_sha256",
+      "evidence_manifest_sha256",
+      "paper_pdf_sha256",
+      "paper_source_manifest_sha256",
+      "projection_sha256",
+      "review_lens_ids",
+      "review_reports",
+      "schema_version",
+      "v3_included_count"
+    ],
+    "unsent_outreach_receipt": [
+      "arxiv_metadata_sha256",
+      "candidate_pdf_sha256",
+      "candidate_receipt_sha256",
+      "local_release_receipt_sha256",
+      "schema_version",
+      "source_archive_sha256",
+      "status",
+      "v3_included_count"
+    ]
+  },
+  "full_plan": {
+    "path": "research/v4_measurement/full_plan.template.json",
+    "sha256": "a2c09bc104e8f721c3a6df153efcb065368d3af7043399ef99fb30abea7d53b2"
+  },
+  "local_release_allowlist": [
+    "arxiv_metadata.json",
+    "candidate.pdf",
+    "local_release_receipt.json",
+    "source.zip"
+  ],
+  "outcome_semantics": {
+    "analysis_go": "report_only",
+    "paired_difference": "unrestricted_tclr_minus_enforced_tclr",
+    "sign_classes": [
+      "positive",
+      "zero",
+      "negative"
+    ]
+  },
+  "projection_policy": "generated_only_from_verified_answer_free_projection",
+  "protocol_identity": {
+    "commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
+    "tag": "v4-measurement-protocol-v1",
+    "tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT"
+  },
+  "protocol_matrix": {
+    "path": "research/v4_measurement/ACCEPTANCE_MATRIX.md",
+    "sha256": "328c3b0dcd93c0df237de42afaa68316ae403ef62f1e2d23ac46d7781e26f7fb"
+  },
+  "resource_policy": {
+    "candidate_projection_max_bytes": 1048576,
+    "pdf_max_bytes": 2097152,
+    "pdf_max_pages": 8,
+    "render_max_bytes": 4194304,
+    "render_max_pixels": 16777216,
+    "source_archive_max_bytes": 1048576,
+    "source_file_max_bytes": 262144,
+    "source_manifest_max_bytes": 1048576,
+    "string_max_bytes": 512,
+    "tectonic_archive_max_bytes": 67108864,
+    "tectonic_executable_max_bytes": 67108864,
+    "tectonic_log_max_bytes": 65536,
+    "tectonic_output_max_bytes": 4194304,
+    "tectonic_timeout_seconds": 30
+  },
+  "review_lens_ids": [
+    "claim-evidence-anti-fabrication",
+    "experimental-design-primary-development",
+    "trace-protocol-leakage-definition",
+    "finite-panel-statistical-reporting",
+    "reproducibility-provenance-determinism",
+    "related-work-novelty",
+    "plain-language-readability-abstract",
+    "adversarial-overclaim-limitations",
+    "authorship-ai-licensing-integrity",
+    "pdf-latex-arxiv-metadata-layout"
+  ],
+  "schema_version": "anachron-v4-candidate-contract-pre-freeze-v1",
+  "self_custody_limitation": "Self-custody evidence supports internal consistency and byte replay; it detects missing, partial, malformed, or inconsistent artifacts, including re-signed artifacts without corresponding authority. It provides no independent raw-response provenance and cannot detect a coherent rewrite of every locally held artifact.",
+  "source_archive_allowlist": [
+    "README.md",
+    "figures/primary_tclr.tex",
+    "main.tex",
+    "references.bib"
+  ],
+  "source_manifest_sha256": "REPLACE_AFTER_REVIEWED_TAG_FREEZE",
+  "states": [
+    "candidate",
+    "local_release",
+    "unsent_outreach"
+  ],
+  "static_artifact_hashes": {
+    "paper/v4_measurement/CANDIDATE_ACCEPTANCE_MATRIX.md": "b3abd12374153b7932eccacd6267c0942991bdcbfa070e06a881131fae649182",
+    "paper/v4_measurement/CANDIDATE_CLAIM_EVIDENCE_MAP.md": "e05dc5d4be299f6a1663edc6b2dd6a1bfe202b4bd9b6168dc812a9ebaca893f0",
+    "paper/v4_measurement/CANDIDATE_SUBMISSION_METADATA.md": "d10302555bde791f367d5b83cc8bb9c9504569778b0c481c0d9a97a06514b20c",
+    "paper/v4_measurement/README.md": "53575d645e1a8d4277bb99cbd53b7b2b41616496b960dd4f4f5a9bfb64961cf3",
+    "paper/v4_measurement/archive_allowlist.json": "e80580f20b5d7674e8eaf305de4dbfb61a0f0bf9ef677fbd1470eb187431668f",
+    "paper/v4_measurement/author_approval.template.json": "507ccf89b2cffaee2be6d894ac3b8d8242a321cde835ba898754b15e6802b040",
+    "paper/v4_measurement/candidate_manuscript_template.json": "46c9b44b57ee102aac0d7d297ccf2028d33e61acc6916e63833ce5d4499e26d9",
+    "paper/v4_measurement/candidate_references.bib": "ffe90c40d711025c6ffe096d890b9cd8c3a729ca69d3c5ee4324b23db1185462",
+    "paper/v4_measurement/outreach.template.md": "da41095b30a0904641929369fddea0b756b57f9f1167cf448a3903e7d6b93a96",
+    "paper/v4_measurement/reviews/review.template.json": "d9b1fae82e447a06d45447a0ce11171ce85b8ec1509e8b770fee2e0f14d0d655"
+  },
+  "tectonic": {
+    "linux_archive_sha256": "1a715688baf591e650c8aeb160ae934e181685eecbb38b317de30b269ac5d606",
+    "linux_executable_sha256": "2b3a86250906c92ed0a3ae8aaa454ec55bd6cede8593b3e549640177f6aecaa3",
+    "version": "0.17.0",
+    "windows_executable_sha256": "99ffcfdbf1ebf8bdda9e791942e3d06aedb12463fddc33f07de6f5211c8bf08d"
+  },
+  "topology": {
+    "compatibility_chats": 4,
+    "compatibility_traces": 2,
+    "development_trajectories": 0,
+    "main_chats": 128,
+    "primary_cases": 8,
+    "primary_trajectories": 64,
+    "repetitions": 2
+  },
+  "v3_included_count": 0
+}

@@ -1,0 +1,66 @@
+{
+  "affiliation": "Independent Researcher",
+  "ai_assistance_disclosure": "AI systems assisted code organization, drafting, and adversarial review. Lester Leong retains responsibility for the study design, evidence interpretation, citations, and manuscript approval.",
+  "author": "Lester Leong",
+  "citations": [
+    "cheng-etal-2024-dated-data",
+    "el-lahib-2026-search-date-filter",
+    "zhuang-etal-2023-toolqa"
+  ],
+  "generated_sections": [
+    "abstract",
+    "results",
+    "figure",
+    "diagnostics",
+    "operational_completeness"
+  ],
+  "result_field_policy": "generated_only_from_verified_answer_free_projection",
+  "schema_version": "anachron-v4-candidate-manuscript-template-pre-freeze-v1",
+  "sentence_forms": {
+    "negative": "Across the complete finite primary panel, the paired TCLR difference was negative: enforced traces had a higher observed TCLR than unrestricted traces.",
+    "operational_completeness": "All required compatibility and primary trajectories were complete and replay-valid; the descriptive result is reported without turning repeated traces into independent observations.",
+    "positive": "Across the complete finite primary panel, the paired TCLR difference was positive: enforced traces had a lower observed TCLR than unrestricted traces.",
+    "zero": "Across the complete finite primary panel, the paired TCLR difference was zero: observed TCLR was the same in enforced and unrestricted traces."
+  },
+  "sections": [
+    {
+      "heading": "1. Question and measurement",
+      "paragraphs": [
+        "When an agent is asked to reason as of an earlier date, the tool result it receives should not contain material published later. This note measures that narrow observable event in a controlled synthetic retrieval setting. It does not grade whether the terminal answer is useful or correct.",
+        "Tool-Call Leakage Rate, or TCLR, is the share of scored first-tool interactions whose returned record was published after the case cutoff. Query wording, restatement markers, and entity-validity markers are reported as separate diagnostics. They are not silently added into TCLR.",
+        "The first tool-call schema requires a nonempty query and permits an optional date only when it exactly repeats the case cutoff. The date is checked for interface compatibility and never changes retrieval or scoring."
+      ]
+    },
+    {
+      "heading": "2. Finite-panel design",
+      "paragraphs": [
+        "The primary panel contains eight fictional synthetic cases: finance and general future-information cases, finance and general current-anchor cases, original and later restatement cases, and not-yet-listed and delisted survivorship cases. Every record, cutoff, and eligibility relation is specified in the frozen case registry and reviewed in a source audit before execution.",
+        "Each case is evaluated in unrestricted and enforced retrieval modes for two pinned local models with two repeated traces per pairing. The 64 main trajectories are descriptive trace accounting, not 64 independent draws. Before them, two excluded compatibility traces exercise the same production tool schema; the main panel starts only if both compatibility traces are complete and valid.",
+        "The paired difference is unrestricted TCLR minus enforced TCLR. Positive, zero, and negative directions are all reportable for a complete replay-valid study."
+      ]
+    },
+    {
+      "heading": "3. Generated primary results",
+      "paragraphs": [
+        "This section is generated only from the verified answer-free projection. It reports model-specific and pooled TCLR with exact finite denominators, then presents the paired direction without significance tests or model-ranking language."
+      ]
+    },
+    {
+      "heading": "4. Design history and limits",
+      "paragraphs": [
+        "An earlier v3 attempt ended with a tool-schema compatibility failure. That failure informed the prospective optional-date interface rule in this protocol, but v3 contributes zero cases, traces, raw outputs, scores, rates, or derived results to this study. The v4 panel is new and outcome-unseen at protocol freeze.",
+        "The controlled finite panel does not establish prevalence in live retrieval systems, behavior for other models, answer correctness, causal model mechanisms, external no-retry behavior, or independent evidence authenticity. TCLR is an operational trace metric, not a general quality score.",
+        "Self-custody evidence supports internal consistency and byte replay; it detects missing, partial, malformed, or inconsistent artifacts, including re-signed artifacts without corresponding authority. It provides no independent raw-response provenance and cannot detect a coherent rewrite of every locally held artifact."
+      ]
+    },
+    {
+      "heading": "5. Related work and reproducibility",
+      "paragraphs": [
+        "Prior work on dated knowledge, date-filtered retrieval, and tool use provides context for this narrow trace-level measurement [[cite:cheng-etal-2024-dated-data]] [[cite:el-lahib-2026-search-date-filter]] [[cite:zhuang-etal-2023-toolqa]]. The paper reports only the finite controlled observation defined by its frozen v4 protocol and answer-free projection.",
+        "Reproducibility means deterministic reconstruction from the admitted evidence boundary. It does not establish external authenticity, and the source archive excludes raw traces, terminal answers, authorization records, and review material."
+      ]
+    }
+  ],
+  "title": "Measuring Point-in-Time Leakage in Agent Tool Traces: A Controlled Finite-Panel Study",
+  "v3_included_count": 0
+}

@@ -1,0 +1,110 @@
+{
+  "authority_block": "### Authority binding\n\nThis document is governed by the v4 authority-binding contract. Before any compatibility chat, the compatibility plan, full plan, and conditional GO must bind the exact frozen acceptance-matrix hash, authority-contract hash, external source-manifest hash, tag-blob comparison hash, completed eight-card audit hash, and pre-GO read-only runtime-identity hash. Audit A and identity I each bind M/X and the identical v4 annotated tag object and peeled commit; A also binds the registry and every case-card tagged blob OID and SHA-256. The offline validator checks only local bytes and has no network, model, runner, paper-builder, review, release, or outreach action. PDF QA dependencies are optional outside the isolated v4-paper CI job.",
+  "documents": [
+    "research/v4_measurement/PROTOCOL.md",
+    "research/v4_measurement/ACCEPTANCE_MATRIX.md",
+    "research/v4_measurement/README.md",
+    "research/v4_measurement/CLAIM_EVIDENCE_MAP.md",
+    "paper/v4_measurement/CANDIDATE_ACCEPTANCE_MATRIX.md"
+  ],
+  "kind": "anachron-v4-authority-binding-contract",
+  "protocol_matrix": {
+    "path": "research/v4_measurement/ACCEPTANCE_MATRIX.md",
+    "sha256": "328c3b0dcd93c0df237de42afaa68316ae403ef62f1e2d23ac46d7781e26f7fb"
+  },
+  "required_actual_go": {
+    "candidate_receipt": {
+      "field": "actual_go_sha256",
+      "requires_exact_binding": true
+    },
+    "comparison_projection_sha256": {
+      "required": true,
+      "type": "sha256"
+    },
+    "runtime_identity_sha256": {
+      "required": true,
+      "type": "sha256"
+    },
+    "source_audit_sha256": {
+      "required": true,
+      "type": "sha256"
+    },
+    "source_manifest_sha256": {
+      "required": true,
+      "type": "sha256"
+    }
+  },
+  "schema_version": 1,
+  "source_manifest": {
+    "governed_paths": [
+      ".github/workflows/tests.yml",
+      "anachron/data/v4_registry.py",
+      "anachron/v4_candidate_common.py",
+      "anachron/v4_candidate_release_common.py",
+      "anachron/v4_comparison.py",
+      "anachron/v4_contract.py",
+      "anachron/v4_measurement.py",
+      "anachron/v4_paths.py",
+      "paper/v4_measurement/CANDIDATE_ACCEPTANCE_MATRIX.md",
+      "paper/v4_measurement/CANDIDATE_CLAIM_EVIDENCE_MAP.md",
+      "paper/v4_measurement/CANDIDATE_SUBMISSION_METADATA.md",
+      "paper/v4_measurement/README.md",
+      "paper/v4_measurement/archive_allowlist.json",
+      "paper/v4_measurement/author_approval.template.json",
+      "paper/v4_measurement/candidate_contract.json",
+      "paper/v4_measurement/candidate_manuscript_template.json",
+      "paper/v4_measurement/candidate_references.bib",
+      "paper/v4_measurement/outreach.template.md",
+      "paper/v4_measurement/reviews/review.template.json",
+      "research/v4_measurement/ACCEPTANCE_MATRIX.md",
+      "research/v4_measurement/CLAIM_EVIDENCE_MAP.md",
+      "research/v4_measurement/PROTOCOL.md",
+      "research/v4_measurement/README.md",
+      "research/v4_measurement/authority_binding_contract.json",
+      "research/v4_measurement/case_registry.json",
+      "research/v4_measurement/cases/fin-aster-2020-06-future.json",
+      "research/v4_measurement/cases/fin-bramble-2023-03-current.json",
+      "research/v4_measurement/cases/fin-drift-2022-04-restatement-original.json",
+      "research/v4_measurement/cases/fin-fable-2012-06-not-listed.json",
+      "research/v4_measurement/cases/fin-granite-2026-01-delisted.json",
+      "research/v4_measurement/cases/gen-archipelago-2021-04-future.json",
+      "research/v4_measurement/cases/gen-civic-2024-02-current.json",
+      "research/v4_measurement/cases/gen-estuary-2025-01-restatement-later.json",
+      "research/v4_measurement/compatibility_case.json",
+      "research/v4_measurement/compatibility_plan.template.json",
+      "research/v4_measurement/conditional_go.template.json",
+      "research/v4_measurement/full_plan.template.json",
+      "research/v4_measurement/source_audit.template.json",
+      "tests/test_v4_candidate_outreach.py",
+      "tests/test_v4_candidate_paper.py",
+      "tests/test_v4_candidate_projection.py",
+      "tests/test_v4_candidate_review_release.py",
+      "tests/test_v4_ci_workflow.py",
+      "tests/test_v4_contract.py",
+      "tests/test_v4_materialization.py",
+      "tests/test_v4_operational.py",
+      "tests/test_v4_source_manifest.py",
+      "tools/analyze_v4_measurement.py",
+      "tools/build_v4_measurement_candidate_paper.py",
+      "tools/build_v4_source_audit_ui.py",
+      "tools/build_v4_source_manifest.py",
+      "tools/capture_v4_runtime_identity.py",
+      "tools/finalize_v4_source_audit.py",
+      "tools/materialize_v4_inputs.py",
+      "tools/project_v4_measurement_candidate.py",
+      "tools/release_v4_measurement_candidate.py",
+      "tools/render_v4_contract_docs.py",
+      "tools/render_v4_measurement_unsent_outreach.py",
+      "tools/run_v4_recovery.py",
+      "tools/validate_v4_contract.py",
+      "tools/verify_v4_measurement_candidate_reviews.py"
+    ],
+    "schema_version": "anachron-v4-source-manifest-v1"
+  },
+  "templates": {
+    "candidate_contract": "paper/v4_measurement/candidate_contract.json",
+    "compatibility_plan": "research/v4_measurement/compatibility_plan.template.json",
+    "conditional_go": "research/v4_measurement/conditional_go.template.json",
+    "full_plan": "research/v4_measurement/full_plan.template.json"
+  }
+}

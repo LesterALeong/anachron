@@ -1,0 +1,9 @@
+{
+  "schema_version": "anachron-v4-source-archive-allowlist-v1",
+  "source_archive_allowlist": [
+    "README.md",
+    "figures/primary_tclr.tex",
+    "main.tex",
+    "references.bib"
+  ]
+}

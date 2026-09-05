@@ -1,0 +1,36 @@
+{
+  "acceptance_matrix_sha256": "328c3b0dcd93c0df237de42afaa68316ae403ef62f1e2d23ac46d7781e26f7fb",
+  "authority_binding_contract_sha256": "403e0686f3d61e6b4313eb66268809aa4666888747714d3b1f4286ecac9bc329",
+  "chat_requests_per_trace": 2,
+  "comparison_projection_sha256": "REPLACE_AFTER_PROTOCOL_FREEZE",
+  "excluded_from_metrics": true,
+  "generation": {
+    "num_ctx": 8192,
+    "num_predict": 512,
+    "seed": 0,
+    "temperature": 0,
+    "think": false
+  },
+  "kind": "anachron-v4-production-schema-compatibility-template",
+  "models": "REPLACE_WITH_READ_ONLY_RUNTIME_IDENTITY_AND_APPROVED_DIGESTS",
+  "no_retry": true,
+  "plan_id": "anachron-v4-compatibility-2026-09-04",
+  "production_schema": {
+    "date": "optional_exact_case_as_of_YYYY_MM_DD_string",
+    "query": "required_nonempty_string",
+    "unknown_keys": "reject"
+  },
+  "protocol_version": "v4-measurement-protocol-v1",
+  "release": {
+    "commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
+    "tag": "v4-measurement-protocol-v1",
+    "tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT"
+  },
+  "sample_ids": [
+    "compat-lantern-2022-08-schema"
+  ],
+  "source_audit_sha256": "REPLACE_AFTER_COMPLETED_SOURCE_AUDIT",
+  "source_manifest_sha256": "REPLACE_AFTER_REVIEWED_TAG_FREEZE",
+  "trace_count": 2,
+  "v3_included_count": 0
+}

@@ -1,0 +1,22 @@
+{
+  "acceptance_matrix_sha256": "328c3b0dcd93c0df237de42afaa68316ae403ef62f1e2d23ac46d7781e26f7fb",
+  "authority_binding_contract_sha256": "403e0686f3d61e6b4313eb66268809aa4666888747714d3b1f4286ecac9bc329",
+  "authorized_at_utc": "REPLACE_WITH_UTC_ISO8601_TIMESTAMP",
+  "authorized_by": "Lester Leong",
+  "comparison_projection_sha256": "REPLACE_AFTER_PROTOCOL_FREEZE",
+  "compatibility_plan_sha256": "b1e81a7e0d6a4d12d5d4d7ea0ce3e2e32c18f69e14204d4eb31975ad529fff19",
+  "decision": "PENDING",
+  "full_plan_sha256": "a2c09bc104e8f721c3a6df153efcb065368d3af7043399ef99fb30abea7d53b2",
+  "kind": "anachron-v4-conditional-measurement-authorization",
+  "model_digests": "REPLACE_WITH_READ_ONLY_RUNTIME_IDENTITY_DIGESTS",
+  "protocol_commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
+  "protocol_tag": "v4-measurement-protocol-v1",
+  "protocol_tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT",
+  "registry_sha256": "REPLACE_AFTER_PROTOCOL_FREEZE",
+  "runtime_identity_sha256": "REPLACE_WITH_READ_ONLY_RUNTIME_IDENTITY",
+  "schema_version": 1,
+  "source_audit_sha256": "REPLACE_AFTER_COMPLETED_SOURCE_AUDIT",
+  "source_manifest_sha256": "REPLACE_AFTER_REVIEWED_TAG_FREEZE",
+  "statement": "I authorize one exact v4 conditional campaign: two excluded compatibility traces may run first, and the 64-trajectory primary panel may run only if both compatibility traces are complete and valid. A failure ends this authorization without resume or retry. This does not authorize outreach, endorsement-code transmission, arXiv upload, or submission.",
+  "v3_included_count": 0
+}

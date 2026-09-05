@@ -181,7 +181,9 @@ def write_sealed_bundle(directory, study):
 
 
 def legacy_v2_fixture():
-    digest = lambda value: "sha256:" + value * 64
+    def digest(value):
+        return "sha256:" + value * 64
+
     document_text = "The post-cutoff answer is POST."
     document = {
         "text": document_text,
@@ -235,17 +237,18 @@ def legacy_v2_fixture():
         },
         "candidates": candidates,
     }
-    source_side = lambda oldid, timestamp, excerpt_sha: {
-        "immutable_url": f"https://example.test/w/index.php?oldid={oldid}",
-        "timestamp": timestamp,
-        "full_content_sha256": digest("d" if oldid == 1 else "e"),
-        "anchor_sha256": digest("f" if oldid == 1 else "0"),
-        "anchor_start_offset": 0,
-        "anchor_end_offset": 1,
-        "excerpt_sha256": excerpt_sha,
-        "excerpt_start_offset": 0,
-        "excerpt_end_offset": 1,
-    }
+    def source_side(oldid, timestamp, excerpt_sha):
+        return {
+            "immutable_url": f"https://example.test/w/index.php?oldid={oldid}",
+            "timestamp": timestamp,
+            "full_content_sha256": digest("d" if oldid == 1 else "e"),
+            "anchor_sha256": digest("f" if oldid == 1 else "0"),
+            "anchor_start_offset": 0,
+            "anchor_end_offset": 1,
+            "excerpt_sha256": excerpt_sha,
+            "excerpt_start_offset": 0,
+            "excerpt_end_offset": 1,
+        }
     items = {
         "schema_version": "date-shift-audited-items-v2",
         "frame_sha256": canonical_sha256(frame),

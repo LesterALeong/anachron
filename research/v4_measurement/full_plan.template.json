@@ -1,0 +1,47 @@
+{
+  "acceptance_matrix_sha256": "328c3b0dcd93c0df237de42afaa68316ae403ef62f1e2d23ac46d7781e26f7fb",
+  "authority_binding_contract_sha256": "403e0686f3d61e6b4313eb66268809aa4666888747714d3b1f4286ecac9bc329",
+  "comparison_projection_sha256": "REPLACE_AFTER_PROTOCOL_FREEZE",
+  "compatibility": {
+    "chat_requests": 4,
+    "excludes_from_metrics": true,
+    "plan_sha256": "b1e81a7e0d6a4d12d5d4d7ea0ce3e2e32c18f69e14204d4eb31975ad529fff19",
+    "required_valid_traces": 2,
+    "traces_per_model": 1
+  },
+  "endpoint": "http://127.0.0.1:11434",
+  "generation": {
+    "num_ctx": 8192,
+    "num_predict": 512,
+    "seed": 0,
+    "temperature": 0,
+    "think": false
+  },
+  "kind": "anachron-v4-conditional-compatibility-then-primary-template",
+  "main": {
+    "case_count": 8,
+    "chat_requests": 128,
+    "development_trajectories": 0,
+    "modes": [
+      "unrestricted",
+      "enforced"
+    ],
+    "primary_trajectories": 64,
+    "repetitions": 2,
+    "requires_compatibility_pass": true,
+    "total_trajectories": 64
+  },
+  "models": "REPLACE_WITH_READ_ONLY_RUNTIME_IDENTITY_AND_APPROVED_DIGESTS",
+  "no_retry": true,
+  "plan_id": "anachron-v4-conditional-primary-2026-09-04",
+  "protocol_version": "v4-measurement-protocol-v1",
+  "registry_sha256": "REPLACE_AFTER_PROTOCOL_FREEZE",
+  "release": {
+    "commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
+    "tag": "v4-measurement-protocol-v1",
+    "tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT"
+  },
+  "source_audit_sha256": "REPLACE_AFTER_COMPLETED_SOURCE_AUDIT",
+  "source_manifest_sha256": "REPLACE_AFTER_REVIEWED_TAG_FREEZE",
+  "v3_included_count": 0
+}
