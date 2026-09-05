@@ -67,11 +67,11 @@ class V4CandidatePaperTests(unittest.TestCase):
         v3_tag_object = self._git(root, "rev-parse", "refs/tags/v3-test^{tag}")
         self._git(root, "remote", "add", "origin", str(origin))
         self._git(root, "push", "origin", "master", "refs/tags/v3-test")
-        self._git(root, "checkout", "-b", "protocol/v4-recovery-v1")
+        self._git(root, "checkout", "-b", "protocol/v4-recovery-v2")
         self._git(root, "commit", "--allow-empty", "-m", "v4 source")
-        self._git(root, "tag", "-a", "v4-measurement-protocol-v2", "-m", "v4")
-        self._git(root, "push", "origin", "protocol/v4-recovery-v1", "refs/tags/v4-measurement-protocol-v2")
-        self._git(root, "checkout", "--detach", "v4-measurement-protocol-v2")
+        self._git(root, "tag", "-a", "v4-measurement-protocol-v3", "-m", "v4")
+        self._git(root, "push", "origin", "protocol/v4-recovery-v2", "refs/tags/v4-measurement-protocol-v3")
+        self._git(root, "checkout", "--detach", "v4-measurement-protocol-v3")
         return temporary, root, origin, {"commit": v3_commit, "tag": "v3-test", "tag_object": v3_tag_object}
 
     @staticmethod
@@ -246,7 +246,7 @@ class V4CandidatePaperTests(unittest.TestCase):
             projection.write_bytes(builder.canonical_json_bytes(envelope))
             output = root.parent / "candidate"
             result = builder.build_candidate(root, manifest, projection, output, TECTONIC, expected_origin=str(origin), expected_v3=expected_v3)
-            self.assertEqual(result["protocol_tag"], "v4-measurement-protocol-v2")
+            self.assertEqual(result["protocol_tag"], "v4-measurement-protocol-v3")
             self.assertEqual({item.name for item in output.iterdir()}, set(builder.CANDIDATE_COMPLETION))
             self.assertEqual((output / "projection.json").read_bytes(), projection.read_bytes())
             receipt = json.loads((output / "candidate_receipt.json").read_text(encoding="utf-8"))

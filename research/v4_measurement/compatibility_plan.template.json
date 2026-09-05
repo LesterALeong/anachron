@@ -1,6 +1,6 @@
 {
-  "acceptance_matrix_sha256": "328c3b0dcd93c0df237de42afaa68316ae403ef62f1e2d23ac46d7781e26f7fb",
-  "authority_binding_contract_sha256": "403e0686f3d61e6b4313eb66268809aa4666888747714d3b1f4286ecac9bc329",
+  "acceptance_matrix_sha256": "0bc2848ceee2470b70d2cd18c32dff8c9deee0eab1c5e3b0d224df456db02f7d",
+  "authority_binding_contract_sha256": "04fa344ae20679010164d3f7b019911e16eff10dc24d4756e5288be0cf94f97c",
   "chat_requests_per_trace": 2,
   "comparison_projection_sha256": "REPLACE_AFTER_PROTOCOL_FREEZE",
   "excluded_from_metrics": true,
@@ -20,10 +20,10 @@
     "query": "required_nonempty_string",
     "unknown_keys": "reject"
   },
-  "protocol_version": "v4-measurement-protocol-v2",
+  "protocol_version": "v4-measurement-protocol-v3",
   "release": {
     "commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
-    "tag": "v4-measurement-protocol-v2",
+    "tag": "v4-measurement-protocol-v3",
     "tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT"
   },
   "sample_ids": [

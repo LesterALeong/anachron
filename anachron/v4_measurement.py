@@ -16,6 +16,7 @@ from urllib.request import Request, urlopen
 
 from anachron.data.v4_registry import (
     REGISTRY_PATH,
+    V4RegistryError,
     canonical_json_bytes,
     eligible_records,
     load_compatibility_case,
@@ -50,7 +51,7 @@ _ISO = re.compile(
 _TOOL = "anachron_search"
 _MODES = ("unrestricted", "enforced")
 _SOURCE_MANIFEST_SCHEMA = "anachron-v4-source-manifest-v1"
-_RUNTIME_IDENTITY_SCHEMA = "anachron-v4-runtime-identity-v3"
+_RUNTIME_IDENTITY_SCHEMA = "anachron-v4-runtime-identity-v4"
 _MAX_RESPONSE_BYTES = 1_048_576
 _MAX_CAMPAIGN_RESPONSE_BYTES = 8_388_608
 _RESPONSE_PREFIX_BYTES = 4_096
@@ -246,6 +247,23 @@ def _load(path: Path, label: str) -> tuple[dict[str, Any], bytes]:
     except OSError as error:
         raise V4MeasurementError(f"{label} cannot be read") from error
     return _obj(raw, label), raw
+
+
+def _load_wire_json(path: Path, label: str) -> tuple[dict[str, Any], bytes]:
+    """Load one bounded native HTTP response without changing its bytes."""
+
+    candidate = _admit_regular_file(path, label)
+    try:
+        with candidate.open("rb") as stream:
+            raw = stream.read(_MAX_RESPONSE_BYTES + 1)
+    except OSError as error:
+        raise V4MeasurementError(f"{label} cannot be read") from error
+    if len(raw) > _MAX_RESPONSE_BYTES:
+        raise V4MeasurementError(f"{label} exceeds response byte limit")
+    try:
+        return _obj(raw, label, canonical=False), raw
+    except V4RegistryError as error:
+        raise V4MeasurementError(str(error)) from error
 
 
 def _repo(root: Path, path: str, label: str) -> bytes:
@@ -576,7 +594,7 @@ def _source_manifest(raw: bytes) -> tuple[dict[str, str], dict[str, dict[str, st
             r"[0-9a-f]{40}", _str(release[key], f"source manifest release.{key}")
         ):
             raise V4MeasurementError("source manifest release differs")
-    if release["tag"] != "v4-measurement-protocol-v2" or not _str(
+    if release["tag"] != "v4-measurement-protocol-v3" or not _str(
         release["v3_tag"], "source manifest v3 tag"
     ):
         raise V4MeasurementError("source manifest release differs")
@@ -793,13 +811,15 @@ def build_source_audit_packet(
 
 
 def _validate_identity(
-    version: object, tags: object, models: list[dict[str, Any]]
-) -> None:
+    version: object,
+    tags: object,
+    expected_models: list[dict[str, str]] | None = None,
+) -> list[dict[str, str]]:
     version = _map(version, {"version"}, "Ollama version")
     if version["version"] != "0.33.2":
         raise V4MeasurementError("Ollama version differs")
     tags = _map(tags, {"models"}, "Ollama tags")
-    found = {}
+    found = []
     for value in _type(tags["models"], list, "Ollama models"):
         value = _map(
             value,
@@ -814,8 +834,9 @@ def _validate_identity(
             },
             "Ollama model",
         )
-        _str(value["name"], "Ollama name")
-        _str(value["model"], "Ollama model name")
+        name = _str(value["name"], "Ollama name")
+        if _str(value["model"], "Ollama model name") != name:
+            raise V4MeasurementError("Ollama model name differs")
         _utc(value["modified_at"], "Ollama modified", z=False)
         if _type(value["size"], int, "Ollama size") < 0:
             raise V4MeasurementError("Ollama size differs")
@@ -849,13 +870,16 @@ def _validate_identity(
             *_type(value["capabilities"], list, "Ollama capabilities"),
         ]:
             _str(text, "Ollama list")
-        found[value["name"]] = _str(value["digest"], "Ollama digest").removeprefix(
-            "sha256:"
-        )
-        if _HEX.fullmatch(found[value["name"]]) is None:
+        digest = _str(value["digest"], "Ollama digest").removeprefix("sha256:")
+        if _HEX.fullmatch(digest) is None:
             raise V4MeasurementError("Ollama digest differs")
-    if found != {model["name"]: model["digest"] for model in models}:
+        found.append({"digest": digest, "name": name})
+    models = _models(sorted(found, key=lambda item: item["name"]), "Ollama models")
+    if expected_models is not None and models != _models(
+        expected_models, "expected Ollama models"
+    ):
         raise V4MeasurementError("Ollama models differ")
+    return models
 
 
 def capture_runtime_identity(
@@ -885,20 +909,13 @@ def capture_runtime_identity(
         )
     except V4PathError as error:
         raise V4MeasurementError(str(error)) from error
-    version, version_raw = _load(version_response, "version response")
-    tags, tags_raw = _load(tags_response, "tags response")
+    version, version_raw = _load_wire_json(version_response, "version response")
+    tags, tags_raw = _load_wire_json(tags_response, "tags response")
     source_manifest_raw = source_manifest.read_bytes()
     comparison_raw = comparison.read_bytes()
     release, _ = _source_manifest(source_manifest_raw)
     _comparison(comparison_raw, release)
-    models = sorted(
-        [
-            {"name": item["name"], "digest": item["digest"].removeprefix("sha256:")}
-            for item in tags["models"]
-        ],
-        key=lambda item: item["name"],
-    )
-    _validate_identity(version, tags, models)
+    models = _validate_identity(version, tags)
     identity = {
         "capture_phase": "pre_go_read_only",
         "comparison_projection_sha256": sha256_bytes(comparison_raw),
@@ -908,8 +925,10 @@ def capture_runtime_identity(
         "protocol_tag_object": release["tag_object"],
         "schema_version": _RUNTIME_IDENTITY_SCHEMA,
         "source_manifest_sha256": sha256_bytes(source_manifest_raw),
+        "tags_canonical_sha256": sha256_bytes(canonical_json_bytes(tags)),
         "tags_response_sha256": sha256_bytes(tags_raw),
         "version": version["version"],
+        "version_canonical_sha256": sha256_bytes(canonical_json_bytes(version)),
         "version_response_sha256": sha256_bytes(version_raw),
     }
     with output.open("xb") as stream:
@@ -936,8 +955,10 @@ def _identity(
             "protocol_tag_object",
             "schema_version",
             "source_manifest_sha256",
+            "tags_canonical_sha256",
             "tags_response_sha256",
             "version",
+            "version_canonical_sha256",
             "version_response_sha256",
         },
         "runtime identity",
@@ -953,12 +974,14 @@ def _identity(
     for field in (
         "comparison_projection_sha256",
         "source_manifest_sha256",
+        "tags_canonical_sha256",
         "tags_response_sha256",
+        "version_canonical_sha256",
         "version_response_sha256",
     ):
         _sha(value[field], f"runtime identity.{field}")
     if (
-        value["protocol_tag"] != "v4-measurement-protocol-v2"
+        value["protocol_tag"] != "v4-measurement-protocol-v3"
         or not re.fullmatch(r"[0-9a-f]{40}", value["protocol_commit"])
         or not re.fullmatch(r"[0-9a-f]{40}", value["protocol_tag_object"])
     ):
@@ -1024,7 +1047,7 @@ def _compatibility_plan(
             )
         )
         or value["kind"] != "anachron-v4-production-schema-compatibility-template"
-        or value["protocol_version"] != "v4-measurement-protocol-v2"
+        or value["protocol_version"] != "v4-measurement-protocol-v3"
         or value["no_retry"] is not True
         or value["excluded_from_metrics"] is not True
         or value["chat_requests_per_trace"] != 2
@@ -1119,7 +1142,7 @@ def _plan(
     ):
         raise V4MeasurementError("full plan differs")
     _str(value["plan_id"], "full plan.plan_id")
-    if value["protocol_version"] != "v4-measurement-protocol-v2":
+    if value["protocol_version"] != "v4-measurement-protocol-v3":
         raise V4MeasurementError("full plan protocol version differs")
     _models(value["models"], "full plan.models")
     release = _map(
@@ -1129,7 +1152,7 @@ def _plan(
         not re.fullmatch(
             r"[0-9a-f]{40}", _str(release["commit"], "full plan release commit")
         )
-        or release["tag"] != "v4-measurement-protocol-v2"
+        or release["tag"] != "v4-measurement-protocol-v3"
         or not re.fullmatch(
             r"[0-9a-f]{40}", _str(release["tag_object"], "full plan release tag object")
         )
@@ -1810,7 +1833,9 @@ def _identity_checkpoint(
         tr = transport(endpoint, "/api/tags", None, 30)
         tp = writer.bytes(f"raw/identity.{name}.tags.json", tr)
         response_written = True
-        _validate_identity(_obj(vr, "version", False), _obj(tr, "tags", False), models)
+        version = _obj(vr, "version", False)
+        tags = _obj(tr, "tags", False)
+        _validate_identity(version, tags, expected_models=models)
     except _ResponseLimitError as error:
         if error.prefix:
             writer.bytes(
@@ -1844,12 +1869,16 @@ def _identity_checkpoint(
             raw_response_state=("complete" if response_written else "absent"),
         ) from error
     result = {
-        "version_sha256": sha256_bytes(vp.read_bytes()),
+        "tags_canonical_sha256": sha256_bytes(canonical_json_bytes(tags)),
         "tags_sha256": sha256_bytes(tp.read_bytes()),
+        "version_canonical_sha256": sha256_bytes(canonical_json_bytes(version)),
+        "version_sha256": sha256_bytes(vp.read_bytes()),
     }
     if result != {
+        "tags_canonical_sha256": identity["tags_canonical_sha256"],
         "version_sha256": identity["version_response_sha256"],
         "tags_sha256": identity["tags_response_sha256"],
+        "version_canonical_sha256": identity["version_canonical_sha256"],
     }:
         raise _TraceFailure(
             phase=phase,
@@ -2802,18 +2831,20 @@ def _replay_identity_checkpoint(
 ) -> None:
     version = (evidence / "raw" / f"identity.{name}.version.json").read_bytes()
     tags = (evidence / "raw" / f"identity.{name}.tags.json").read_bytes()
-    _validate_identity(
-        _obj(version, "checkpoint version", False),
-        _obj(tags, "checkpoint tags", False),
-        models,
-    )
+    version_value = _obj(version, "checkpoint version", False)
+    tags_value = _obj(tags, "checkpoint tags", False)
+    _validate_identity(version_value, tags_value, expected_models=models)
     expected = {
-        "version_sha256": sha256_bytes(version),
+        "tags_canonical_sha256": sha256_bytes(canonical_json_bytes(tags_value)),
         "tags_sha256": sha256_bytes(tags),
+        "version_canonical_sha256": sha256_bytes(canonical_json_bytes(version_value)),
+        "version_sha256": sha256_bytes(version),
     }
     if recorded != expected or expected != {
+        "tags_canonical_sha256": identity["tags_canonical_sha256"],
         "version_sha256": identity["version_response_sha256"],
         "tags_sha256": identity["tags_response_sha256"],
+        "version_canonical_sha256": identity["version_canonical_sha256"],
     }:
         raise V4MeasurementError("identity checkpoint replay differs")
 
@@ -2918,7 +2949,12 @@ def analyze_compatibility(
         identity,
         _map(
             runtime["identity_before"],
-            {"tags_sha256", "version_sha256"},
+            {
+                "tags_canonical_sha256",
+                "tags_sha256",
+                "version_canonical_sha256",
+                "version_sha256",
+            },
             "compat identity",
         ),
     )
@@ -2996,7 +3032,12 @@ def analyze_measurement(
         identity,
         _map(
             runtime["identity_between"],
-            {"tags_sha256", "version_sha256"},
+            {
+                "tags_canonical_sha256",
+                "tags_sha256",
+                "version_canonical_sha256",
+                "version_sha256",
+            },
             "between identity",
         ),
     )
@@ -3007,7 +3048,12 @@ def analyze_measurement(
         identity,
         _map(
             runtime["identity_after"],
-            {"tags_sha256", "version_sha256"},
+            {
+                "tags_canonical_sha256",
+                "tags_sha256",
+                "version_canonical_sha256",
+                "version_sha256",
+            },
             "after identity",
         ),
     )

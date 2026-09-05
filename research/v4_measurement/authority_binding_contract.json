@@ -1,5 +1,5 @@
 {
-  "authority_block": "### Authority binding\n\nThis document is governed by the v4 authority-binding contract. Before any compatibility chat, the compatibility plan, full plan, and conditional GO must bind the exact frozen acceptance-matrix hash, authority-contract hash, external source-manifest hash, tag-blob comparison hash, completed eight-card audit hash, and pre-GO read-only runtime-identity hash. Audit A and identity I each bind M/X and the identical v4 annotated tag object and peeled commit; A also binds the registry and every case-card tagged blob OID and SHA-256. The offline validator checks only local bytes and has no network, model, runner, paper-builder, review, release, or outreach action. PDF QA dependencies are optional outside the isolated v4-paper CI job.",
+  "authority_block": "### Authority binding\n\nThis document is governed by the v4 authority-binding contract. Before any compatibility chat, the compatibility plan, full plan, and conditional GO must bind the exact frozen acceptance-matrix hash, authority-contract hash, external source-manifest hash, tag-blob comparison hash, completed eight-card audit hash, and pre-GO read-only runtime-identity hash. Audit A and identity I each bind M/X and the identical v4 annotated tag object and peeled commit; A also binds the registry and every case-card tagged blob OID and SHA-256. I binds SHA-256 digests of the exact supplied `/api/version` and `/api/tags` HTTP response-body bytes, without newline insertion, whitespace change, key sorting, decoding/re-encoding, or other transformation, plus `version_canonical_sha256` and `tags_canonical_sha256` derived with canonical JSON serialization from strictly parsed versions of those same bodies. Raw response-body equality remains decisive: an equivalent reserialization fails identity even when its derived canonical digest matches. The offline validator checks only local bytes and has no network, model, runner, paper-builder, review, release, or outreach action. PDF QA dependencies are optional outside the isolated v4-paper CI job.",
   "documents": [
     "research/v4_measurement/PROTOCOL.md",
     "research/v4_measurement/ACCEPTANCE_MATRIX.md",
@@ -10,7 +10,7 @@
   "kind": "anachron-v4-authority-binding-contract",
   "protocol_matrix": {
     "path": "research/v4_measurement/ACCEPTANCE_MATRIX.md",
-    "sha256": "328c3b0dcd93c0df237de42afaa68316ae403ef62f1e2d23ac46d7781e26f7fb"
+    "sha256": "0bc2848ceee2470b70d2cd18c32dff8c9deee0eab1c5e3b0d224df456db02f7d"
   },
   "required_actual_go": {
     "candidate_receipt": {

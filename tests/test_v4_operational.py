@@ -40,7 +40,7 @@ from tools import (
     finalize_v4_source_audit,
     run_v4_recovery,
 )
-from tools.materialize_v4_inputs import materialize
+from tools.materialize_v4_inputs import V4MaterializationError, materialize
 
 _OFFICIAL_ORIGIN = "https://github.com/LesterALeong/anachron.git"
 
@@ -52,6 +52,10 @@ def _sha(path: Path) -> str:
 def _write(path: Path, value: object) -> Path:
     path.write_bytes(canonical_json_bytes(value))
     return path
+
+
+def _native_json(value: object) -> bytes:
+    return json.dumps(value, allow_nan=False, separators=(",", ":")).encode("utf-8")
 
 
 def _reseal_failure(evidence: Path) -> None:
@@ -106,11 +110,11 @@ class _DisposableAuthorityFixture:
         self._git(self.root, "remote", "add", "origin", _OFFICIAL_ORIGIN)
         self._git(self.root, "config", f"url.{self.origin.as_posix()}.insteadOf", _OFFICIAL_ORIGIN)
         self._git(self.root, "push", "origin", "master", "refs/tags/v3-measurement-protocol-v1")
-        self._git(self.root, "checkout", "-b", "protocol/v4-recovery-v1")
+        self._git(self.root, "checkout", "-b", "protocol/v4-recovery-v2")
         self._git(self.root, "commit", "--allow-empty", "-m", "v4 source")
-        self._git(self.root, "tag", "-a", "v4-measurement-protocol-v2", "-m", "v4")
-        self._git(self.root, "push", "origin", "protocol/v4-recovery-v1", "refs/tags/v4-measurement-protocol-v2")
-        self._git(self.root, "checkout", "--detach", "v4-measurement-protocol-v2")
+        self._git(self.root, "tag", "-a", "v4-measurement-protocol-v3", "-m", "v4")
+        self._git(self.root, "push", "origin", "protocol/v4-recovery-v2", "refs/tags/v4-measurement-protocol-v3")
+        self._git(self.root, "checkout", "--detach", "v4-measurement-protocol-v3")
         self.external.mkdir()
         self.packet = self._materialize_packet()
 
@@ -143,8 +147,10 @@ class _DisposableAuthorityFixture:
         reviewed_path = _write(self.external / "reviewed-audit.json", reviewed)
         audit = self.external / "A.json"
         finalize_source_audit(self.root, reviewed_path, source, comparison, audit)
-        version = _write(self.external / "version.json", {"version": "0.33.2"})
-        tags = _write(self.external / "tags.json", self._tags())
+        version = self.external / "version.json"
+        version.write_bytes(_native_json({"version": "0.33.2"}))
+        tags = self.external / "tags.json"
+        tags.write_bytes(_native_json(self._tags()))
         identity = self.external / "I.json"
         capture_runtime_identity(self.root, version, tags, source, comparison, identity)
         packet = self.external / "packet"
@@ -169,7 +175,7 @@ class _DisposableAuthorityFixture:
         result["output"] = destination / "evidence"
         return result
 
-    def transport(self, counter: list[int], *, failure_at: int | None = None, drift: bool = False, identity_failure: str | None = None):
+    def transport(self, counter: list[int], *, failure_at: int | None = None, drift: bool = False, wire_drift: bool = False, identity_failure: str | None = None):
         version = (self.external / "version.json").read_bytes()
         tags = (self.external / "tags.json").read_bytes()
         identity_calls = [0]
@@ -187,6 +193,8 @@ class _DisposableAuthorityFixture:
                     changed = json.loads(tags.decode("utf-8"))
                     changed["models"][0]["digest"] = "d" * 64
                     return canonical_json_bytes(changed)
+                if wire_drift:
+                    return canonical_json_bytes(json.loads(tags.decode("utf-8")))
                 return tags
             counter[0] += 1
             if failure_at == counter[0]:
@@ -234,8 +242,184 @@ class V4OperationalTests(unittest.TestCase):
         self.assertEqual(counter[0], 132)
         self.assertEqual(projection["topology"]["total_chats"], 132)
         self.assertEqual(len(projection["paired_tclr_reductions"]), 32)
+        identity = json.loads(inputs["identity"].read_text(encoding="utf-8"))
+        expected_checkpoint = {
+            "tags_canonical_sha256": identity["tags_canonical_sha256"],
+            "tags_sha256": identity["tags_response_sha256"],
+            "version_canonical_sha256": identity["version_canonical_sha256"],
+            "version_sha256": identity["version_response_sha256"],
+        }
+        compatibility_runtime = json.loads(
+            (inputs["output"] / "compatibility" / "runtime.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        full_runtime = json.loads(
+            (inputs["output"] / "full" / "runtime.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(compatibility_runtime["identity_before"], expected_checkpoint)
+        self.assertEqual(full_runtime["identity_between"], expected_checkpoint)
+        self.assertEqual(full_runtime["identity_after"], expected_checkpoint)
         self.assertEqual(analyze_compatibility(inputs["output"], repository_root=self.fixture.root)["chat_count"], 4)
         self.assertEqual(analyze_measurement(inputs["output"], repository_root=self.fixture.root), projection)
+
+    def test_capture_binds_exact_minified_response_bodies(self) -> None:
+        version = (self.fixture.external / "version.json").read_bytes()
+        tags = (self.fixture.external / "tags.json").read_bytes()
+        identity_raw = (self.fixture.external / "I.json").read_bytes()
+        identity = json.loads(identity_raw.decode("utf-8"))
+        self.assertEqual(version, b'{"version":"0.33.2"}')
+        self.assertFalse(tags.endswith(b"\n"))
+        self.assertNotEqual(tags, canonical_json_bytes(json.loads(tags.decode("utf-8"))))
+        self.assertEqual(identity_raw, canonical_json_bytes(identity))
+        self.assertEqual(identity["schema_version"], "anachron-v4-runtime-identity-v4")
+        self.assertEqual(
+            identity["version_response_sha256"],
+            "6a8e7c4e085644537ba2410c5ff4c6c88a12bfb6c9f9efcf56abea7023a87fc8",
+        )
+        self.assertEqual(identity["version_response_sha256"], hashlib.sha256(version).hexdigest())
+        self.assertEqual(identity["tags_response_sha256"], hashlib.sha256(tags).hexdigest())
+        self.assertEqual(
+            identity["version_canonical_sha256"],
+            hashlib.sha256(canonical_json_bytes(json.loads(version.decode("utf-8")))).hexdigest(),
+        )
+        self.assertEqual(
+            identity["tags_canonical_sha256"],
+            hashlib.sha256(canonical_json_bytes(json.loads(tags.decode("utf-8")))).hexdigest(),
+        )
+        self.assertNotEqual(
+            identity["version_response_sha256"], identity["version_canonical_sha256"]
+        )
+        self.assertNotEqual(
+            identity["tags_response_sha256"], identity["tags_canonical_sha256"]
+        )
+        self.assertEqual(identity["models"], self.fixture._models())
+        self.assertNotIn("version_response", identity)
+        self.assertNotIn("tags_response", identity)
+        self.assertIn("version_canonical_sha256", identity)
+        self.assertIn("tags_canonical_sha256", identity)
+
+    def test_capture_rejects_hostile_native_response_bodies_before_identity_creation(self) -> None:
+        source = self.fixture.external / "M.json"
+        comparison = self.fixture.external / "X.json"
+        valid_version = (self.fixture.external / "version.json").read_bytes()
+        valid_tags = (self.fixture.external / "tags.json").read_bytes()
+        hostile = {
+            "duplicate-key": (b'{"version":"0.33.2","version":"0.33.2"}', valid_tags),
+            "nested-duplicate-key": (
+                valid_version,
+                valid_tags.replace(
+                    b'"format":"gguf"', b'"format":"gguf","format":"gguf"', 1
+                ),
+            ),
+            "unknown-version-field": (b'{"version":"0.33.2","extra":true}', valid_tags),
+            "missing-version-field": (b"{}", valid_tags),
+            "non-object-version": (b"[]", valid_tags),
+            "malformed": (b"{", valid_tags),
+            "invalid-utf8": (b'\xff', valid_tags),
+            "trailing-garbage": (b'{"version":"0.33.2"}x', valid_tags),
+            "nonfinite": (valid_version, valid_tags.replace(b'"size":1', b'"size":NaN', 1)),
+            "infinite": (valid_version, valid_tags.replace(b'"size":1', b'"size":Infinity', 1)),
+            "negative-infinite": (valid_version, valid_tags.replace(b'"size":1', b'"size":-Infinity', 1)),
+            "overflow": (valid_version, valid_tags.replace(b'"size":1', b'"size":1e999', 1)),
+            "unknown-tags-field": (
+                valid_version,
+                valid_tags[:-1] + b',"extra":true}',
+            ),
+            "missing-models-field": (valid_version, b"{}"),
+            "non-object-tags": (valid_version, b"[]"),
+            "bool-as-size": (
+                valid_version,
+                valid_tags.replace(b'"size":1', b'"size":true', 1),
+            ),
+            "model-name-mismatch": (
+                valid_version,
+                valid_tags.replace(b'"model":"model-a"', b'"model":"other"', 1),
+            ),
+            "malformed-digest": (
+                valid_version,
+                valid_tags.replace(b'"digest":"' + b"a" * 64 + b'"', b'"digest":"bad"', 1),
+            ),
+            "duplicate-model": (valid_version, _native_json({"models": [*self.fixture._tags()["models"], self.fixture._tags()["models"][0]]})),
+            "extra-model": (
+                valid_version,
+                _native_json(
+                    {
+                        "models": [
+                            *self.fixture._tags()["models"],
+                            {
+                                **self.fixture._tags()["models"][0],
+                                "digest": "c" * 64,
+                                "model": "model-c",
+                                "name": "model-c",
+                            },
+                        ]
+                    }
+                ),
+            ),
+        }
+        directory = self.fixture.external / "hostile-identity"
+        directory.mkdir()
+        for label, (version_raw, tags_raw) in hostile.items():
+            with self.subTest(label=label):
+                version = directory / f"{label}.version.json"
+                tags = directory / f"{label}.tags.json"
+                output = directory / f"{label}.I.json"
+                version.write_bytes(version_raw)
+                tags.write_bytes(tags_raw)
+                with self.assertRaises(V4MeasurementError):
+                    capture_runtime_identity(
+                        self.fixture.root, version, tags, source, comparison, output
+                    )
+                self.assertFalse(output.exists())
+
+    def test_capture_enforces_native_response_input_bound(self) -> None:
+        directory = self.fixture.external / "oversized-identity"
+        directory.mkdir()
+        version = directory / "version.json"
+        tags = directory / "tags.json"
+        output = directory / "I.json"
+        version.write_bytes(b"x" * (_MAX_RESPONSE_BYTES + 1))
+        tags.write_bytes((self.fixture.external / "tags.json").read_bytes())
+        with self.assertRaises(V4MeasurementError):
+            capture_runtime_identity(
+                self.fixture.root,
+                version,
+                tags,
+                self.fixture.external / "M.json",
+                self.fixture.external / "X.json",
+                output,
+            )
+        self.assertFalse(output.exists())
+
+    def test_successor_rejects_v2_runtime_identity_authority(self) -> None:
+        inputs = self.fixture.inputs("v2-runtime-identity")
+        identity = json.loads(inputs["identity"].read_text(encoding="utf-8"))
+        for field, value in (
+            ("schema_version", "anachron-v4-runtime-identity-v3"),
+            ("protocol_tag", "v4-measurement-protocol-v2"),
+            ("tags_canonical_sha256", None),
+            ("version_canonical_sha256", None),
+        ):
+            with self.subTest(field=field):
+                forged = inputs["identity"].with_name(f"{field}.json")
+                if value is None:
+                    del identity[field]
+                else:
+                    identity[field] = value
+                _write(forged, identity)
+                with self.assertRaises(V4MaterializationError):
+                    materialize(
+                        self.fixture.root,
+                        source_manifest=inputs["manifest"],
+                        comparison=inputs["comparison"],
+                        source_audit=inputs["audit"],
+                        runtime_identity=forged,
+                        output=inputs["output"].with_name(f"{field}-packet"),
+                        expected_v3=self.fixture.expected_v3,
+                    )
+                self.assertFalse(inputs["output"].with_name(f"{field}-packet").exists())
+                identity = json.loads(inputs["identity"].read_text(encoding="utf-8"))
 
     def test_each_of_132_chat_failures_is_fail_closed(self) -> None:
         for failure_at in range(1, 133):
@@ -269,6 +453,20 @@ class V4OperationalTests(unittest.TestCase):
         with self.assertRaises(V4MeasurementError):
             self._run(drift, self.fixture.transport([0], drift=True))
         self.assertTrue((drift["output"] / "failure_receipt.json").exists())
+        wire = self.fixture.inputs("identity-wire-drift")
+        with self.assertRaises(V4MeasurementError):
+            self._run(wire, self.fixture.transport([0], wire_drift=True))
+        receipt = json.loads((wire["output"] / "failure_receipt.json").read_text(encoding="utf-8"))
+        self.assertEqual(receipt["fault_code"], "identity")
+        wire_tags = next((wire["output"] / "compatibility" / "raw").glob("identity.*.tags.json"))
+        identity = json.loads(wire["identity"].read_text(encoding="utf-8"))
+        self.assertNotEqual(hashlib.sha256(wire_tags.read_bytes()).hexdigest(), identity["tags_response_sha256"])
+        self.assertEqual(
+            hashlib.sha256(
+                canonical_json_bytes(json.loads(wire_tags.read_text(encoding="utf-8")))
+            ).hexdigest(),
+            identity["tags_canonical_sha256"],
+        )
         for kind in ("identity", "chat", "final"):
             with self.subTest(kind=kind):
                 inputs = self.fixture.inputs(f"oversized-{kind}")

@@ -1,4 +1,4 @@
-"""Create local v4 runtime identity evidence from supplied non-chat responses."""
+"""Create local v4 runtime identity evidence from supplied non-chat response bodies."""
 
 from __future__ import annotations
 

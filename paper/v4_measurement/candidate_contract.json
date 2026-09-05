@@ -4,7 +4,7 @@
   "archive_allowlist_sha256": "e80580f20b5d7674e8eaf305de4dbfb61a0f0bf9ef677fbd1470eb187431668f",
   "authority_binding_contract": {
     "path": "research/v4_measurement/authority_binding_contract.json",
-    "sha256": "403e0686f3d61e6b4313eb66268809aa4666888747714d3b1f4286ecac9bc329"
+    "sha256": "04fa344ae20679010164d3f7b019911e16eff10dc24d4756e5288be0cf94f97c"
   },
   "authority_graph": {
     "actual_go": {
@@ -33,7 +33,7 @@
   "comparison_projection_sha256": "REPLACE_AFTER_PROTOCOL_FREEZE",
   "compatibility_plan": {
     "path": "research/v4_measurement/compatibility_plan.template.json",
-    "sha256": "c1c8b84d8dae4cccf381af56ca114c223e4c81cb32552fe2ff1a197da4aa4c85"
+    "sha256": "cf780a52a0d983b87b9a511fb328c39d0c2ac0459d261340ed08eb092593c126"
   },
   "completion_sets": {
     "candidate": [
@@ -108,7 +108,7 @@
   },
   "full_plan": {
     "path": "research/v4_measurement/full_plan.template.json",
-    "sha256": "c95b7a8b26b9fc650b03961b64868c87f924ea5a31185b1fdbbed715d1479f5e"
+    "sha256": "bafab570b92a14a862a7c6b10efc5017ef582b7305fab9008b6cd20028990df8"
   },
   "local_release_allowlist": [
     "arxiv_metadata.json",
@@ -128,12 +128,12 @@
   "projection_policy": "generated_only_from_verified_answer_free_projection",
   "protocol_identity": {
     "commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
-    "tag": "v4-measurement-protocol-v2",
+    "tag": "v4-measurement-protocol-v3",
     "tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT"
   },
   "protocol_matrix": {
     "path": "research/v4_measurement/ACCEPTANCE_MATRIX.md",
-    "sha256": "328c3b0dcd93c0df237de42afaa68316ae403ef62f1e2d23ac46d7781e26f7fb"
+    "sha256": "0bc2848ceee2470b70d2cd18c32dff8c9deee0eab1c5e3b0d224df456db02f7d"
   },
   "resource_policy": {
     "candidate_projection_max_bytes": 1048576,
@@ -178,7 +178,7 @@
     "unsent_outreach"
   ],
   "static_artifact_hashes": {
-    "paper/v4_measurement/CANDIDATE_ACCEPTANCE_MATRIX.md": "b3abd12374153b7932eccacd6267c0942991bdcbfa070e06a881131fae649182",
+    "paper/v4_measurement/CANDIDATE_ACCEPTANCE_MATRIX.md": "5d1bd2010011d62881274a8ef606c5c576a0c2c441b668a72e59417bc08ba592",
     "paper/v4_measurement/CANDIDATE_CLAIM_EVIDENCE_MAP.md": "e05dc5d4be299f6a1663edc6b2dd6a1bfe202b4bd9b6168dc812a9ebaca893f0",
     "paper/v4_measurement/CANDIDATE_SUBMISSION_METADATA.md": "d10302555bde791f367d5b83cc8bb9c9504569778b0c481c0d9a97a06514b20c",
     "paper/v4_measurement/README.md": "53575d645e1a8d4277bb99cbd53b7b2b41616496b960dd4f4f5a9bfb64961cf3",

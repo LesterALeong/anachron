@@ -16,7 +16,7 @@ from anachron.v4_paths import (
 
 AUTHORITY_CONTRACT_PATH = "research/v4_measurement/authority_binding_contract.json"
 EXPECTED_AUTHORITY_CONTRACT_SHA256 = (
-    "403e0686f3d61e6b4313eb66268809aa4666888747714d3b1f4286ecac9bc329"
+    "04fa344ae20679010164d3f7b019911e16eff10dc24d4756e5288be0cf94f97c"
 )
 _BEGIN_AUTHORITY_BLOCK = "<!-- BEGIN V4 AUTHORITY BINDING -->"
 _END_AUTHORITY_BLOCK = "<!-- END V4 AUTHORITY BINDING -->"
@@ -30,7 +30,7 @@ _CANONICAL_MATRIX_EQUALITY = (
 )
 _LEGACY_TWO_CARRIER_WORDING = "The full plan and GO must carry the same acceptance-matrix hash before compatibility."
 SOURCE_MANIFEST_PLACEHOLDER = "REPLACE_AFTER_REVIEWED_TAG_FREEZE"
-V4_PROTOCOL_BRANCH = "protocol/v4-recovery-v1"
+V4_PROTOCOL_BRANCH = "protocol/v4-recovery-v2"
 V4_GOVERNED_SOURCE_PATHS = (
     ".github/workflows/tests.yml",
     "anachron/data/v4_registry.py",
@@ -667,7 +667,7 @@ def _validate_candidate_graph(
         raise V4ContractError("candidate contract schema version differs")
     expected_identity = {
         "commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
-        "tag": "v4-measurement-protocol-v2",
+        "tag": "v4-measurement-protocol-v3",
         "tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT",
     }
     if candidate["protocol_identity"] != expected_identity:

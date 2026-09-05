@@ -3,7 +3,7 @@
 <!-- BEGIN V4 AUTHORITY BINDING -->
 ### Authority binding
 
-This document is governed by the v4 authority-binding contract. Before any compatibility chat, the compatibility plan, full plan, and conditional GO must bind the exact frozen acceptance-matrix hash, authority-contract hash, external source-manifest hash, tag-blob comparison hash, completed eight-card audit hash, and pre-GO read-only runtime-identity hash. Audit A and identity I each bind M/X and the identical v4 annotated tag object and peeled commit; A also binds the registry and every case-card tagged blob OID and SHA-256. The offline validator checks only local bytes and has no network, model, runner, paper-builder, review, release, or outreach action. PDF QA dependencies are optional outside the isolated v4-paper CI job.
+This document is governed by the v4 authority-binding contract. Before any compatibility chat, the compatibility plan, full plan, and conditional GO must bind the exact frozen acceptance-matrix hash, authority-contract hash, external source-manifest hash, tag-blob comparison hash, completed eight-card audit hash, and pre-GO read-only runtime-identity hash. Audit A and identity I each bind M/X and the identical v4 annotated tag object and peeled commit; A also binds the registry and every case-card tagged blob OID and SHA-256. I binds SHA-256 digests of the exact supplied `/api/version` and `/api/tags` HTTP response-body bytes, without newline insertion, whitespace change, key sorting, decoding/re-encoding, or other transformation, plus `version_canonical_sha256` and `tags_canonical_sha256` derived with canonical JSON serialization from strictly parsed versions of those same bodies. Raw response-body equality remains decisive: an equivalent reserialization fails identity even when its derived canonical digest matches. The offline validator checks only local bytes and has no network, model, runner, paper-builder, review, release, or outreach action. PDF QA dependencies are optional outside the isolated v4-paper CI job.
 <!-- END V4 AUTHORITY BINDING -->
 
 This directory is an offline, pre-freeze contract for a separate v4 study.
@@ -21,10 +21,17 @@ an endorsement code, upload, or submit from this contract candidate.
 
 The pre-audit `v4-measurement-protocol-v1` tag is ineligible study authority.
 Its Python 3.10 paper lane exceeded the original 30-second Tectonic cold-cache
-timeout while downloading compiler support files. No source audit, runtime
-identity, conditional GO, model call, result, or external action used that tag.
-`v4-measurement-protocol-v2` supersedes it with a bounded 120-second compiler
-allowance; only the v2 annotated tag may anchor the lifecycle below.
+timeout while downloading compiler support files. The later
+`v4-measurement-protocol-v2` tag is also ineligible: its identity-capture
+boundary required canonical JSON while its checkpoints bind native response
+body bytes. Its completed eight-card source audit remains valid only as a
+historical v2 record; no valid runtime identity, conditional GO, model call,
+result, or external action used either ineligible tag.
+`v4-measurement-protocol-v3` supersedes them: it binds the exact native
+`/api/version` and `/api/tags` response-body bytes, plus canonical-serialization
+hashes derived after strict parsing of those same bodies. Raw body equality is
+still decisive, so equivalent reserialization is rejected. Only the v3 annotated
+tag may anchor the lifecycle below.
 
 ## Lifecycle commands
 

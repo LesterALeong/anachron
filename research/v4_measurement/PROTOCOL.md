@@ -3,7 +3,7 @@
 <!-- BEGIN V4 AUTHORITY BINDING -->
 ### Authority binding
 
-This document is governed by the v4 authority-binding contract. Before any compatibility chat, the compatibility plan, full plan, and conditional GO must bind the exact frozen acceptance-matrix hash, authority-contract hash, external source-manifest hash, tag-blob comparison hash, completed eight-card audit hash, and pre-GO read-only runtime-identity hash. Audit A and identity I each bind M/X and the identical v4 annotated tag object and peeled commit; A also binds the registry and every case-card tagged blob OID and SHA-256. The offline validator checks only local bytes and has no network, model, runner, paper-builder, review, release, or outreach action. PDF QA dependencies are optional outside the isolated v4-paper CI job.
+This document is governed by the v4 authority-binding contract. Before any compatibility chat, the compatibility plan, full plan, and conditional GO must bind the exact frozen acceptance-matrix hash, authority-contract hash, external source-manifest hash, tag-blob comparison hash, completed eight-card audit hash, and pre-GO read-only runtime-identity hash. Audit A and identity I each bind M/X and the identical v4 annotated tag object and peeled commit; A also binds the registry and every case-card tagged blob OID and SHA-256. I binds SHA-256 digests of the exact supplied `/api/version` and `/api/tags` HTTP response-body bytes, without newline insertion, whitespace change, key sorting, decoding/re-encoding, or other transformation, plus `version_canonical_sha256` and `tags_canonical_sha256` derived with canonical JSON serialization from strictly parsed versions of those same bodies. Raw response-body equality remains decisive: an equivalent reserialization fails identity even when its derived canonical digest matches. The offline validator checks only local bytes and has no network, model, runner, paper-builder, review, release, or outreach action. PDF QA dependencies are optional outside the isolated v4-paper CI job.
 <!-- END V4 AUTHORITY BINDING -->
 
 V4 is a new finite synthetic study. It does not retry, repair, trim, score, or
@@ -60,8 +60,13 @@ nonempty reason, and its own strict UTC timestamp. The completed audit binds
 the exact external source manifest, tag-blob comparison, annotated v4 tag
 object, peeled commit, registry tagged-blob OID/SHA-256, and every case-card
 tagged-blob OID/SHA-256. The pre-GO, read-only runtime identity binds that same
-manifest, comparison, tag object, peeled commit, exact raw version/tags hashes,
-server `0.33.2`, and the two approved model names/digests. The runner must
+manifest, comparison, tag object, peeled commit, SHA-256 hashes of the exact
+`/api/version` and `/api/tags` response-body bytes, their separate
+`version_canonical_sha256` and `tags_canonical_sha256` values derived with
+canonical JSON serialization after strict parsing, server `0.33.2`, and the
+two approved model names/digests. The identity loader strictly parses those
+same unmodified response bodies. Raw response-body equality remains decisive:
+an equivalent reserialization fails even if its canonical digest matches. The runner must
 reject an incomplete audit or any mismatched binding. The source-audit UI creates
 one external packet containing M, X, the review worksheet, and a receipt from
 the clean detached annotated-tag checkout. Materialization, the runner, and
