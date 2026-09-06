@@ -11,3 +11,4 @@
 | Compatibility | Two opaque, excluded traces gate only transport, identity, bounded capture, manifest, and replay. |
 | V4 exclusion | V4 empirical rows and statistics are absent; `v4_included_count = 0`. |
 | Authority | A later exact hash-bound GO is required before any identity preflight or campaign; it binds the tagged wrapper, runner, analyzer, M/C/F artifacts, plans, and one external root without placing actual artifact hashes in the tag. |
+| Release rehearsal | Before tagging, a clean detached local-Git rehearsal must build and validate a create-only source manifest from the exact production governed-path tuple; after tagging, the real remote tag must repeat that build and validation before runtime identity capture. |

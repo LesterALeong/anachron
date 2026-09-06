@@ -15,10 +15,11 @@
   "kind": "anachron-v5-authority-binding-contract",
   "protocol": {
     "branch": "protocol/v5-successor",
-    "tag": "v5-measurement-protocol-v1"
+    "tag": "v5-measurement-protocol-v2"
   },
   "schema_version": 1,
   "scientific_governed_paths": [
+    ".gitattributes",
     "anachron/data/v5_registry.py",
     "anachron/v5_carry_forward.py",
     "anachron/v5_contract.py",
@@ -52,12 +53,13 @@
     "tests/test_v5_operational.py",
     "tests/test_v5_paths.py",
     "tests/test_v5_source_manifest.py",
+    "tools/.gitattributes",
     "tools/analyze_v5_measurement.py",
     "tools/build_v5_source_manifest.py",
     "tools/finalize_v5_carry_forward.py",
     "tools/materialize_v5_inputs.py",
-    "tools/run_v5_recovery.py",
     "tools/run_v5_conditional_campaign.ps1",
+    "tools/run_v5_recovery.py",
     "tools/validate_v5_contract.py"
   ],
   "v4_exclusion": {

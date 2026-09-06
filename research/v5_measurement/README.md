@@ -8,6 +8,9 @@ python -m tools.materialize_v5_inputs --repository-root <repo> --carry-forward <
 python -m tools.analyze_v5_measurement <evidence>
 ```
 
+`v5-measurement-protocol-v1` was unexecuted and never produced a valid source manifest, so it is manifest-ineligible. `v5-measurement-protocol-v2` is a technical-only prospective repair; it has not run an identity preflight or a model and does not authorize either action.
+The v2 release gate rehearses the unchanged source-manifest builder against the exact production governed closure in a clean detached local-Git checkout, then requires the real tagged checkout to repeat build and validation before any runtime operation.
+
 ## Implementation boundary
 
 A single bounded custody transaction now captures the nine authority inputs

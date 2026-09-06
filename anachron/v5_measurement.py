@@ -17,6 +17,7 @@ from anachron.v5_contract import (
     EXPECTED_RUNTIME_IDENTITY,
     V5_PROTOCOL_TAG,
     V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS,
+    V5_SEED_NAMESPACE,
 )
 from anachron.v5_custody import (
     AUTHORITY_MEMBER_MAX_BYTES,
@@ -53,6 +54,7 @@ from anachron.v5_registry import (
 
 MODES = ("unrestricted", "enforced")
 REPETITION_SEEDS = (1477205243, 106139663)
+REPETITION_SEED_NAMESPACE = V5_SEED_NAMESPACE
 FIRST_CATEGORIES = ("valid", "no_tool_call", "tool_call_count_invalid", "tool_name_invalid", "tool_arguments_unparseable_or_nonobject", "tool_arguments_duplicate_key", "tool_keyset_invalid", "query_invalid", "date_invalid_type", "date_mismatch", "first_native_response_invalid")
 FINAL_CATEGORIES = ("valid", "final_native_response_invalid", "final_content_invalid")
 _MAX_RESPONSE_BYTES = 1_048_576

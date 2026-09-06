@@ -7,6 +7,9 @@ from unittest.mock import patch
 
 from anachron.v5_contract import (
     V5_GOVERNED_SOURCE_PATHS,
+    V5_PROTOCOL_TAG,
+    V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS,
+    V5_SEED_NAMESPACE,
     presentation_source_closure,
     scientific_source_closure,
     validate_authority_contract,
@@ -15,9 +18,21 @@ from anachron.v5_registry import canonical_json_bytes, strict_json_loads
 
 
 class V5ContractTests(unittest.TestCase):
+    def test_scientific_governed_source_paths_are_literal_sorted_and_unique(self) -> None:
+        self.assertEqual(
+            V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS,
+            tuple(sorted(V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS)),
+        )
+        self.assertEqual(
+            len(V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS),
+            len(set(V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS)),
+        )
+        self.assertEqual(V5_PROTOCOL_TAG, "v5-measurement-protocol-v2")
+        self.assertEqual(V5_SEED_NAMESPACE, "anachron-v5-measurement-protocol-v1")
+
     def test_governed_closure_contains_every_a1_runtime_and_tool(self) -> None:
         root = Path(__file__).resolve().parents[1]
-        required = {"anachron/v5_registry.py", "tests/test_v5_operational.py", "tools/analyze_v5_measurement.py", "tools/build_v5_source_manifest.py", "tools/finalize_v5_carry_forward.py", "tools/materialize_v5_inputs.py", "tools/run_v5_conditional_campaign.ps1", "tools/run_v5_recovery.py"}
+        required = {".gitattributes", "anachron/v5_registry.py", "tests/test_v5_operational.py", "tools/.gitattributes", "tools/analyze_v5_measurement.py", "tools/build_v5_source_manifest.py", "tools/finalize_v5_carry_forward.py", "tools/materialize_v5_inputs.py", "tools/run_v5_conditional_campaign.ps1", "tools/run_v5_recovery.py"}
         self.assertTrue(required.issubset(V5_GOVERNED_SOURCE_PATHS))
         self.assertEqual(set(validate_authority_contract(root)), set(V5_GOVERNED_SOURCE_PATHS))
 

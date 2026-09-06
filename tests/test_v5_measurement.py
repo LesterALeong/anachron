@@ -7,12 +7,17 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from anachron.v5_contract import V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS
+from anachron.v5_contract import (
+    V5_PROTOCOL_TAG,
+    V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS,
+    V5_SEED_NAMESPACE,
+)
 from anachron.v5_custody import ByteBudget, V5CustodyError
 from anachron.v5_measurement import (
     _MAX_AUTHORITY_BYTES,
     _MAX_RESPONSE_BYTES,
     FAILURE_MAX_BYTES,
+    REPETITION_SEED_NAMESPACE,
     REPETITION_SEEDS,
     V5MeasurementError,
     V5OperationalFailure,
@@ -63,13 +68,13 @@ def measurement_plan_and_go(repository_root: Path, cards: dict[str, dict[str, ob
     acceptance_raw = (repository_root / "research/v5_measurement/ACCEPTANCE_MATRIX.md").read_bytes()
     component = {"analyzer": sha256_bytes((repository_root / "tools/analyze_v5_measurement.py").read_bytes()), "runner": sha256_bytes((repository_root / "tools/run_v5_recovery.py").read_bytes()), "wrapper": sha256_bytes((repository_root / "tools/run_v5_conditional_campaign.ps1").read_bytes())}
     output = directory / "evidence"
-    plan_value = {"authority_contract_sha256": sha256_bytes(authority_raw), "carry_forward_sha256": sha256_bytes(carry_raw), "compatibility_plan_sha256": sha256_bytes(compatibility_raw), "component_sha256": component, "evidence_output_root": str(output.resolve()), "expected_runtime": {"models": models, "version": "0.33.2"}, "protocol_release": {"commit": "1" * 40, "tag": "v5-measurement-protocol-v1", "tag_object": "2" * 40}, "schedule": build_schedule(cards, [model["name"] for model in models]), "schema_version": "anachron-v5-full-plan-v2", "seeds": list(REPETITION_SEEDS), "v4_included_count": 0, "v5_source_manifest_sha256": sha256_bytes(source_raw)}
+    plan_value = {"authority_contract_sha256": sha256_bytes(authority_raw), "carry_forward_sha256": sha256_bytes(carry_raw), "compatibility_plan_sha256": sha256_bytes(compatibility_raw), "component_sha256": component, "evidence_output_root": str(output.resolve()), "expected_runtime": {"models": models, "version": "0.33.2"}, "protocol_release": {"commit": "1" * 40, "tag": V5_PROTOCOL_TAG, "tag_object": "2" * 40}, "schedule": build_schedule(cards, [model["name"] for model in models]), "schema_version": "anachron-v5-full-plan-v2", "seeds": list(REPETITION_SEEDS), "v4_included_count": 0, "v5_source_manifest_sha256": sha256_bytes(source_raw)}
     plan_raw = canonical_json_bytes(plan_value)
     plan.write_bytes(plan_raw)
     schedule_raw = canonical_json_bytes({"rows": plan_value["schedule"], "v4_included_count": 0})
     receipt_raw = canonical_json_bytes({"authority_contract_sha256": sha256_bytes(authority_raw), "carry_forward_sha256": sha256_bytes(carry_raw), "compatibility_plan_sha256": sha256_bytes(compatibility_raw), "full_plan_sha256": sha256_bytes(plan_raw), "runtime_identity_sha256": sha256_bytes(runtime_raw), "schedule_sha256": sha256_bytes(schedule_raw), "schema_version": "anachron-v5-materialization-receipt-v2", "v4_included_count": 0, "v5_source_manifest_sha256": sha256_bytes(source_raw)})
     (plans / "materialization_receipt.json").write_bytes(receipt_raw)
-    go.write_bytes(canonical_json_bytes({"acceptance_matrix_sha256": sha256_bytes(acceptance_raw), "analyzer_sha256": component["analyzer"], "authority_contract_sha256": sha256_bytes(authority_raw), "authorized_at_utc": "2026-09-06T00:00:00Z", "authorized_by": "Test", "carry_forward_sha256": sha256_bytes(carry_raw), "compatibility_plan_sha256": sha256_bytes(compatibility_raw), "decision": "GO", "expected_runtime": plan_value["expected_runtime"], "full_plan_sha256": sha256_bytes(plan_raw), "kind": "anachron-v5-conditional-measurement-authorization", "materialization_receipt_sha256": sha256_bytes(receipt_raw), "output_root": str(output.resolve()), "protocol_commit": "1" * 40, "protocol_tag": "v5-measurement-protocol-v1", "protocol_tag_object": "2" * 40, "runner_sha256": component["runner"], "source_manifest_sha256": sha256_bytes(source_raw), "statement": "fixture authorization", "v4_included_count": 0, "wrapper_sha256": component["wrapper"]}))
+    go.write_bytes(canonical_json_bytes({"acceptance_matrix_sha256": sha256_bytes(acceptance_raw), "analyzer_sha256": component["analyzer"], "authority_contract_sha256": sha256_bytes(authority_raw), "authorized_at_utc": "2026-09-06T00:00:00Z", "authorized_by": "Test", "carry_forward_sha256": sha256_bytes(carry_raw), "compatibility_plan_sha256": sha256_bytes(compatibility_raw), "decision": "GO", "expected_runtime": plan_value["expected_runtime"], "full_plan_sha256": sha256_bytes(plan_raw), "kind": "anachron-v5-conditional-measurement-authorization", "materialization_receipt_sha256": sha256_bytes(receipt_raw), "output_root": str(output.resolve()), "protocol_commit": "1" * 40, "protocol_tag": V5_PROTOCOL_TAG, "protocol_tag_object": "2" * 40, "runner_sha256": component["runner"], "source_manifest_sha256": sha256_bytes(source_raw), "statement": "fixture authorization", "v4_included_count": 0, "wrapper_sha256": component["wrapper"]}))
     return plan, go
 
 
@@ -80,7 +85,8 @@ class V5MeasurementTests(unittest.TestCase):
         self.card = next(iter(self.cards.values()))
 
     def test_precommitted_seeds_match_documented_derivation(self) -> None:
-        expected = tuple(int.from_bytes(hashlib.sha256(f"anachron-v5-measurement-protocol-v1/repetition-{number}".encode()).digest()[:4], "big") & 0x7FFFFFFF for number in (1, 2))
+        expected = tuple(int.from_bytes(hashlib.sha256(f"{V5_SEED_NAMESPACE}/repetition-{number}".encode()).digest()[:4], "big") & 0x7FFFFFFF for number in (1, 2))
+        self.assertEqual(REPETITION_SEED_NAMESPACE, V5_SEED_NAMESPACE)
         self.assertEqual(REPETITION_SEEDS, expected)
         self.assertEqual(REPETITION_SEEDS, (1477205243, 106139663))
 

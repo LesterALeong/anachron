@@ -3,7 +3,7 @@ name: tests
 on:
   push:
     branches: [master, main, protocol/v4-recovery-v2, protocol/v5-successor]
-    tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1]
+    tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1, v5-measurement-protocol-v2]
   pull_request:
   workflow_dispatch:
 
@@ -187,6 +187,8 @@ jobs:
         id: scientific-python
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Rehearse clean detached v5 source-manifest closure
+        run: ${{ steps.scientific-python.outputs.python-path }} -m unittest tests.test_v5_source_manifest -v
       - name: Run v5 scientific and source-generation gates
         run: |
           ${{ steps.scientific-python.outputs.python-path }} -m tools.validate_v5_contract --repository-root .

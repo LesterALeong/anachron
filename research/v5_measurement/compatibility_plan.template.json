@@ -3,7 +3,7 @@
   "excludes_from_metrics": true,
   "kind": "anachron-v5-opaque-compatibility-template",
   "no_retry": true,
-  "protocol_tag": "v5-measurement-protocol-v1",
+  "protocol_tag": "v5-measurement-protocol-v2",
   "trace_count": 2,
   "v4_included_count": 0
 }

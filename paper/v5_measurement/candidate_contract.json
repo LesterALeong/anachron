@@ -110,7 +110,7 @@
   "projection_policy": "generated_only_from_verified_answer_free_v5_projection",
   "protocol_identity": {
     "commit": "REPLACE_WITH_FROZEN_PEELED_COMMIT",
-    "tag": "v5-measurement-protocol-v1",
+    "tag": "v5-measurement-protocol-v2",
     "tag_object": "REPLACE_WITH_ANNOTATED_TAG_OBJECT"
   },
   "resource_policy": {

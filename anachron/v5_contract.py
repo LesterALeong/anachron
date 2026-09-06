@@ -12,7 +12,8 @@ from anachron.v5_paths import V5PathError, admit_existing, admit_repository_root
 
 AUTHORITY_CONTRACT_PATH = "research/v5_measurement/authority_binding_contract.json"
 V5_PROTOCOL_BRANCH = "protocol/v5-successor"
-V5_PROTOCOL_TAG = "v5-measurement-protocol-v1"
+V5_PROTOCOL_TAG = "v5-measurement-protocol-v2"
+V5_SEED_NAMESPACE = "anachron-v5-measurement-protocol-v1"
 EXPECTED_RUNTIME_IDENTITY = {
     "models": (
         {
@@ -27,6 +28,7 @@ EXPECTED_RUNTIME_IDENTITY = {
     "version": "0.33.2",
 }
 V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS = (
+    ".gitattributes",
     "anachron/data/v5_registry.py",
     "anachron/v5_carry_forward.py",
     "anachron/v5_contract.py",
@@ -60,12 +62,13 @@ V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS = (
     "tests/test_v5_operational.py",
     "tests/test_v5_paths.py",
     "tests/test_v5_source_manifest.py",
+    "tools/.gitattributes",
     "tools/analyze_v5_measurement.py",
     "tools/build_v5_source_manifest.py",
     "tools/finalize_v5_carry_forward.py",
     "tools/materialize_v5_inputs.py",
-    "tools/run_v5_recovery.py",
     "tools/run_v5_conditional_campaign.ps1",
+    "tools/run_v5_recovery.py",
     "tools/validate_v5_contract.py",
 )
 

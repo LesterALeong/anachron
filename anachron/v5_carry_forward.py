@@ -6,6 +6,7 @@ import hashlib
 from pathlib import Path
 from typing import Any
 
+from anachron.v5_contract import V5_PROTOCOL_TAG
 from anachron.v5_custody import V5CustodyError, capture_regular
 from anachron.v5_paths import (
     V5PathError,
@@ -17,7 +18,7 @@ from anachron.v5_registry import canonical_json_bytes, strict_json_loads
 V4_TAG = "v4-measurement-protocol-v3"
 V4_TAG_OBJECT = "f981b1b50ee47566b71e4f44ff597ef76cb71f4b"
 V4_TAG_PEELED = "499f656e98f85c97dbe21e5f0773a2b0bb9782c8"
-V5_TAG = "v5-measurement-protocol-v1"
+V5_TAG = V5_PROTOCOL_TAG
 _HEX40 = set("0123456789abcdef")
 
 

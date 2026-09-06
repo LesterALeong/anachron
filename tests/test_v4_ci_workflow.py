@@ -26,7 +26,7 @@ class V4CiWorkflowTests(unittest.TestCase):
             self.workflow,
         )
         self.assertIn(
-            "tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1]",
+            "tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1, v5-measurement-protocol-v2]",
             self.workflow,
         )
         self.assertIn("workflow_dispatch:", self.workflow)

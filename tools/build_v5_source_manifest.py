@@ -94,6 +94,8 @@ def _release(root: Path, *, expected_origin: str, expected_release: Mapping[str,
     reference = f"refs/tags/{V5_PROTOCOL_TAG}"
     if _git(root, "status", "--porcelain", "--untracked-files=all"):
         raise V5SourceManifestError("source manifest requires a clean checkout")
+    if _git(root, "branch", "--show-current"):
+        raise V5SourceManifestError("source manifest requires a detached checkout")
     if _git(root, "cat-file", "-t", reference) != "tag":
         raise V5SourceManifestError("source manifest requires an annotated release tag")
     release = {

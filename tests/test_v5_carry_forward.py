@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from anachron.v5_carry_forward import V5CarryForwardError, derive_carry_forward
+from anachron.v5_contract import V5_PROTOCOL_TAG
 from anachron.v5_registry import canonical_json_bytes
 from tools import materialize_v5_inputs as materializer
 from tools.materialize_v5_inputs import V5MaterializationError, materialize
@@ -94,7 +95,7 @@ class V5CarryForwardTests(unittest.TestCase):
             "remote_branch": "1" * 40,
             "remote_tag_object": "2" * 40,
             "remote_tag_peeled": "1" * 40,
-            "tag": "v5-measurement-protocol-v1",
+            "tag": V5_PROTOCOL_TAG,
             "tag_object": "2" * 40,
             "tag_peeled": "1" * 40,
         }
@@ -157,7 +158,7 @@ class V5CarryForwardTests(unittest.TestCase):
 
     def test_materialization_stages_all_members_and_refuses_raced_final(self) -> None:
         runtime = {"models": [{"digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e", "name": "qwen2.5:7b"}, {"digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8", "name": "qwen3:14b-q4_K_M"}], "version": "0.33.2"}
-        source = {"release": {"commit": "1" * 40, "tag": "v5-measurement-protocol-v1", "tag_object": "2" * 40}}
+        source = {"release": {"commit": "1" * 40, "tag": V5_PROTOCOL_TAG, "tag_object": "2" * 40}}
         carry = {"schema_version": "fixture", "v4_included_count": 0}
         hashes = {"tools/analyze_v5_measurement.py": "1" * 64, "tools/run_v5_recovery.py": "2" * 64, "tools/run_v5_conditional_campaign.ps1": "3" * 64}
         with tempfile.TemporaryDirectory() as temporary:
