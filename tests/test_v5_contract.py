@@ -58,6 +58,12 @@ class V5ContractTests(unittest.TestCase):
         self.assertIn('test ! -e "$cache"', workflow)
         self.assertIn("HOME: ${{ runner.temp }}/tectonic-v5-home", workflow)
         self.assertIn("TECTONIC_CACHE_DIR: ${{ runner.temp }}/tectonic-v5-cache", workflow)
+        preflight_output = 'mkdir -p "$cache" "$home" "$xdg" "$RUNNER_TEMP/tectonic-v5-preflight/out"'
+        self.assertIn(preflight_output, workflow)
+        self.assertLess(
+            workflow.index(preflight_output),
+            workflow.index('--outdir "$RUNNER_TEMP/tectonic-v5-preflight/out"'),
+        )
         self.assertIn('"--only-cached"', (Path(__file__).resolve().parents[1] / "tools/build_v5_measurement_candidate_paper.py").read_text(encoding="utf-8"))
 
 

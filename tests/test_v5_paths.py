@@ -25,19 +25,21 @@ from anachron.v5_paths import (
 
 class V5PathTests(unittest.TestCase):
     def test_windows_directory_flush_accepts_only_unsupported_directory_handle(self) -> None:
+        fixture = Path("C:/fixture")
         with (
             patch.object(v5_paths.os, "name", "nt"),
             patch.object(v5_paths.os, "open", side_effect=PermissionError(v5_paths.errno.EACCES, "access denied")),
         ):
-            fsync_directory(Path("C:/fixture"), "fixture")
+            fsync_directory(fixture, "fixture")
 
     def test_windows_directory_flush_refuses_unrelated_open_failure(self) -> None:
+        fixture = Path("C:/fixture")
         with (
             patch.object(v5_paths.os, "name", "nt"),
             patch.object(v5_paths.os, "open", side_effect=OSError(v5_paths.errno.ENOENT, "not found")),
             self.assertRaisesRegex(V5PathError, "cannot be flushed"),
         ):
-            fsync_directory(Path("C:/fixture"), "fixture")
+            fsync_directory(fixture, "fixture")
 
     def test_portable_components_reject_windows_ambiguous_names(self) -> None:
         for value in ("model:tag", "CON", "file.", "file ", "a/b", "a\\b", ".."):

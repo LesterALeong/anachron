@@ -226,7 +226,7 @@ jobs:
           test ! -e "$cache"
           home="$RUNNER_TEMP/tectonic-v5-home"
           xdg="$RUNNER_TEMP/tectonic-v5-xdg"
-          mkdir -p "$cache" "$home" "$xdg" "$RUNNER_TEMP/tectonic-v5-preflight"
+          mkdir -p "$cache" "$home" "$xdg" "$RUNNER_TEMP/tectonic-v5-preflight/out"
           printf '%s\n' '\documentclass[10pt]{article}' '\usepackage[margin=0.85in]{geometry}' '\usepackage[T1]{fontenc}' '\usepackage{booktabs}' '\begin{document}' '\begin{tabular}{ll}\toprule A & B \\ \bottomrule\end{tabular}' '\cite{fixture}' '\bibliographystyle{plain}' '\bibliography{references}' '\end{document}' > "$RUNNER_TEMP/tectonic-v5-preflight/main.tex"
           printf '%s\n' '@article{fixture, author = {Fixture, F.}, title = {Fixture}, journal = {Fixture Journal}, year = {2026}}' > "$RUNNER_TEMP/tectonic-v5-preflight/references.bib"
           HOME="$home" XDG_CACHE_HOME="$xdg" TECTONIC_CACHE_DIR="$cache" "$RUNNER_TEMP/tectonic-v5/tectonic" --bundle "$bundle_url" --keep-logs --outdir "$RUNNER_TEMP/tectonic-v5-preflight/out" "$RUNNER_TEMP/tectonic-v5-preflight/main.tex"
