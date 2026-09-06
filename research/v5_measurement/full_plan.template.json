@@ -1,0 +1,21 @@
+{
+  "authority_binding": "Materialization writes the canonical v2 plan with exact source, carry-forward, wrapper/runner/analyzer component, expected-runtime, release, and external-output bindings. The later GO also binds the materialization receipt.",
+  "kind": "anachron-v5-conditional-primary-template-v2",
+  "main": {
+    "case_count": 8,
+    "modes": [
+      "unrestricted",
+      "enforced"
+    ],
+    "primary_trajectories": 64,
+    "repetitions": 2,
+    "seeds": [
+      1477205243,
+      106139663
+    ]
+  },
+  "no_retry": true,
+  "protocol_tag": "v5-measurement-protocol-v1",
+  "seed_derivation": "positive 31-bit big-endian first four SHA-256 bytes of anachron-v5-measurement-protocol-v1/repetition-N",
+  "v4_included_count": 0
+}

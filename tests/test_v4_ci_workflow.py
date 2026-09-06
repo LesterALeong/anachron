@@ -21,8 +21,14 @@ class V4CiWorkflowTests(unittest.TestCase):
     def test_v4_push_tag_matrix_and_pinned_tectonic_are_exact(self) -> None:
         for job in ("core", "inspect", "paper", "v4-paper"):
             self.assertIn(f"  {job}:\n", self.workflow)
-        self.assertIn("branches: [master, main, protocol/v4-recovery-v2]", self.workflow)
-        self.assertIn("tags: [v4-measurement-protocol-v3]", self.workflow)
+        self.assertIn(
+            "branches: [master, main, protocol/v4-recovery-v2, protocol/v5-successor]",
+            self.workflow,
+        )
+        self.assertIn(
+            "tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1]",
+            self.workflow,
+        )
         self.assertIn("workflow_dispatch:", self.workflow)
         self.assertIn("  v4-paper:\n", self.workflow)
         self.assertIn('python-version: ["3.10", "3.11", "3.12"]', self.workflow)

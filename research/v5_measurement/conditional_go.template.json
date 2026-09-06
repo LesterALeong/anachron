@@ -1,0 +1,35 @@
+{
+  "acceptance_matrix_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
+  "analyzer_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
+  "authority_contract_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
+  "authorized_at_utc": "REPLACE_WITH_UTC_ISO8601_TIMESTAMP",
+  "authorized_by": "Lester Leong",
+  "carry_forward_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
+  "compatibility_plan_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
+  "decision": "PENDING",
+  "expected_runtime": {
+    "models": [
+      {
+        "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "name": "qwen2.5:7b"
+      },
+      {
+        "digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+        "name": "qwen3:14b-q4_K_M"
+      }
+    ],
+    "version": "0.33.2"
+  },
+  "full_plan_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
+  "kind": "anachron-v5-conditional-measurement-authorization",
+  "materialization_receipt_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
+  "output_root": "REPLACE_WITH_ABSOLUTE_EXTERNAL_EVIDENCE_ROOT",
+  "protocol_commit": "REPLACE_WITH_40_LOWERCASE_HEX",
+  "protocol_tag": "v5-measurement-protocol-v1",
+  "protocol_tag_object": "REPLACE_WITH_40_LOWERCASE_HEX",
+  "runner_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
+  "source_manifest_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
+  "statement": "I authorize one exact v5 campaign after read-only identity preflight: two excluded compatibility chats may run first, and the 64-trajectory primary panel may run only after they pass. An operational failure ends this authorization without resume or retry. This does not authorize outreach, endorsement-code transmission, arXiv upload, or submission.",
+  "v4_included_count": 0,
+  "wrapper_sha256": "REPLACE_WITH_64_LOWERCASE_HEX"
+}

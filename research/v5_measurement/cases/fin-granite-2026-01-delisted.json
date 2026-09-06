@@ -1,0 +1,26 @@
+{
+  "as_of": "2026-01-12",
+  "case_id": "fin-granite-2026-01-delisted",
+  "category": "survivorship-delisted",
+  "corpus_records": [
+    {
+      "delisted_date": "2025-09-30",
+      "id": "v4-fin-granite-001",
+      "listed_date": "2011-04-04",
+      "publish_date": "2024-06-12",
+      "text": "Granite Textiles reports a new order-management program while listed on the Meridian Exchange."
+    },
+    {
+      "delisted_date": "2025-09-30",
+      "id": "v4-fin-granite-002",
+      "listed_date": "2011-04-04",
+      "publish_date": "2025-09-30",
+      "text": "Granite Textiles is removed from the Meridian Exchange after liquidation."
+    }
+  ],
+  "entity": "Granite Textiles",
+  "entity_identifier": "GRNT",
+  "expected_mechanism": "survivorship",
+  "expected_point_in_time_record": "v4-fin-granite-002",
+  "prompt": "What was Granite Textiles' listing status by 2026-01-12?"
+}

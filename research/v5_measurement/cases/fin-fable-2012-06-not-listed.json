@@ -1,0 +1,24 @@
+{
+  "as_of": "2012-06-01",
+  "case_id": "fin-fable-2012-06-not-listed",
+  "category": "survivorship-not-yet-listed",
+  "corpus_records": [
+    {
+      "id": "v4-fin-fable-001",
+      "listed_date": "2013-03-11",
+      "publish_date": "2013-03-11",
+      "text": "Fable Energy completes its first public listing on the Meridian Exchange."
+    },
+    {
+      "id": "v4-fin-fable-002",
+      "listed_date": "2013-03-11",
+      "publish_date": "2014-02-07",
+      "text": "Fable Energy reports its first full year as a listed company."
+    }
+  ],
+  "entity": "Fable Energy",
+  "entity_identifier": "FBLE",
+  "expected_mechanism": "survivorship",
+  "expected_point_in_time_record": null,
+  "prompt": "Was Fable Energy a listed company by 2012-06-01, based only on material public by that date?"
+}

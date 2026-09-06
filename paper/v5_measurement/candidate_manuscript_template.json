@@ -1,0 +1,9 @@
+{
+  "ai_assistance_disclosure": "AI systems assisted code organization, drafting, and adversarial review. Lester Leong retains responsibility for the study design, evidence interpretation, citations, and manuscript approval. The manuscript must disclose that v4 was an excluded operational pilot with v4_included_count = 0; it may report only v5 controlled finite-panel adherence and conditional-exposure results from the verified answer-free projection.",
+  "author": "Lester Leong",
+  "categories": [
+    "cs.AI",
+    "cs.CL"
+  ],
+  "title": "Measuring Date-Bounded Agent Tool Traces: A Controlled Finite-Panel Study"
+}

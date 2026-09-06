@@ -1,0 +1,22 @@
+{
+  "as_of": "2022-08-18",
+  "case_id": "compat-compass-2022-08-transport",
+  "category": "current-anchor-general",
+  "corpus_records": [
+    {
+      "id": "v5-compat-compass-001",
+      "publish_date": "2022-06-11",
+      "text": "Compass Field Archive publishes a fictional transport-compatibility bulletin."
+    },
+    {
+      "id": "v5-compat-compass-002",
+      "publish_date": "2022-07-02",
+      "text": "Compass Field Archive adds a fictional bounded-capture index note."
+    }
+  ],
+  "entity": "Compass Field Archive",
+  "entity_identifier": "CFA",
+  "expected_mechanism": "compatibility-only",
+  "expected_point_in_time_record": "v5-compat-compass-001",
+  "prompt": "Which fictional bulletin was available from Compass Field Archive by 2022-08-18?"
+}

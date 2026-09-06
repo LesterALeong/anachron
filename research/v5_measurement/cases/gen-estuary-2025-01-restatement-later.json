@@ -1,0 +1,23 @@
+{
+  "as_of": "2025-01-16",
+  "case_id": "gen-estuary-2025-01-restatement-later",
+  "category": "restatement-later",
+  "corpus_records": [
+    {
+      "id": "v4-gen-estuary-001",
+      "publish_date": "2023-11-18",
+      "text": "Meridian Statistics Office estimates annual estuary freight volume at 2.8 million tonnes."
+    },
+    {
+      "id": "v4-gen-estuary-002",
+      "publish_date": "2024-05-14",
+      "restates": "v4-gen-estuary-001",
+      "text": "Meridian Statistics Office revises annual estuary freight volume to 2.5 million tonnes."
+    }
+  ],
+  "entity": "Meridian Statistics Office",
+  "entity_identifier": "MSO",
+  "expected_mechanism": "restatement",
+  "expected_point_in_time_record": "v4-gen-estuary-002",
+  "prompt": "What annual estuary freight-volume estimate was current by 2025-01-16 according to Meridian Statistics Office?"
+}

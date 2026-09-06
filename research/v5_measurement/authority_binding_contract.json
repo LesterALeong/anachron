@@ -1,0 +1,67 @@
+{
+  "expected_runtime": {
+    "models": [
+      {
+        "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+        "name": "qwen2.5:7b"
+      },
+      {
+        "digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+        "name": "qwen3:14b-q4_K_M"
+      }
+    ],
+    "version": "0.33.2"
+  },
+  "kind": "anachron-v5-authority-binding-contract",
+  "protocol": {
+    "branch": "protocol/v5-successor",
+    "tag": "v5-measurement-protocol-v1"
+  },
+  "schema_version": 1,
+  "scientific_governed_paths": [
+    "anachron/data/v5_registry.py",
+    "anachron/v5_carry_forward.py",
+    "anachron/v5_contract.py",
+    "anachron/v5_custody.py",
+    "anachron/v5_measurement.py",
+    "anachron/v5_paths.py",
+    "anachron/v5_registry.py",
+    "research/v5_measurement/ACCEPTANCE_MATRIX.md",
+    "research/v5_measurement/CLAIM_EVIDENCE_MAP.md",
+    "research/v5_measurement/PROTOCOL.md",
+    "research/v5_measurement/README.md",
+    "research/v5_measurement/authority_binding_contract.json",
+    "research/v5_measurement/carry_forward.template.json",
+    "research/v5_measurement/case_registry.json",
+    "research/v5_measurement/cases/fin-aster-2020-06-future.json",
+    "research/v5_measurement/cases/fin-bramble-2023-03-current.json",
+    "research/v5_measurement/cases/fin-drift-2022-04-restatement-original.json",
+    "research/v5_measurement/cases/fin-fable-2012-06-not-listed.json",
+    "research/v5_measurement/cases/fin-granite-2026-01-delisted.json",
+    "research/v5_measurement/cases/gen-archipelago-2021-04-future.json",
+    "research/v5_measurement/cases/gen-civic-2024-02-current.json",
+    "research/v5_measurement/cases/gen-estuary-2025-01-restatement-later.json",
+    "research/v5_measurement/compatibility_case.json",
+    "research/v5_measurement/compatibility_plan.template.json",
+    "research/v5_measurement/conditional_go.template.json",
+    "research/v5_measurement/full_plan.template.json",
+    "tests/test_v5_carry_forward.py",
+    "tests/test_v5_contract.py",
+    "tests/test_v5_custody.py",
+    "tests/test_v5_measurement.py",
+    "tests/test_v5_operational.py",
+    "tests/test_v5_paths.py",
+    "tests/test_v5_source_manifest.py",
+    "tools/analyze_v5_measurement.py",
+    "tools/build_v5_source_manifest.py",
+    "tools/finalize_v5_carry_forward.py",
+    "tools/materialize_v5_inputs.py",
+    "tools/run_v5_recovery.py",
+    "tools/run_v5_conditional_campaign.ps1",
+    "tools/validate_v5_contract.py"
+  ],
+  "v4_exclusion": {
+    "included_count": 0,
+    "status": "excluded-operational-pilot"
+  }
+}

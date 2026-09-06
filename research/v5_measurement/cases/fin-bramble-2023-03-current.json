@@ -1,0 +1,22 @@
+{
+  "as_of": "2023-03-20",
+  "case_id": "fin-bramble-2023-03-current",
+  "category": "current-anchor-finance",
+  "corpus_records": [
+    {
+      "id": "v4-fin-bramble-001",
+      "publish_date": "2022-11-09",
+      "text": "Bramble Foods reports a new regional distribution agreement."
+    },
+    {
+      "id": "v4-fin-bramble-002",
+      "publish_date": "2023-02-27",
+      "text": "Bramble Foods reports that the regional distribution agreement is operating in three markets."
+    }
+  ],
+  "entity": "Bramble Foods",
+  "entity_identifier": "BRAM",
+  "expected_mechanism": "current",
+  "expected_point_in_time_record": "v4-fin-bramble-002",
+  "prompt": "By 2023-03-20, what was the latest reported status of Bramble Foods' regional distribution agreement?"
+}

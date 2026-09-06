@@ -1,0 +1,10 @@
+{
+  "schema_version": "anachron-v5-source-archive-allowlist-v1",
+  "source_archive_allowlist": [
+    "README.md",
+    "figures/primary_adherence.tex",
+    "main.tex",
+    "references.bib"
+  ],
+  "v4_included_count": 0
+}

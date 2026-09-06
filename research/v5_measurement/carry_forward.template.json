@@ -1,0 +1,8 @@
+{
+  "cards": "REPLACE_WITH_DERIVED_CARRY_FORWARD_CARDS",
+  "case_count": 8,
+  "registry": "REPLACE_WITH_DERIVED_CARRY_FORWARD_REGISTRY",
+  "schema_version": "anachron-v5-carry-forward-v1",
+  "v4_included_count": 0,
+  "v4_tag": "v4-measurement-protocol-v3"
+}

@@ -2,8 +2,8 @@ name: tests
 
 on:
   push:
-    branches: [master, main, protocol/v4-recovery-v2]
-    tags: [v4-measurement-protocol-v3]
+    branches: [master, main, protocol/v4-recovery-v2, protocol/v5-successor]
+    tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1]
   pull_request:
   workflow_dispatch:
 
@@ -172,3 +172,74 @@ jobs:
         run: |
           set -euo pipefail
           env -u LD_LIBRARY_PATH -u PYTHONHOME -u PYTHONPATH "$CANDIDATE_PYTHON" -m unittest tests.test_v4_candidate_projection tests.test_v4_candidate_paper tests.test_v4_candidate_review_release tests.test_v4_candidate_outreach tests.test_v4_ci_workflow tests.test_v4_contract tests.test_v4_source_manifest tests.test_v4_materialization -v
+
+  v5-scientific-source:
+    # The scientific and source-generation boundary is pure local Python.
+    # It does not render a PDF and makes no claim about Tectonic provenance.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: scientific-python
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run v5 scientific and source-generation gates
+        run: |
+          ${{ steps.scientific-python.outputs.python-path }} -m tools.validate_v5_contract --repository-root .
+          ${{ steps.scientific-python.outputs.python-path }} -m unittest discover -s tests -p 'test_v5*.py' -v
+
+  v5-render-smoke-nonhermetic:
+    # Presentation-only smoke gate. Its fetched cache is isolated, but it is
+    # non-hermetic and never contributes to GO or measurement-integrity claims.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: candidate-python
+        with:
+          python-version: "3.12"
+      - name: Install v5 paper dependencies
+        run: ${{ steps.candidate-python.outputs.python-path }} -m pip install -e ".[paper]"
+      - name: Fetch v5 pinned Tectonic
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset="tectonic-0.17.0-x86_64-unknown-linux-gnu.tar.gz"
+          url="https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.17.0/${asset}"
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/$asset" "$url"
+          echo "1a715688baf591e650c8aeb160ae934e181685eecbb38b317de30b269ac5d606  $RUNNER_TEMP/$asset" | sha256sum --check --strict
+          mkdir -p "$RUNNER_TEMP/tectonic-v5"
+          tar --extract --gzip --file "$RUNNER_TEMP/$asset" --directory "$RUNNER_TEMP/tectonic-v5"
+          test "$(sha256sum "$RUNNER_TEMP/tectonic-v5/tectonic" | awk '{print $1}')" = "2b3a86250906c92ed0a3ae8aaa454ec55bd6cede8593b3e549640177f6aecaa3"
+          chmod +x "$RUNNER_TEMP/tectonic-v5/tectonic"
+      - name: Provision isolated pinned v5 Tectonic cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          cache="$RUNNER_TEMP/tectonic-v5-cache"
+          bundle_url="https://relay.fullyjustified.net/default_bundle_v33.tar"
+          cache_content_identifier="6ffe055852f8faf66c0acbe1a7fb27f87b869a90bad1204f3bf4d9683f597c7c"
+          test ! -e "$cache"
+          home="$RUNNER_TEMP/tectonic-v5-home"
+          xdg="$RUNNER_TEMP/tectonic-v5-xdg"
+          mkdir -p "$cache" "$home" "$xdg" "$RUNNER_TEMP/tectonic-v5-preflight"
+          printf '%s\n' '\documentclass[10pt]{article}' '\usepackage[margin=0.85in]{geometry}' '\usepackage[T1]{fontenc}' '\usepackage{booktabs}' '\begin{document}' '\begin{tabular}{ll}\toprule A & B \\ \bottomrule\end{tabular}' '\cite{fixture}' '\bibliographystyle{plain}' '\bibliography{references}' '\end{document}' > "$RUNNER_TEMP/tectonic-v5-preflight/main.tex"
+          printf '%s\n' '@article{fixture, author = {Fixture, F.}, title = {Fixture}, journal = {Fixture Journal}, year = {2026}}' > "$RUNNER_TEMP/tectonic-v5-preflight/references.bib"
+          HOME="$home" XDG_CACHE_HOME="$xdg" TECTONIC_CACHE_DIR="$cache" "$RUNNER_TEMP/tectonic-v5/tectonic" --bundle "$bundle_url" --keep-logs --outdir "$RUNNER_TEMP/tectonic-v5-preflight/out" "$RUNNER_TEMP/tectonic-v5-preflight/main.tex"
+          test -f "$RUNNER_TEMP/tectonic-v5-preflight/out/main.pdf"
+          test "$(find "$cache/bundles/hashes" -type f -exec cat {} \; | tr -d '\n')" = "$cache_content_identifier"
+          test -f "$cache/bundles/data/${cache_content_identifier}.index"
+          test -d "$cache/bundles/data/$cache_content_identifier"
+      - name: Run required v5 candidate lifecycle gate
+        env:
+          ANACHRON_V5_TECTONIC: ${{ runner.temp }}/tectonic-v5/tectonic
+          HOME: ${{ runner.temp }}/tectonic-v5-home
+          TECTONIC_CACHE_DIR: ${{ runner.temp }}/tectonic-v5-cache
+          XDG_CACHE_HOME: ${{ runner.temp }}/tectonic-v5-xdg
+        run: |
+          ${{ steps.candidate-python.outputs.python-path }} -m tools.validate_v5_contract --repository-root .
+          ${{ steps.candidate-python.outputs.python-path }} -m unittest tests.test_v5_candidate_projection tests.test_v5_candidate_paper tests.test_v5_candidate_review_release tests.test_v5_candidate_outreach tests.test_v5_candidate_end_to_end -v
