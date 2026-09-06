@@ -64,6 +64,11 @@ class V5ContractTests(unittest.TestCase):
             workflow.index(preflight_output),
             workflow.index('--outdir "$RUNNER_TEMP/tectonic-v5-preflight/out"'),
         )
+        bundle_hash_file = 'bundle_hash_file="$cache/bundles/hashes/https,58,,47,,47,relay.fullyjustified.net,47,default_bundle_v33.tar"'
+        self.assertIn(bundle_hash_file, workflow)
+        self.assertIn('test -f "$bundle_hash_file"', workflow)
+        self.assertIn('test "$(tr -d \'\\r\\n\' < "$bundle_hash_file")" = "$cache_content_identifier"', workflow)
+        self.assertNotIn('find "$cache/bundles/hashes" -type f -exec cat {} \\;', workflow)
         self.assertIn('"--only-cached"', (Path(__file__).resolve().parents[1] / "tools/build_v5_measurement_candidate_paper.py").read_text(encoding="utf-8"))
 
 
