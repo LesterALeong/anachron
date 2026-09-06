@@ -91,6 +91,27 @@ class V5CandidatePaperStaticTests(unittest.TestCase):
                         builder._candidate_completion(root)
                     path.rmdir()
 
+    def test_every_candidate_compilation_is_cache_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source"
+            source.mkdir()
+            commands: list[list[str]] = []
+
+            def run(command: list[str], _source: Path, label: str, _environment: dict[str, str]) -> str:
+                commands.append(command)
+                output = Path(command[command.index("--outdir") + 1])
+                output.mkdir()
+                (output / "main.pdf").write_bytes(b"fixture")
+                self.assertEqual(label, "Tectonic compilation")
+                return ""
+
+            with patch.object(builder, "_bounded_run", side_effect=run):
+                builder._run_tectonic(Path("tectonic"), source, root / "rendered", {})
+                builder._run_tectonic(Path("tectonic"), source, root / "extracted", {})
+            self.assertEqual(len(commands), 2)
+            self.assertTrue(all("--only-cached" in command for command in commands))
+
 
 if __name__ == "__main__":
     unittest.main()

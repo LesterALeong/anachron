@@ -70,6 +70,7 @@ V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS = (
 )
 
 V5_PRESENTATION_SOURCE_PATHS = (
+    ".github/workflows/tests.yml",
     "anachron/v5_candidate_common.py",
     "anachron/v5_candidate_release_common.py",
     "paper/v5_measurement/CANDIDATE_ACCEPTANCE_MATRIX.md",
@@ -84,10 +85,12 @@ V5_PRESENTATION_SOURCE_PATHS = (
     "paper/v5_measurement/outreach.template.md",
     "paper/v5_measurement/reviews/review.template.json",
     "tests/test_v5_candidate_end_to_end.py",
+    "tests/test_v5_candidate_ci.py",
     "tests/test_v5_candidate_outreach.py",
     "tests/test_v5_candidate_paper.py",
     "tests/test_v5_candidate_projection.py",
     "tests/test_v5_candidate_review_release.py",
+    "tests/v5_presentation_fixture.py",
     "tools/build_v5_measurement_candidate_paper.py",
     "tools/project_v5_measurement_candidate.py",
     "tools/release_v5_measurement_candidate.py",

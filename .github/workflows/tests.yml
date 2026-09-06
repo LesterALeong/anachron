@@ -216,31 +216,35 @@ jobs:
           tar --extract --gzip --file "$RUNNER_TEMP/$asset" --directory "$RUNNER_TEMP/tectonic-v5"
           test "$(sha256sum "$RUNNER_TEMP/tectonic-v5/tectonic" | awk '{print $1}')" = "2b3a86250906c92ed0a3ae8aaa454ec55bd6cede8593b3e549640177f6aecaa3"
           chmod +x "$RUNNER_TEMP/tectonic-v5/tectonic"
-      - name: Provision isolated pinned v5 Tectonic cache
+      - name: Seed isolated pinned v5 Tectonic cache from exact candidate source
         shell: bash
         run: |
           set -euo pipefail
           cache="$RUNNER_TEMP/tectonic-v5-cache"
+          seed="$RUNNER_TEMP/tectonic-v5-seed"
           bundle_url="https://relay.fullyjustified.net/default_bundle_v33.tar"
           cache_content_identifier="6ffe055852f8faf66c0acbe1a7fb27f87b869a90bad1204f3bf4d9683f597c7c"
           test ! -e "$cache"
+          test ! -e "$seed"
           home="$RUNNER_TEMP/tectonic-v5-home"
           xdg="$RUNNER_TEMP/tectonic-v5-xdg"
-          mkdir -p "$cache" "$home" "$xdg" "$RUNNER_TEMP/tectonic-v5-preflight/out"
-          printf '%s\n' '\documentclass[10pt]{article}' '\usepackage[margin=0.85in]{geometry}' '\usepackage[T1]{fontenc}' '\usepackage{booktabs}' '\begin{document}' '\begin{tabular}{ll}\toprule A & B \\ \bottomrule\end{tabular}' '\cite{fixture}' '\bibliographystyle{plain}' '\bibliography{references}' '\end{document}' > "$RUNNER_TEMP/tectonic-v5-preflight/main.tex"
-          printf '%s\n' '@article{fixture, author = {Fixture, F.}, title = {Fixture}, journal = {Fixture Journal}, year = {2026}}' > "$RUNNER_TEMP/tectonic-v5-preflight/references.bib"
-          HOME="$home" XDG_CACHE_HOME="$xdg" TECTONIC_CACHE_DIR="$cache" "$RUNNER_TEMP/tectonic-v5/tectonic" --bundle "$bundle_url" --keep-logs --outdir "$RUNNER_TEMP/tectonic-v5-preflight/out" "$RUNNER_TEMP/tectonic-v5-preflight/main.tex"
-          test -f "$RUNNER_TEMP/tectonic-v5-preflight/out/main.pdf"
+          mkdir -p "$cache" "$home" "$xdg"
+          ${{ steps.candidate-python.outputs.python-path }} -m tests.v5_presentation_fixture --repository-root . --output "$seed"
+          mkdir "$seed/rendered"
+          HOME="$home" XDG_CACHE_HOME="$xdg" TECTONIC_CACHE_DIR="$cache" SOURCE_DATE_EPOCH=0 "$RUNNER_TEMP/tectonic-v5/tectonic" --bundle "$bundle_url" --keep-logs --outdir "$seed/rendered" "$seed/source/main.tex"
+          test -f "$seed/rendered/main.pdf"
           bundle_hash_file="$cache/bundles/hashes/https,58,,47,,47,relay.fullyjustified.net,47,default_bundle_v33.tar"
           test -f "$bundle_hash_file"
           test "$(tr -d '\r\n' < "$bundle_hash_file")" = "$cache_content_identifier"
           test -f "$cache/bundles/data/${cache_content_identifier}.index"
           test -d "$cache/bundles/data/$cache_content_identifier"
+          rm -rf "$seed"
+          test ! -e "$seed"
       - name: Run required v5 candidate lifecycle gate
         env:
           ANACHRON_V5_TECTONIC: ${{ runner.temp }}/tectonic-v5/tectonic
+          ANACHRON_V5_TECTONIC_CACHE_SOURCE: ${{ runner.temp }}/tectonic-v5-cache
           HOME: ${{ runner.temp }}/tectonic-v5-home
-          TECTONIC_CACHE_DIR: ${{ runner.temp }}/tectonic-v5-cache
           XDG_CACHE_HOME: ${{ runner.temp }}/tectonic-v5-xdg
         run: |
           ${{ steps.candidate-python.outputs.python-path }} -m tools.validate_v5_contract --repository-root .

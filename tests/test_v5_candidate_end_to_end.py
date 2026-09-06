@@ -25,6 +25,7 @@ from anachron.v5_candidate_release_common import (
 from anachron.v5_measurement import run_measurement, sha256_bytes
 from anachron.v5_registry import canonical_json_bytes, load_v5_registry
 from tests.test_v5_measurement import measurement_plan_and_go
+from tests.v5_presentation_fixture import injected_transport
 from tools import build_v5_measurement_candidate_paper as builder
 from tools import project_v5_measurement_candidate as projector
 from tools import release_v5_measurement_candidate as release_tool
@@ -73,18 +74,7 @@ class V5CandidateEndToEndTests(unittest.TestCase):
                 os.environ["TECTONIC_CACHE_DIR"] = cls._original_cache
 
     def _transport(self, _endpoint: str, path: str, payload: bytes | None, _timeout: int) -> bytes:
-        models = [
-            {"digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e", "name": "qwen2.5:7b"},
-            {"digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8", "name": "qwen3:14b-q4_K_M"},
-        ]
-        if path == "/api/version":
-            return b'{"version":"0.33.2"}\n'
-        if path == "/api/tags":
-            return canonical_json_bytes({"models": models})
-        request = json.loads(payload.decode("utf-8"))
-        if "tools" in request:
-            return canonical_json_bytes({"message": {"role": "assistant", "tool_calls": [{"function": {"name": "anachron_search", "arguments": {"query": "synthetic bulletin"}}}]}})
-        return canonical_json_bytes({"message": {"role": "assistant", "content": "excluded from paper content"}})
+        return injected_transport(_endpoint, path, payload, _timeout)
 
     def _authority_inputs(self, root: Path, plan: Path, go: Path) -> dict[str, Path]:
         plans = plan.parent
@@ -212,6 +202,32 @@ class V5CandidateEndToEndTests(unittest.TestCase):
                 for forbidden in ("import requests", "import socket", "import smtplib", "import urllib", "import webbrowser", "ollama"):
                     self.assertNotIn(forbidden, source, relative)
         self.assertFalse(temporary_root.exists())
+
+    def test_empty_cache_fails_closed_before_candidate_publication(self) -> None:
+        original_cache = os.environ.get("TECTONIC_CACHE_DIR")
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_root = Path(temporary)
+            empty_cache = temporary_root / "empty-cache"
+            empty_cache.mkdir()
+            os.environ["TECTONIC_CACHE_DIR"] = str(empty_cache)
+            try:
+                plan, go = measurement_plan_and_go(self.root, self.cards, temporary_root)
+                evidence = temporary_root / "evidence"
+                run_measurement(plan, go, evidence, repository_root=self.root, transport=self._transport)
+                inputs = self._authority_inputs(temporary_root, plan, go)
+                projection = temporary_root / "projection.json"
+                projector.project_and_write_candidate(
+                    self.root, evidence=evidence, output=projection, **inputs
+                )
+                candidate = temporary_root / "candidate"
+                with self.assertRaises(builder.CandidatePaperError):
+                    builder.build_candidate(self.root, projection, candidate, self.tectonic)
+                self.assertFalse(candidate.exists())
+            finally:
+                if original_cache is None:
+                    os.environ.pop("TECTONIC_CACHE_DIR", None)
+                else:
+                    os.environ["TECTONIC_CACHE_DIR"] = original_cache
 
 
 if __name__ == "__main__":

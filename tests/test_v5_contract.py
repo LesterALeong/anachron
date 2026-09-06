@@ -50,28 +50,5 @@ class V5ContractTests(unittest.TestCase):
                 raw = (root / relative).read_bytes()
                 self.assertEqual(raw, canonical_json_bytes(strict_json_loads(raw, relative)))
 
-    def test_v5_ci_provisions_a_pinned_dedicated_cache_before_offline_lifecycle(self) -> None:
-        workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/tests.yml").read_text(encoding="utf-8")
-        self.assertIn("Provision isolated pinned v5 Tectonic cache", workflow)
-        self.assertIn("https://relay.fullyjustified.net/default_bundle_v33.tar", workflow)
-        self.assertIn("6ffe055852f8faf66c0acbe1a7fb27f87b869a90bad1204f3bf4d9683f597c7c", workflow)
-        self.assertIn('test ! -e "$cache"', workflow)
-        self.assertIn("HOME: ${{ runner.temp }}/tectonic-v5-home", workflow)
-        self.assertIn("TECTONIC_CACHE_DIR: ${{ runner.temp }}/tectonic-v5-cache", workflow)
-        preflight_output = 'mkdir -p "$cache" "$home" "$xdg" "$RUNNER_TEMP/tectonic-v5-preflight/out"'
-        self.assertIn(preflight_output, workflow)
-        self.assertLess(
-            workflow.index(preflight_output),
-            workflow.index('--outdir "$RUNNER_TEMP/tectonic-v5-preflight/out"'),
-        )
-        bundle_hash_file = 'bundle_hash_file="$cache/bundles/hashes/https,58,,47,,47,relay.fullyjustified.net,47,default_bundle_v33.tar"'
-        self.assertIn(bundle_hash_file, workflow)
-        self.assertIn('test -f "$bundle_hash_file"', workflow)
-        self.assertIn('test "$(tr -d \'\\r\\n\' < "$bundle_hash_file")" = "$cache_content_identifier"', workflow)
-        self.assertNotIn('find "$cache/bundles/hashes" -type f -exec cat {} \\;', workflow)
-        self.assertIn('"--only-cached"', (Path(__file__).resolve().parents[1] / "tools/build_v5_measurement_candidate_paper.py").read_text(encoding="utf-8"))
-
-
-
 if __name__ == "__main__":
     unittest.main()

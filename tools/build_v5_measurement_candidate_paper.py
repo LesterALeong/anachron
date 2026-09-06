@@ -280,6 +280,78 @@ def _discard(root: Path, label: str) -> None:
         raise CandidatePaperError(f"{label} cannot be removed") from error
 
 
+def materialize_candidate_source(
+    repository_root: Path,
+    candidate: dict[str, Any],
+    source: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, int], list[str]]:
+    """Write the exact four-file candidate source tree from one projection."""
+
+    root = admit_repository_root(repository_root)
+    try:
+        candidate = validate_candidate_projection(candidate)
+    except CandidateProjectionError as error:
+        raise CandidatePaperError("candidate projection differs") from error
+    template, _ = _json(
+        root / "paper/v5_measurement/candidate_manuscript_template.json",
+        "manuscript template",
+    )
+    contract, _ = _json(
+        root / "paper/v5_measurement/candidate_contract.json", "candidate contract"
+    )
+    policy, allowlist = contract.get("resource_policy"), contract.get(
+        "source_archive_allowlist"
+    )
+    if (
+        type(policy) is not dict
+        or type(allowlist) is not list
+        or allowlist
+        != ["README.md", "figures/primary_adherence.tex", "main.tex", "references.bib"]
+    ):
+        raise CandidatePaperError("candidate contract differs")
+    try:
+        source.mkdir()
+        (source / "figures").mkdir()
+    except OSError as error:
+        raise CandidatePaperError("candidate source cannot be created") from error
+    source_budget = ByteBudget(policy["source_file_max_bytes"] * 4, 4)
+    _write_staged(
+        source / "README.md",
+        b"Offline v5 finite-panel candidate source. Raw traces are deliberately excluded.\n",
+        "candidate source README",
+        policy["source_file_max_bytes"],
+        source_budget,
+    )
+    metadata = generated_arxiv_metadata(template, candidate)
+    _write_staged(
+        source / "main.tex",
+        _tex(metadata, candidate["projection"]).encode("utf-8"),
+        "candidate source TeX",
+        policy["source_file_max_bytes"],
+        source_budget,
+    )
+    references = capture_regular(
+        root / "paper/v5_measurement/candidate_references.bib",
+        "candidate references",
+        policy["source_file_max_bytes"],
+    )
+    _write_staged(
+        source / "references.bib",
+        references.raw,
+        "candidate source references",
+        policy["source_file_max_bytes"],
+        source_budget,
+    )
+    _write_staged(
+        source / "figures" / "primary_adherence.tex",
+        b"% Values are generated in main.tex from the answer-free projection.\n",
+        "candidate source figure",
+        policy["source_file_max_bytes"],
+        source_budget,
+    )
+    return metadata, contract, policy, allowlist
+
+
 def build_candidate(repository_root: Path, projection: Path, output: Path, tectonic: Path) -> dict[str, Any]:
     root = admit_repository_root(repository_root)
     try:
@@ -288,30 +360,24 @@ def build_candidate(repository_root: Path, projection: Path, output: Path, tecto
     except V5PathError as error:
         raise CandidatePaperError(str(error)) from error
     candidate, candidate_raw = _json(projection, "candidate projection")
-    try:
-        validate_candidate_projection(candidate)
-    except CandidateProjectionError as error:
-        raise CandidatePaperError("candidate projection differs") from error
-    template, _ = _json(root / "paper/v5_measurement/candidate_manuscript_template.json", "manuscript template")
     contract, contract_raw = _json(root / "paper/v5_measurement/candidate_contract.json", "candidate contract")
     policy, allowlist = contract.get("resource_policy"), contract.get("source_archive_allowlist")
     if type(policy) is not dict or type(allowlist) is not list or allowlist != ["README.md", "figures/primary_adherence.tex", "main.tex", "references.bib"]:
         raise CandidatePaperError("candidate contract differs")
     environment = _tectonic_environment()
     _verify_tectonic(tectonic, contract, environment)
-    metadata = generated_arxiv_metadata(template, candidate)
     staging = Path(tempfile.mkdtemp(prefix=f".{destination.name}.staging-", dir=destination.parent))
     try:
         profile = candidate_root_profile(policy)
         candidate_budget = profile.budget()
         source = staging / "source"
-        (source / "figures").mkdir(parents=True)
-        source_budget = ByteBudget(policy["source_file_max_bytes"] * 4, 4)
-        _write_staged(source / "README.md", b"Offline v5 finite-panel candidate source. Raw traces are deliberately excluded.\n", "candidate source README", policy["source_file_max_bytes"], source_budget)
-        _write_staged(source / "main.tex", _tex(metadata, candidate["projection"]).encode("utf-8"), "candidate source TeX", policy["source_file_max_bytes"], source_budget)
-        references = capture_regular(root / "paper/v5_measurement/candidate_references.bib", "candidate references", policy["source_file_max_bytes"])
-        _write_staged(source / "references.bib", references.raw, "candidate source references", policy["source_file_max_bytes"], source_budget)
-        _write_staged(source / "figures" / "primary_adherence.tex", b"% Values are generated in main.tex from the answer-free projection.\n", "candidate source figure", policy["source_file_max_bytes"], source_budget)
+        metadata, materialized_contract, materialized_policy, materialized_allowlist = materialize_candidate_source(root, candidate, source)
+        if (
+            materialized_contract != contract
+            or materialized_policy != policy
+            or materialized_allowlist != allowlist
+        ):
+            raise CandidatePaperError("candidate source materialization differs")
         rendered, extracted, extracted_rendered = staging / "rendered", staging / "extracted", staging / "extracted-rendered"
         rendered.mkdir()
         pdf = _run_tectonic(tectonic, source, rendered, environment)
