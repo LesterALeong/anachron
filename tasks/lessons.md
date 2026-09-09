@@ -61,3 +61,13 @@ The nominal-gate proof is preserved in successor-v3-repair/matrix11-reset05-arch
 ## Admit exact CLI argv before consuming a unique gate
 
 Reset04 attempt 1 had three approved, frozen source files, but root manually invoked the source-only detector without its required `--output` option. Argparse exited before the detector body, so no JSON receipt existed and the unique invocation could not be retried. Before any unique or one-shot receipt-producing CLI, statically derive required options from the frozen source or an independently frozen schema and admit the exact literal argv, cwd, script identity, option order/multiplicity, output path, and create-only output absence. Execute only the retained admitted argv; do not reconstruct it manually. Preserve malformed argv as RED. `prove_matrix11_reset05_controller03_cli_admission_01.py` demonstrates the original omission as RED and the intended `--output .\source03-attempt-01-static.json` argv as GREEN without launching the detector.
+
+## Exercise the exact HTTP request serializer before a one-shot capture
+
+The v3 identity controller's fake loopback responder accepted the request without
+inspecting its headers. Python's `HTTPConnection.putrequest` supplied a default
+`Host` header, then the controller supplied a second explicit header; the normal
+Ollama server rejected the capture with HTTP 400 before any process mutation. A
+transport gate must use a disposable raw socket that counts the exact serialized
+headers, retain the frozen predecessor request as RED, and require the successor
+to emit exactly one explicit host header before a capture is authorized.

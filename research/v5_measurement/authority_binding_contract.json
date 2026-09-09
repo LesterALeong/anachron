@@ -14,8 +14,8 @@
   },
   "kind": "anachron-v5-authority-binding-contract",
   "protocol": {
-    "branch": "protocol/v5-successor-v3",
-    "tag": "v5-measurement-protocol-v3"
+    "branch": "protocol/v5-successor-v4",
+    "tag": "v5-measurement-protocol-v4"
   },
   "schema_version": 1,
   "scientific_governed_paths": [

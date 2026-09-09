@@ -2,8 +2,8 @@ name: tests
 
 on:
   push:
-    branches: [master, main, protocol/v4-recovery-v2, protocol/v5-successor, protocol/v5-successor-v3]
-    tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1, v5-measurement-protocol-v2, v5-measurement-protocol-v3]
+    branches: [master, main, protocol/v4-recovery-v2, protocol/v5-successor, protocol/v5-successor-v3, protocol/v5-successor-v4]
+    tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1, v5-measurement-protocol-v2, v5-measurement-protocol-v3, v5-measurement-protocol-v4]
   pull_request:
   workflow_dispatch:
 
@@ -183,6 +183,8 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         id: scientific-python
         with:

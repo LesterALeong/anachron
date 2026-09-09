@@ -27,7 +27,7 @@ class V5ContractTests(unittest.TestCase):
             len(V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS),
             len(set(V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS)),
         )
-        self.assertEqual(V5_PROTOCOL_TAG, "v5-measurement-protocol-v3")
+        self.assertEqual(V5_PROTOCOL_TAG, "v5-measurement-protocol-v4")
         self.assertEqual(len(V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS), 47)
         self.assertEqual(V5_SEED_NAMESPACE, "anachron-v5-measurement-protocol-v1")
 

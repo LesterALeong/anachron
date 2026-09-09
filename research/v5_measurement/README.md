@@ -1,6 +1,6 @@
 # Anachron v5 measurement
 
-V3 repairs the unexecuted v2 technical protocol. It remains offline and does not authorize model execution, process control, outreach, upload, or submission. V2 is preserved historical evidence and is not relabeled or retagged.
+V4 repairs V3's failed preflight loopback transport request. It remains offline and does not authorize model execution, process control, outreach, upload, or submission. V3 is preserved failed-capture evidence, and V2 is preserved historical evidence; neither is relabeled or retagged.
 
 ```text
 python -m tools.validate_v5_contract --repository-root <repo>

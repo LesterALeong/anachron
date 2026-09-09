@@ -1,9 +1,10 @@
 # Anachron v5 successor protocol
 
-V3 repairs the unexecuted v2 technical protocol. It requires a clean annotated
-`v5-measurement-protocol-v3` release: the tag object, peeled commit, branch,
-remote references, governed blob IDs, and worktree bytes must agree. V2 remains
-historical technical evidence and is not an execution authorization.
+V4 repairs V3's failed preflight transport request. It requires a clean annotated
+`v5-measurement-protocol-v4` release: the tag object, peeled commit, branch,
+remote references, governed blob IDs, and worktree bytes must agree. V3 remains
+immutable failed-capture evidence, and V2 remains historical technical evidence;
+neither is an execution authorization.
 
 The tagged closure includes the isolated identity controller, its Authenticode
 helper, and a fixed local CIM process-identity helper. When psutil cannot read
@@ -17,6 +18,11 @@ parent; it uses bounded output capture, atomic restoration publication, and
 recursive bounded inventory. These repairs do not
 authorize a capture, model call, process control, outreach, upload, or
 submission.
+
+The controller emits one explicit `Host` header for its fixed loopback requests.
+The frozen V3 controller emitted two `Host` headers and failed before process
+mutation; the V4 regression verifies both the immutable V3 failure and V4's
+single-header request against disposable loopback sockets.
 
 The source tag contains templates with placeholders. After it is frozen, the
 external source manifest, carry-forward receipt, captured runtime identity,

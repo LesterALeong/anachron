@@ -15,7 +15,7 @@
     ]
   },
   "no_retry": true,
-  "protocol_tag": "v5-measurement-protocol-v3",
+  "protocol_tag": "v5-measurement-protocol-v4",
   "seed_derivation": "positive 31-bit big-endian first four SHA-256 bytes of anachron-v5-measurement-protocol-v1/repetition-N",
   "v4_included_count": 0
 }

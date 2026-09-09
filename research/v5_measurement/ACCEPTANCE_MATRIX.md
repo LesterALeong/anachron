@@ -1,11 +1,12 @@
-# V5 successor v3 acceptance matrix
+# V5 successor v4 acceptance matrix
 
-V3 is an offline repair candidate. A future campaign requires a separate,
-fresh, explicit GO and is not operationally qualified by this matrix.
+V4 is an offline transport-repair candidate. V3 remains immutable failed-capture
+evidence. A future campaign requires a separate, fresh, explicit GO and is not
+operationally qualified by this matrix.
 
 | Control | Required evidence |
 | --- | --- |
-| Release identity | Clean annotated `v5-measurement-protocol-v3` tag, peeled commit, branch, remote references, governed blob IDs, and worktree bytes agree. |
+| Release identity | Clean annotated `v5-measurement-protocol-v4` tag, peeled commit, branch, remote references, governed blob IDs, and worktree bytes agree. |
 | Governed closure | The sorted 47-member scientific closure includes the controller, Authenticode helper, CIM process-identity helper, controller test, and Python package bootstrap; the authority contract matches it byte-for-byte. |
 | Carry-forward | All eight registry/card bytes, hashes, and accepted-v4 tag blob IDs match. |
 | Materialization | Exactly seven create-only members pass bounded topology, ADS, reparse, member, total-byte, and atomic-publication checks. |

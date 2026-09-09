@@ -27,7 +27,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$ExpectedProtocolTag = "v5-measurement-protocol-v3"
+$ExpectedProtocolTag = "v5-measurement-protocol-v4"
 $ExpectedNormalApp = "C:\Users\leste\AppData\Local\Programs\Ollama\ollama app.exe"
 $ExpectedNormalServer = "C:\Users\leste\AppData\Local\Programs\Ollama\ollama.exe"
 $ExpectedIsolatedExe = "C:\Users\leste\Downloads\Repos\anachron-v4-evidence\ollama-0.33.2-isolated\runtime\ollama.exe"

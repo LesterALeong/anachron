@@ -25,7 +25,7 @@
   "materialization_receipt_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
   "output_root": "REPLACE_WITH_ABSOLUTE_EXTERNAL_EVIDENCE_ROOT",
   "protocol_commit": "REPLACE_WITH_40_LOWERCASE_HEX",
-  "protocol_tag": "v5-measurement-protocol-v3",
+  "protocol_tag": "v5-measurement-protocol-v4",
   "protocol_tag_object": "REPLACE_WITH_40_LOWERCASE_HEX",
   "runner_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",
   "source_manifest_sha256": "REPLACE_WITH_64_LOWERCASE_HEX",

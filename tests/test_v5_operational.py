@@ -98,7 +98,7 @@ class V5OperationalTests(unittest.TestCase):
 
     def test_wrapper_binds_all_post_tag_authorities_without_a_tag_cycle(self) -> None:
         for required in (
-            '"v5-measurement-protocol-v3"',
+            '"v5-measurement-protocol-v4"',
             '"anachron-v5-materialization-receipt-v3"',
             "materialization_receipt_sha256",
             "runtime_identity_sha256",

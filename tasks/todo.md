@@ -172,3 +172,15 @@ This section supersedes the Reset06 controller-successor critical path. Reset05 
 - [x] Bind the controller to the current validly Microsoft-signed PowerShell binary installed on the capture host and pass the new real host-dependency test before replacing the branch CI run. Independent review APPROVED; QA SHIP IT with 139 focused v5 tests passing and one expected paper-resource skip.
 - [ ] After fresh authorization, perform the existing read-only identity preflight and at most one capture, then verify restoration.
 - [ ] Materialize the input closure offline and retain the exact PENDING_VALID receipt. Stop before any model endpoint or campaign without fresh explicit GO authorization.
+
+## Successor v4 capture transport recovery, 2026-09-09
+
+The single v3 capture failed safely before process mutation because its raw HTTP client emitted two `Host` headers and the current normal Ollama server returned HTTP 400. Preserve the tagged v3 release and its three-file failure root unchanged. Prepare a separately versioned v4 release; stop before any second capture unless the complete v4 release passes and that capture is freshly authorized.
+
+- [x] Preserve the v3 tag, external source manifest, controller operation, and failed identity root as immutable history; independently verify no stop signal, isolated launch, restoration, or model execution occurred.
+- [x] Freeze PM acceptance criteria and architecture for the minimal transport fix and v4 identity bindings.
+- [x] Reproduce the exact duplicate-`Host` request as the original RED and add a disposable loopback regression that requires exactly one `Host` header.
+- [x] Update the branch, tag, external path, template, wrapper, documentation, test, and workflow identities to the v4 successor without changing measurement science.
+- [ ] Run the complete unchanged-candidate local matrix, independent review, and QA.
+- [ ] Commit and push `protocol/v5-successor-v4`; require branch CI green, create annotated `v5-measurement-protocol-v4`, and require tag CI green.
+- [ ] Build and validate the detached v4 source manifest and external controller authority, then stop for fresh authorization before any second capture.

@@ -6,10 +6,12 @@ import io
 import json
 import os
 import shutil
+import socket
 import struct
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from contextlib import ExitStack
 from pathlib import Path
@@ -142,7 +144,101 @@ class IdentityControllerTests(unittest.TestCase):
     def test_library_import_has_no_operational_side_effects(self) -> None:
         self.assertTrue(callable(controller.run_capture))
         self.assertEqual(controller.ADMITTED_ENDPOINTS, frozenset(("/api/version", "/api/tags")))
-        self.assertEqual(controller.PROTOCOL_ROOT, Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v3"))
+        self.assertEqual(controller.PROTOCOL_ROOT, Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v4"))
+
+    def test_loopback_request_emits_exactly_one_host_header(self) -> None:
+        def host_fields(request: bytes) -> list[bytes]:
+            return [line for line in request.split(b"\r\n") if line.lower().startswith(b"host:")]
+
+        def serve_once(expected_host_count: int) -> tuple[int, threading.Event, list[bytes], list[OSError | AssertionError]]:
+            listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.addCleanup(listener.close)
+            listener.bind((controller.HOST, 0))
+            listener.listen(1)
+            port = listener.getsockname()[1]
+            completed = threading.Event()
+            requests: list[bytes] = []
+            errors: list[OSError | AssertionError] = []
+
+            def serve() -> None:
+                try:
+                    connection, _ = listener.accept()
+                    with connection:
+                        connection.settimeout(5)
+                        request = bytearray()
+                        while b"\r\n\r\n" not in request:
+                            chunk = connection.recv(8192)
+                            if not chunk:
+                                raise AssertionError("loopback client closed before headers")
+                            request.extend(chunk)
+                        captured = bytes(request)
+                        requests.append(captured)
+                        host_count = len(host_fields(captured))
+                        status = 200 if host_count == expected_host_count else 400
+                        body = b"{}"
+                        connection.sendall(
+                            f"HTTP/1.1 {status} {'OK' if status == 200 else 'Bad Request'}\r\n"
+                            f"Content-Length: {len(body)}\r\n"
+                            "\r\n".encode("ascii")
+                            + body
+                        )
+                        connection.recv(1)
+                except (OSError, AssertionError) as error:
+                    errors.append(error)
+                finally:
+                    completed.set()
+
+            thread = threading.Thread(target=serve, daemon=True)
+            thread.start()
+            self.addCleanup(thread.join, 5)
+            return port, completed, requests, errors
+
+        def tagged_v3_controller(directory: Path) -> object:
+            tagged = subprocess.run(
+                ["git", "show", "v5-measurement-protocol-v3:tools/capture_read_only_v5_identity.py"],
+                cwd=ROOT,
+                check=False,
+                capture_output=True,
+            )
+            self.assertEqual(tagged.returncode, 0, tagged.stderr.decode("utf-8", errors="replace"))
+            source = directory / "v3_capture_read_only_v5_identity.py"
+            source.write_bytes(tagged.stdout)
+            spec = importlib.util.spec_from_file_location("v5_identity_controller_v3", source)
+            self.assertIsNotNone(spec)
+            assert spec is not None and spec.loader is not None
+            tagged_controller = importlib.util.module_from_spec(spec)
+            sys.modules[spec.name] = tagged_controller
+            self.addCleanup(sys.modules.pop, spec.name, None)
+            spec.loader.exec_module(tagged_controller)
+            return tagged_controller
+
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary)
+            v3_controller = tagged_v3_controller(workspace)
+            v3_port, v3_completed, v3_requests, v3_errors = serve_once(expected_host_count=1)
+            with self.assertRaises(v3_controller.CaptureError) as captured_v3_error:
+                v3_controller.stream_loopback_get(v3_port, "/api/version", workspace / "v3.response.json")
+            self.assertIn(
+                "loopback response status differs for /api/version: 400",
+                str(captured_v3_error.exception),
+            )
+            self.assertTrue(v3_completed.wait(5))
+            self.assertFalse(v3_errors)
+            self.assertEqual(
+                host_fields(v3_requests[0]),
+                [f"Host: {controller.HOST}:{v3_port}".encode("ascii")] * 2,
+            )
+
+            v4_port, v4_completed, v4_requests, v4_errors = serve_once(expected_host_count=1)
+            response = workspace / "v4.response.json"
+            controller.stream_loopback_get(v4_port, "/api/version", response)
+            self.assertTrue(v4_completed.wait(5))
+            self.assertFalse(v4_errors)
+            self.assertEqual(
+                host_fields(v4_requests[0]),
+                [f"Host: {controller.HOST}:{v4_port}".encode("ascii")],
+            )
+            self.assertEqual(response.read_bytes(), b"{}")
 
     def test_authenticode_uses_fixed_helper_argv_for_metacharacter_path(self) -> None:
         executable = Path(tempfile.gettempdir()) / "signed & literal; path.exe"

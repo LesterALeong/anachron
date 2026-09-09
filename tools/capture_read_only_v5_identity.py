@@ -36,17 +36,17 @@ except ModuleNotFoundError:
     psutil = None  # type: ignore[assignment]
 
 
-PROTOCOL_ROOT = Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v3")
-PROTOCOL_TAG = "v5-measurement-protocol-v3"
+PROTOCOL_ROOT = Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v4")
+PROTOCOL_TAG = "v5-measurement-protocol-v4"
 SOURCE_MANIFEST = Path(
-    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\source-manifest-v3\source_manifest.json"
+    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\source-manifest-v4\source_manifest.json"
 )
 STAGE_ROOT = Path(r"C:\Users\leste\Downloads\Repos\anachron-v4-evidence\ollama-0.33.2-isolated")
 ISOLATED_EXE = STAGE_ROOT / "runtime" / "ollama.exe"
 ISOLATED_EXE_SHA256 = "c79df1e0c1bfa10ed813c7030ac4c3ba38bb0e350bd7322d9bb58320343235c6"
 ISOLATED_MODELS = STAGE_ROOT / "models"
 IDENTITY_ROOT = Path(
-    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\runtime-identity-v5-protocol-v3"
+    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\runtime-identity-v5-protocol-v4"
 )
 NORMAL_APP = Path(r"C:\Users\leste\AppData\Local\Programs\Ollama\ollama app.exe")
 NORMAL_SERVER = Path(r"C:\Users\leste\AppData\Local\Programs\Ollama\ollama.exe")
@@ -363,7 +363,7 @@ def stream_loopback_get(port: int, endpoint: str, destination: Path) -> None:
     with destination.open("xb") as output:
         connection = http.client.HTTPConnection(HOST, port, timeout=min(CONNECT_HEADER_SECONDS, remaining_seconds(deadline, endpoint)))
         try:
-            connection.putrequest("GET", endpoint, skip_accept_encoding=True)
+            connection.putrequest("GET", endpoint, skip_host=True, skip_accept_encoding=True)
             connection.putheader("Host", f"{HOST}:{port}")
             connection.endheaders()
             response = connection.getresponse()
