@@ -25,7 +25,8 @@ import threading
 import time
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass
+from ctypes import wintypes
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, BinaryIO
@@ -36,16 +37,20 @@ except ModuleNotFoundError:
     psutil = None  # type: ignore[assignment]
 
 
-PROTOCOL_ROOT = Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v4")
-PROTOCOL_TAG = "v5-measurement-protocol-v4"
+PROTOCOL_ROOT = Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v5")
+PROTOCOL_TAG = "v5-measurement-protocol-v5"
 SOURCE_MANIFEST = Path(
-    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\source-manifest-v4\source_manifest.json"
+    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\source-manifest-v5\source_manifest.json"
 )
 STAGE_ROOT = Path(r"C:\Users\leste\Downloads\Repos\anachron-v4-evidence\ollama-0.33.2-isolated")
 ISOLATED_EXE = STAGE_ROOT / "runtime" / "ollama.exe"
 ISOLATED_EXE_SHA256 = "c79df1e0c1bfa10ed813c7030ac4c3ba38bb0e350bd7322d9bb58320343235c6"
 ISOLATED_MODELS = STAGE_ROOT / "models"
 IDENTITY_ROOT = Path(
+    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\runtime-identity-v5-protocol-v5"
+)
+V4_FAILURE_BINDING = Path("research/v5_measurement/v4_failure_binding.json")
+V4_FAILURE_ROOT = Path(
     r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\runtime-identity-v5-protocol-v4"
 )
 NORMAL_APP = Path(r"C:\Users\leste\AppData\Local\Programs\Ollama\ollama app.exe")
@@ -105,6 +110,21 @@ RESTORATION_ATTEMPTS = 3
 MAX_HELPER_OUTPUT_BYTES = 4096
 MAX_AUTHENTICODE_OUTPUT_BYTES = MAX_HELPER_OUTPUT_BYTES
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+DETACHED_PROCESS = getattr(subprocess, "DETACHED_PROCESS", 0)
+CREATE_SUSPENDED = 0x00000004
+JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000
+JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS = 9
+JOB_OBJECT_BASIC_ACCOUNTING_INFORMATION_CLASS = 1
+PROCESS_TERMINATE = 0x0001
+PROCESS_SET_QUOTA = 0x0100
+PROCESS_JOB_ASSIGN_ACCESS = PROCESS_TERMINATE | PROCESS_SET_QUOTA
+THREAD_SUSPEND_RESUME = 0x0002
+JOB_TERMINATION_EXIT_CODE = 1
+INVALID_DWORD = 0xFFFFFFFF
+ISOLATED_STARTUP_SECONDS = 15.0
+ISOLATED_CENSUS_SECONDS = 0.25
+ISOLATED_QUIESCENCE_SECONDS = 2.0
+ISOLATED_TEARDOWN_SECONDS = 10.0
 PROCESS_FIELD_UNAVAILABLE = object()
 PROCESS_IDENTITY_HELPERS = (
     "tools/read_v5_authenticode_identity.ps1",
@@ -191,12 +211,124 @@ class BoundedDrain:
     thread: threading.Thread
 
 
+@dataclass(frozen=True)
+class FailureReceipt:
+    phase: str
+    operation: str
+    message: str
+    recorded_at_utc: str
+
+
+class IsolatedLifecyclePhase(Enum):
+    NEW = "new"
+    JOB_CREATED = "job-created"
+    ROOT_LAUNCHED = "root-launched"
+    ROOT_ASSIGNED = "root-assigned"
+    ROOT_BOUND = "root-bound"
+    DRAINS_STARTED = "drains-started"
+    ROOT_RESUMED = "root-resumed"
+    STOPPED = "stopped"
+
+
 @dataclass
-class IsolatedRuntime:
-    process: subprocess.Popen[bytes]
-    identity: ProcessRecord | None = None
+class IsolatedLifecycle:
+    phase: IsolatedLifecyclePhase = IsolatedLifecyclePhase.NEW
+    job_handle: int | None = None
+    process: subprocess.Popen[bytes] | None = None
+    root_identity: ProcessRecord | None = None
     stdout_drain: BoundedDrain | None = None
     stderr_drain: BoundedDrain | None = None
+    assignment_process_handle: int | None = None
+    root_thread_handle: int | None = None
+    job_create_attempted: bool = False
+    job_create_succeeded: bool = False
+    root_launch_attempted: bool = False
+    root_launch_succeeded: bool = False
+    job_assign_attempted: bool = False
+    job_assign_succeeded: bool = False
+    root_bind_attempted: bool = False
+    root_bind_succeeded: bool = False
+    drains_started_attempted: bool = False
+    drains_started_succeeded: bool = False
+    root_resume_attempted: bool = False
+    root_resume_succeeded: bool = False
+    root_thread_handle_close_attempted: bool = False
+    root_thread_handle_close_succeeded: bool = False
+    startup_observer_started: bool = False
+    startup_observed: bool = False
+    quiescence_succeeded: bool = False
+    teardown_path: str = "none"
+    stop_attempted: bool = False
+    job_terminate_attempted: bool = False
+    job_terminate_succeeded: bool = False
+    root_waited: bool = False
+    job_zero_window_confirmed: bool = False
+    prebind_root_stop_attempted: bool = False
+    prebind_root_stop_succeeded: bool = False
+    prebind_baseline_clean: bool = False
+    pipes_closed: bool = False
+    drains_joined: bool = False
+    job_close_attempted: bool = False
+    job_close_succeeded: bool = False
+    cleanup_errors: list[FailureReceipt] = field(default_factory=list)
+    primary_error: FailureReceipt | None = None
+
+    def advance(self, phase: IsolatedLifecyclePhase) -> None:
+        if phase.value == self.phase.value:
+            return
+        order = tuple(IsolatedLifecyclePhase)
+        if order.index(phase) <= order.index(self.phase):
+            raise CaptureError("isolated lifecycle phase regressed")
+        self.phase = phase
+
+
+class JOBOBJECT_BASIC_LIMIT_INFORMATION(ctypes.Structure):
+    _fields_ = [
+        ("PerProcessUserTimeLimit", ctypes.c_int64),
+        ("PerJobUserTimeLimit", ctypes.c_int64),
+        ("LimitFlags", wintypes.DWORD),
+        ("MinimumWorkingSetSize", ctypes.c_size_t),
+        ("MaximumWorkingSetSize", ctypes.c_size_t),
+        ("ActiveProcessLimit", wintypes.DWORD),
+        ("Affinity", ctypes.c_size_t),
+        ("PriorityClass", wintypes.DWORD),
+        ("SchedulingClass", wintypes.DWORD),
+    ]
+
+
+class JOBOBJECT_BASIC_ACCOUNTING_INFORMATION(ctypes.Structure):
+    _fields_ = [
+        ("TotalUserTime", ctypes.c_int64),
+        ("TotalKernelTime", ctypes.c_int64),
+        ("ThisPeriodTotalUserTime", ctypes.c_int64),
+        ("ThisPeriodTotalKernelTime", ctypes.c_int64),
+        ("TotalPageFaultCount", wintypes.DWORD),
+        ("TotalProcesses", wintypes.DWORD),
+        ("ActiveProcesses", wintypes.DWORD),
+        ("TotalTerminatedProcesses", wintypes.DWORD),
+    ]
+
+
+class IO_COUNTERS(ctypes.Structure):
+    _fields_ = [
+        ("ReadOperationCount", ctypes.c_uint64),
+        ("WriteOperationCount", ctypes.c_uint64),
+        ("OtherOperationCount", ctypes.c_uint64),
+        ("ReadTransferCount", ctypes.c_uint64),
+        ("WriteTransferCount", ctypes.c_uint64),
+        ("OtherTransferCount", ctypes.c_uint64),
+    ]
+
+
+class JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
+    _fields_ = [
+        ("BasicLimitInformation", JOBOBJECT_BASIC_LIMIT_INFORMATION),
+        ("IoInfo", IO_COUNTERS),
+        ("ProcessMemoryLimit", ctypes.c_size_t),
+        ("JobMemoryLimit", ctypes.c_size_t),
+        ("PeakProcessMemoryUsed", ctypes.c_size_t),
+        ("PeakJobMemoryUsed", ctypes.c_size_t),
+    ]
 
 
 @dataclass
@@ -497,6 +629,47 @@ def verify_source_manifest(authority: dict[str, str]) -> dict[str, Any]:
     ):
         raise CaptureError("source manifest release identity differs")
     return manifest
+
+
+def verify_v4_failure_binding(manifest: dict[str, Any]) -> None:
+    binding_path = PROTOCOL_ROOT / V4_FAILURE_BINDING
+    assert_no_reparse_or_ads(binding_path, "v4 failure binding")
+    binding = read_json(binding_path, "v4 failure binding")
+    if not isinstance(binding, dict) or set(binding) != {"failure_root", "kind", "v4_release"}:
+        raise CaptureError("v4 failure binding differs")
+    release = binding["v4_release"]
+    failure_root = binding["failure_root"]
+    expected_release = {
+        "branch": "protocol/v5-successor-v4",
+        "controller_sha256": "c7b56cdc7661015f6fc4ab8796ee048c74afb1d92a989e013ab772fe7ee0ba1b",
+        "commit": "c8f81bb9dc9c7b1f701f8e894b4e86a120a04a71",
+        "source_manifest_sha256": "83422ab979149520c0c85c5e96a88e1f549f12fae1020be94670286571453d74",
+        "tag": "v5-measurement-protocol-v4",
+        "tag_object": "ad369ca0cdd667b2af305341517fc24baa3c5404",
+    }
+    if binding["kind"] != "anachron-v5-v4-failure-binding" or release != expected_release or not isinstance(failure_root, dict):
+        raise CaptureError("v4 failure binding differs")
+    members = failure_root.get("members")
+    status = failure_root.get("status")
+    if failure_root.get("path") != str(V4_FAILURE_ROOT) or not isinstance(members, list) or not isinstance(status, dict):
+        raise CaptureError("v4 failure binding differs")
+    if V4_FAILURE_BINDING.as_posix() not in {entry.get("path") for entry in manifest.get("governed_files", []) if isinstance(entry, dict)}:
+        raise CaptureError("v4 failure binding is not governed")
+    assert_no_reparse_or_ads(V4_FAILURE_ROOT, "v4 failure root")
+    actual_paths = {entry.name for entry in V4_FAILURE_ROOT.iterdir()}
+    expected_paths = {entry.get("path") for entry in members if isinstance(entry, dict)}
+    if actual_paths != expected_paths or len(members) != 6:
+        raise CaptureError("v4 failure root topology differs")
+    for member in members:
+        if not isinstance(member, dict) or set(member) != {"bytes", "path", "sha256"}:
+            raise CaptureError("v4 failure binding differs")
+        path = V4_FAILURE_ROOT / member["path"]
+        assert_regular(path, "v4 failure root member")
+        if path.stat().st_size != member["bytes"] or sha256_file(path) != member["sha256"]:
+            raise CaptureError("v4 failure root member differs")
+    recorded_status = read_json(V4_FAILURE_ROOT / "operation_status.json", "v4 operation status")
+    if not isinstance(recorded_status, dict) or any(recorded_status.get(key) != value for key, value in status.items()):
+        raise CaptureError("v4 failure status differs")
 
 
 def verify_tracked_helpers(manifest: dict[str, Any]) -> dict[str, Path]:
@@ -1032,7 +1205,10 @@ def assert_normal_state(cim_helper: Path | None = None) -> tuple[ProcessRecord, 
     return observation.app, observation.server
 
 
-def assert_isolated_state(pid: int, cim_helper: Path | None = None) -> None:
+def assert_isolated_state(lifecycle: IsolatedLifecycle, cim_helper: Path | None = None) -> None:
+    if lifecycle.root_identity is None or lifecycle.job_handle is None or not lifecycle.job_assign_succeeded or not lifecycle.root_resume_succeeded:
+        raise CaptureError("isolated Job Object state is incomplete")
+    pid = lifecycle.root_identity.pid
     census = process_census(cim_helper)
     assert_no_runner_or_llama_server(cim_helper, census)
     records = process_records(cim_helper, census)
@@ -1045,6 +1221,8 @@ def assert_isolated_state(pid: int, cim_helper: Path | None = None) -> None:
             raise CaptureError("isolated executable identity differs")
         if psutil.Process(pid).children(recursive=True):
             raise CaptureError("isolated server has child processes")
+        if isolated_job_active_members(lifecycle) != 1:
+            raise CaptureError("isolated Job Object active member count differs")
     except expected_process_observation_errors() as error:
         raise OperationalUncertainty("isolated process observation failed") from error
 
@@ -1119,17 +1297,236 @@ def wait_for_listener_free() -> None:
     raise CaptureError("port 11434 did not become free")
 
 
-def wait_for_isolated_listener(pid: int, stdout_overflow: threading.Event, stderr_overflow: threading.Event) -> None:
-    deadline = time.monotonic() + 60.0
+def root_bound_startup_descendants(
+    lifecycle: IsolatedLifecycle,
+    census: tuple[ProcessObservation, ...],
+) -> tuple[ProcessObservation, ...]:
+    """Return complete descendants of the live bound root for startup admission only."""
+    if lifecycle.root_identity is None:
+        raise OperationalUncertainty("isolated child identity is unavailable")
+    by_pid = {observation.pid: observation for observation in census}
+    root = by_pid.get(lifecycle.root_identity.pid)
+    if root is None:
+        raise CaptureError("isolated server identity differs during startup")
+    if root.record is None or root.record != lifecycle.root_identity:
+        raise CaptureError("isolated server identity differs during startup")
+
+    def is_descendant(observation: ProcessObservation) -> bool:
+        parent = observation.ppid
+        visited = {observation.pid}
+        while parent != lifecycle.root_identity.pid:
+            if parent is None or parent in visited:
+                return False
+            visited.add(parent)
+            ancestor = by_pid.get(parent)
+            if ancestor is None:
+                return False
+            parent = ancestor.ppid
+        return True
+
+    descendants: list[ProcessObservation] = []
+    for observation in census:
+        if observation.pid == lifecycle.root_identity.pid:
+            continue
+        if not is_descendant(observation):
+            continue
+        if observation.exe is None or observation.ppid is None or observation.birth_token_hex is None:
+            raise OperationalUncertainty("isolated task descendant identity is incomplete")
+        descendants.append(observation)
+    return tuple(descendants)
+
+
+def isolated_startup_descendants(
+    lifecycle: IsolatedLifecycle,
+    census: tuple[ProcessObservation, ...],
+) -> tuple[ProcessRecord, ...]:
+    """Return only exact production-trace helpers during startup admission."""
+    descendants = root_bound_startup_descendants(lifecycle, census)
+    by_pid = {observation.pid: observation for observation in census}
+    isolated_executable = resolve_observed_executable(ISOLATED_EXE, "governed isolated server")
+    lib_root = (isolated_executable.parent / "lib" / "ollama").resolve(strict=True)
+    llama_executable = (lib_root / "llama-server.exe").resolve(strict=True)
+    conhost_executable = (Path(os.environ["SystemRoot"]) / "System32" / "conhost.exe").resolve(strict=True)
+
+    def exact_command(
+        observation: ProcessObservation,
+        executable: Path,
+        arguments: tuple[str, ...],
+        *,
+        nt_namespace_prefix: bool = False,
+    ) -> bool:
+        if observation.cmdline is None or len(observation.cmdline) != len(arguments) + 1:
+            return False
+        executable_token = observation.cmdline[0]
+        if nt_namespace_prefix:
+            if not executable_token.startswith("\\??\\"):
+                return False
+            executable_token = executable_token.removeprefix("\\??\\")
+        try:
+            resolved_executable = Path(executable_token).resolve(strict=True)
+        except OSError:
+            return False
+        return (
+            resolved_executable == executable
+            and observation.cmdline[1:] == arguments
+        )
+
+    def admitted_helper(observation: ProcessObservation) -> bool:
+        if observation.exe is None or observation.cmdline is None:
+            return False
+        executable = resolve_observed_executable(observation.exe, "isolated startup descendant")
+        if observation.name.casefold() == "ollama.exe" and executable == isolated_executable:
+            return any(
+                exact_command(
+                    observation,
+                    isolated_executable,
+                    ("gpu-discover", "--lib-dir", str(lib_root), "--lib-dir", str(lib_root / variant)),
+                )
+                for variant in ("cuda_v12", "cuda_v13", "vulkan")
+            )
+        if observation.name.casefold() != "llama-server.exe" or executable != llama_executable:
+            return False
+        if exact_command(observation, llama_executable, ("--list-devices", "--offline", "--verbose")):
+            return True
+        command = observation.cmdline
+        if len(command) != 8 or Path(command[0]).resolve(strict=True) != llama_executable:
+            return False
+        port = command[2]
+        return (
+            command[1] == "--port"
+            and port.isdecimal()
+            and 49152 <= int(port) <= 65535
+            and command[3:] == ("--host", HOST, "--no-webui", "--offline", "--verbose")
+        )
+
+    def admitted_conhost(observation: ProcessObservation) -> bool:
+        if observation.name.casefold() != "conhost.exe" or observation.exe is None:
+            return False
+        if resolve_observed_executable(observation.exe, "isolated conhost descendant") != conhost_executable:
+            return False
+        parent = by_pid.get(observation.ppid)
+        return (
+            parent is not None
+            and admitted_helper(parent)
+            and exact_command(observation, conhost_executable, ("0x4",), nt_namespace_prefix=True)
+        )
+
+    for observation in census:
+        if observation.pid == lifecycle.root_identity.pid:
+            continue
+        descendant = any(candidate.pid == observation.pid for candidate in descendants)
+        if observation.disposition in (ProcessDisposition.BLOCKER, ProcessDisposition.OLLAMA) and not descendant:
+            raise CaptureError("foreign runner or llama-server process is present")
+        if not descendant:
+            continue
+        if not (admitted_helper(observation) or admitted_conhost(observation)):
+            raise CaptureError("isolated startup descendant differs")
+    return tuple(
+        ProcessRecord(
+            observation.pid,
+            observation.ppid,
+            observation.name,
+            observation.exe,
+            observation.birth_token_hex,
+        )
+        for observation in descendants
+        if observation.exe is not None and observation.ppid is not None and observation.birth_token_hex is not None
+    )
+
+
+def wait_for_isolated_quiescence(
+    lifecycle: IsolatedLifecycle,
+    stdout_overflow: threading.Event,
+    stderr_overflow: threading.Event,
+    cim_helper: Path | None = None,
+) -> None:
+    deadline = time.monotonic() + ISOLATED_STARTUP_SECONDS
+    quiescent_since: float | None = None
+    while time.monotonic() < deadline:
+        if stdout_overflow.is_set() or stderr_overflow.is_set():
+            raise CaptureError("isolated stdout or stderr exceeded the log cap")
+        if lifecycle.process is None:
+            raise CaptureError("isolated root is unavailable during startup quiescence")
+        if lifecycle.process.poll() is not None or not psutil.pid_exists(lifecycle.process.pid):
+            raise CaptureError("isolated server exited before startup quiescence")
+        if listener_pids(PORT) != (lifecycle.process.pid,):
+            quiescent_since = None
+            time.sleep(ISOLATED_CENSUS_SECONDS)
+            continue
+        descendants = isolated_startup_descendants(lifecycle, process_census(cim_helper))
+        if descendants:
+            quiescent_since = None
+        elif quiescent_since is None:
+            quiescent_since = time.monotonic()
+        elif time.monotonic() - quiescent_since >= ISOLATED_QUIESCENCE_SECONDS:
+            lifecycle.startup_observed = True
+            lifecycle.quiescence_succeeded = True
+            return
+        time.sleep(ISOLATED_CENSUS_SECONDS)
+    raise CaptureError("isolated server did not reach continuous child-free quiescence")
+
+
+def wait_for_isolated_listener(
+    pid: int,
+    stdout_overflow: threading.Event,
+    stderr_overflow: threading.Event,
+    lifecycle: IsolatedLifecycle | None = None,
+    cim_helper: Path | None = None,
+) -> None:
+    deadline = time.monotonic() + ISOLATED_STARTUP_SECONDS
     while time.monotonic() < deadline:
         if stdout_overflow.is_set() or stderr_overflow.is_set():
             raise CaptureError("isolated stdout or stderr exceeded the log cap")
         if not psutil.pid_exists(pid):
             raise CaptureError("isolated server exited before listener opened")
         if listener_pids(PORT) == (pid,):
+            if lifecycle is not None:
+                lifecycle.startup_observer_started = True
+                wait_for_isolated_quiescence(lifecycle, stdout_overflow, stderr_overflow, cim_helper)
             return
-        time.sleep(0.25)
+        time.sleep(ISOLATED_CENSUS_SECONDS)
     raise CaptureError("isolated server listener did not open")
+
+
+def wait_for_prelaunch_baseline(cim_helper: Path | None = None) -> None:
+    """Require the suspended-launch failure path to return to an empty isolated baseline."""
+    deadline = time.monotonic() + ISOLATED_TEARDOWN_SECONDS
+    absent_since: float | None = None
+    isolated_runtime_root = resolve_observed_executable(ISOLATED_EXE, "governed isolated server").parent
+    while time.monotonic() < deadline:
+        census = process_census(cim_helper)
+        assert_no_runner_or_llama_server(cim_helper, census)
+        staged_runtime_present = any(
+            observation.exe is not None
+            and resolve_observed_executable(observation.exe, "isolated prelaunch process").is_relative_to(isolated_runtime_root)
+            for observation in census
+        )
+        if staged_runtime_present or listener_pids(PORT):
+            absent_since = None
+        elif absent_since is None:
+            absent_since = time.monotonic()
+        elif time.monotonic() - absent_since >= ISOLATED_QUIESCENCE_SECONDS:
+            return
+        time.sleep(ISOLATED_CENSUS_SECONDS)
+    raise CaptureError("isolated prelaunch baseline did not clear")
+
+
+def wait_for_isolated_job_quiescence(lifecycle: IsolatedLifecycle) -> None:
+    """Require the assigned Job Object to report zero active members continuously."""
+    if lifecycle.job_handle is None or not lifecycle.job_assign_succeeded or not lifecycle.job_terminate_succeeded:
+        raise CaptureError("isolated Job Object teardown state is incomplete")
+    deadline = time.monotonic() + ISOLATED_TEARDOWN_SECONDS
+    absent_since: float | None = None
+    while time.monotonic() < deadline:
+        if isolated_job_active_members(lifecycle) != 0:
+            absent_since = None
+        elif absent_since is None:
+            absent_since = time.monotonic()
+        elif time.monotonic() - absent_since >= ISOLATED_QUIESCENCE_SECONDS:
+            lifecycle.job_zero_window_confirmed = True
+            return
+        time.sleep(ISOLATED_CENSUS_SECONDS)
+    raise CaptureError("isolated Job Object did not reach zero active members")
 
 
 def assert_exact_tags(tags: Any) -> None:
@@ -1192,21 +1589,172 @@ def join_bounded_drain(drain: BoundedDrain, label: str) -> None:
         raise CaptureError(f"{label} log exceeds {MAX_RESPONSE_BYTES} bytes")
 
 
-def assert_no_log_overflow(runtime: IsolatedRuntime) -> None:
-    if runtime.stdout_drain is None or runtime.stderr_drain is None:
+def assert_no_log_overflow(lifecycle: IsolatedLifecycle) -> None:
+    if lifecycle.stdout_drain is None or lifecycle.stderr_drain is None:
         raise CaptureError("isolated log drains are incomplete")
-    if isolated_log_overflow(runtime):
+    if isolated_log_overflow(lifecycle):
         raise CaptureError("isolated stdout or stderr exceeded the log cap")
 
 
-def isolated_log_overflow(runtime: IsolatedRuntime | None) -> bool:
-    return runtime is not None and (
-        (runtime.stdout_drain is not None and runtime.stdout_drain.overflow.is_set())
-        or (runtime.stderr_drain is not None and runtime.stderr_drain.overflow.is_set())
+def isolated_log_overflow(lifecycle: IsolatedLifecycle | None) -> bool:
+    return lifecycle is not None and (
+        (lifecycle.stdout_drain is not None and lifecycle.stdout_drain.overflow.is_set())
+        or (lifecycle.stderr_drain is not None and lifecycle.stderr_drain.overflow.is_set())
     )
 
 
-def start_isolated_process() -> IsolatedRuntime:
+def kernel32() -> Any:
+    if os.name != "nt":
+        raise CaptureError("isolated Job Object requires Windows")
+    api = ctypes.WinDLL("kernel32", use_last_error=True)
+    api.CreateJobObjectW.argtypes = (ctypes.c_void_p, wintypes.LPCWSTR)
+    api.CreateJobObjectW.restype = wintypes.HANDLE
+    api.SetInformationJobObject.argtypes = (wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD)
+    api.SetInformationJobObject.restype = wintypes.BOOL
+    api.AssignProcessToJobObject.argtypes = (wintypes.HANDLE, wintypes.HANDLE)
+    api.AssignProcessToJobObject.restype = wintypes.BOOL
+    api.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    api.OpenProcess.restype = wintypes.HANDLE
+    api.OpenThread.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    api.OpenThread.restype = wintypes.HANDLE
+    api.GetProcessIdOfThread.argtypes = (wintypes.HANDLE,)
+    api.GetProcessIdOfThread.restype = wintypes.DWORD
+    api.ResumeThread.argtypes = (wintypes.HANDLE,)
+    api.ResumeThread.restype = wintypes.DWORD
+    api.TerminateJobObject.argtypes = (wintypes.HANDLE, wintypes.UINT)
+    api.TerminateJobObject.restype = wintypes.BOOL
+    api.QueryInformationJobObject.argtypes = (
+        wintypes.HANDLE,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        ctypes.POINTER(wintypes.DWORD),
+    )
+    api.QueryInformationJobObject.restype = wintypes.BOOL
+    api.CloseHandle.argtypes = (wintypes.HANDLE,)
+    api.CloseHandle.restype = wintypes.BOOL
+    return api
+
+
+def win32_error(label: str) -> CaptureError:
+    return CaptureError(f"{label} failed: Win32 error {ctypes.get_last_error()}")
+
+
+def create_lifecycle_job(lifecycle: IsolatedLifecycle) -> None:
+    lifecycle.job_create_attempted = True
+    api = kernel32()
+    handle = api.CreateJobObjectW(None, None)
+    if not handle:
+        raise win32_error("CreateJobObjectW")
+    lifecycle.job_handle = int(handle)
+    limits = JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
+    limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+    if not api.SetInformationJobObject(
+        lifecycle.job_handle,
+        JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS,
+        ctypes.byref(limits),
+        ctypes.sizeof(limits),
+    ):
+        raise win32_error("SetInformationJobObject")
+    lifecycle.job_create_succeeded = True
+    lifecycle.advance(IsolatedLifecyclePhase.JOB_CREATED)
+
+
+def close_lifecycle_job(lifecycle: IsolatedLifecycle) -> None:
+    lifecycle.job_close_attempted = True
+    if lifecycle.job_handle is None or lifecycle.job_handle < 1:
+        raise CaptureError("isolated Job Object handle differs")
+    api = kernel32()
+    if not api.CloseHandle(lifecycle.job_handle):
+        raise win32_error("CloseHandle(Job Object)")
+    lifecycle.job_close_succeeded = True
+    lifecycle.job_handle = None
+
+
+def assign_suspended_root_to_job(lifecycle: IsolatedLifecycle) -> None:
+    lifecycle.job_assign_attempted = True
+    if lifecycle.job_handle is None or lifecycle.process is None:
+        raise CaptureError("isolated Job Object is unavailable")
+    if type(lifecycle.process.pid) is not int or lifecycle.process.pid < 1:
+        raise CaptureError("isolated suspended root PID differs")
+    api = kernel32()
+    process_handle = api.OpenProcess(PROCESS_JOB_ASSIGN_ACCESS, False, lifecycle.process.pid)
+    if not process_handle:
+        raise win32_error("OpenProcess(isolated root)")
+    lifecycle.assignment_process_handle = int(process_handle)
+    try:
+        if not api.AssignProcessToJobObject(lifecycle.job_handle, lifecycle.assignment_process_handle):
+            raise win32_error("AssignProcessToJobObject")
+        lifecycle.job_assign_succeeded = True
+        lifecycle.advance(IsolatedLifecyclePhase.ROOT_ASSIGNED)
+    finally:
+        if not api.CloseHandle(lifecycle.assignment_process_handle):
+            raise win32_error("CloseHandle(isolated root)")
+        lifecycle.assignment_process_handle = None
+
+
+def resume_suspended_root(lifecycle: IsolatedLifecycle) -> None:
+    lifecycle.root_resume_attempted = True
+    if lifecycle.root_identity is None or lifecycle.process is None or psutil is None:
+        raise CaptureError("isolated root identity is unavailable before resume")
+    threads = psutil.Process(lifecycle.root_identity.pid).threads()
+    if len(threads) != 1:
+        raise CaptureError("isolated suspended root thread count differs")
+    thread_id = threads[0].id
+    api = kernel32()
+    thread_handle = api.OpenThread(THREAD_SUSPEND_RESUME, False, thread_id)
+    if not thread_handle:
+        raise win32_error("OpenThread")
+    lifecycle.root_thread_handle = int(thread_handle)
+    try:
+        if api.GetProcessIdOfThread(lifecycle.root_thread_handle) != lifecycle.root_identity.pid:
+            raise CaptureError("isolated suspended root thread owner differs")
+        prior_suspend_count = api.ResumeThread(lifecycle.root_thread_handle)
+        if prior_suspend_count == INVALID_DWORD:
+            raise win32_error("ResumeThread")
+        if prior_suspend_count != 1:
+            raise CaptureError("isolated suspended root prior suspend count differs")
+        lifecycle.root_resume_succeeded = True
+        lifecycle.advance(IsolatedLifecyclePhase.ROOT_RESUMED)
+    finally:
+        lifecycle.root_thread_handle_close_attempted = True
+        if not api.CloseHandle(lifecycle.root_thread_handle):
+            raise win32_error("CloseHandle(root thread)")
+        lifecycle.root_thread_handle_close_succeeded = True
+        lifecycle.root_thread_handle = None
+
+
+def terminate_lifecycle_job(lifecycle: IsolatedLifecycle) -> None:
+    lifecycle.job_terminate_attempted = True
+    if lifecycle.job_handle is None or not lifecycle.job_assign_succeeded:
+        raise CaptureError("isolated Job Object was not assigned")
+    api = kernel32()
+    if not api.TerminateJobObject(lifecycle.job_handle, JOB_TERMINATION_EXIT_CODE):
+        raise win32_error("TerminateJobObject")
+    lifecycle.job_terminate_succeeded = True
+
+
+def isolated_job_active_members(lifecycle: IsolatedLifecycle) -> int:
+    if lifecycle.job_handle is None:
+        raise CaptureError("isolated Job Object handle is unavailable")
+    api = kernel32()
+    accounting = JOBOBJECT_BASIC_ACCOUNTING_INFORMATION()
+    returned = wintypes.DWORD()
+    if not api.QueryInformationJobObject(
+        lifecycle.job_handle,
+        JOB_OBJECT_BASIC_ACCOUNTING_INFORMATION_CLASS,
+        ctypes.byref(accounting),
+        ctypes.sizeof(accounting),
+        ctypes.byref(returned),
+    ):
+        raise win32_error("QueryInformationJobObject")
+    if returned.value != ctypes.sizeof(accounting):
+        raise CaptureError("QueryInformationJobObject byte count differs")
+    return int(accounting.ActiveProcesses)
+
+
+def launch_suspended_isolated_root(lifecycle: IsolatedLifecycle) -> None:
+    lifecycle.root_launch_attempted = True
     environment = os.environ.copy()
     environment.update({"OLLAMA_HOST": f"{HOST}:{PORT}", "OLLAMA_MODELS": str(ISOLATED_MODELS), "OLLAMA_NO_CLOUD": "1", "OLLAMA_NOPRUNE": "1"})
     process = subprocess.Popen(
@@ -1215,28 +1763,148 @@ def start_isolated_process() -> IsolatedRuntime:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=environment,
-        creationflags=CREATE_NO_WINDOW,
+        creationflags=DETACHED_PROCESS | CREATE_SUSPENDED,
     )
-    return IsolatedRuntime(process)
+    lifecycle.process = process
+    lifecycle.root_launch_succeeded = True
+    lifecycle.advance(IsolatedLifecyclePhase.ROOT_LAUNCHED)
 
 
-def bind_isolated_identity(runtime: IsolatedRuntime, cim_helper: Path | None = None) -> None:
+def bind_suspended_root_identity(lifecycle: IsolatedLifecycle, cim_helper: Path | None = None) -> None:
+    lifecycle.root_bind_attempted = True
+    if lifecycle.process is None:
+        raise CaptureError("isolated root is unavailable before identity binding")
     if psutil is None:
         raise CaptureError("psutil is unavailable")
     try:
-        process = psutil.Process(runtime.process.pid)
+        process = psutil.Process(lifecycle.process.pid)
     except psutil.NoSuchProcess:
         raise
     except (psutil.AccessDenied, OSError) as error:
         raise CaptureError("cannot establish isolated child identity before stop") from error
-    runtime.identity = process_record(process, "isolated child", cim_helper)
+    lifecycle.root_identity = process_record(process, "isolated child", cim_helper)
+    lifecycle.root_bind_succeeded = True
+    lifecycle.advance(IsolatedLifecyclePhase.ROOT_BOUND)
 
 
-def start_isolated_drains(runtime: IsolatedRuntime, stdout_path: Path, stderr_path: Path) -> None:
-    if runtime.process.stdout is None or runtime.process.stderr is None:
+def start_lifecycle_drains(lifecycle: IsolatedLifecycle, stdout_path: Path, stderr_path: Path) -> None:
+    lifecycle.drains_started_attempted = True
+    if lifecycle.process is None or lifecycle.process.stdout is None or lifecycle.process.stderr is None:
         raise CaptureError("isolated process pipes are unavailable")
-    runtime.stdout_drain = start_bounded_drain(runtime.process.stdout, stdout_path, "isolated-stdout")
-    runtime.stderr_drain = start_bounded_drain(runtime.process.stderr, stderr_path, "isolated-stderr")
+    lifecycle.stdout_drain = start_bounded_drain(lifecycle.process.stdout, stdout_path, "isolated-stdout")
+    lifecycle.stderr_drain = start_bounded_drain(lifecycle.process.stderr, stderr_path, "isolated-stderr")
+    lifecycle.drains_started_succeeded = True
+    lifecycle.advance(IsolatedLifecyclePhase.DRAINS_STARTED)
+
+
+def lifecycle_failure(lifecycle: IsolatedLifecycle, operation: str, error: BaseException) -> FailureReceipt:
+    return FailureReceipt(
+        lifecycle.phase.value,
+        operation,
+        str(error),
+        time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    )
+
+
+def append_cleanup_failure(lifecycle: IsolatedLifecycle, operation: str, error: BaseException) -> None:
+    lifecycle.cleanup_errors.append(lifecycle_failure(lifecycle, operation, error))
+
+
+def close_lifecycle_pipes(lifecycle: IsolatedLifecycle) -> None:
+    if lifecycle.process is None:
+        lifecycle.pipes_closed = True
+        return
+    for pipe, label in ((lifecycle.process.stdout, "isolated stdout pipe"), (lifecycle.process.stderr, "isolated stderr pipe")):
+        try:
+            if pipe is not None:
+                pipe.close()
+        except BaseException as error:  # noqa: BLE001
+            append_cleanup_failure(lifecycle, label, error)
+    lifecycle.pipes_closed = not any(receipt.operation.endswith("pipe") for receipt in lifecycle.cleanup_errors)
+
+
+def join_lifecycle_drains(lifecycle: IsolatedLifecycle) -> None:
+    for drain, label in ((lifecycle.stdout_drain, "isolated stdout"), (lifecycle.stderr_drain, "isolated stderr")):
+        try:
+            if drain is not None:
+                join_bounded_drain(drain, label)
+        except BaseException as error:  # noqa: BLE001
+            append_cleanup_failure(lifecycle, f"{label} drain", error)
+    lifecycle.drains_joined = not any(receipt.operation.endswith("drain") for receipt in lifecycle.cleanup_errors)
+
+
+def stop_isolated_lifecycle(lifecycle: IsolatedLifecycle, cim_helper: Path | None = None) -> None:
+    """Perform the sole lifecycle teardown from durable acquisition facts."""
+    if lifecycle.stop_attempted:
+        raise CaptureError("isolated lifecycle stop was already attempted")
+    lifecycle.stop_attempted = True
+    if lifecycle.process is None:
+        lifecycle.teardown_path = "no-root"
+    elif not lifecycle.job_assign_succeeded:
+        lifecycle.teardown_path = "unassigned-suspended"
+        lifecycle.prebind_root_stop_attempted = True
+        try:
+            lifecycle.process.kill()
+            lifecycle.process.wait(timeout=CONNECT_HEADER_SECONDS)
+            lifecycle.prebind_root_stop_succeeded = True
+            lifecycle.root_waited = True
+        except BaseException as error:  # noqa: BLE001
+            append_cleanup_failure(lifecycle, "prebind root stop", error)
+        try:
+            wait_for_prelaunch_baseline(cim_helper)
+            lifecycle.prebind_baseline_clean = True
+        except BaseException as error:  # noqa: BLE001
+            append_cleanup_failure(lifecycle, "prebind baseline", error)
+    else:
+        lifecycle.teardown_path = "job"
+        try:
+            terminate_lifecycle_job(lifecycle)
+        except BaseException as error:  # noqa: BLE001
+            append_cleanup_failure(lifecycle, "Job terminate", error)
+        if lifecycle.process is not None:
+            try:
+                lifecycle.process.wait(timeout=CONNECT_HEADER_SECONDS)
+                lifecycle.root_waited = True
+            except BaseException as error:  # noqa: BLE001
+                append_cleanup_failure(lifecycle, "isolated root wait", error)
+        if lifecycle.job_terminate_succeeded:
+            try:
+                wait_for_isolated_job_quiescence(lifecycle)
+            except BaseException as error:  # noqa: BLE001
+                append_cleanup_failure(lifecycle, "Job zero window", error)
+    close_lifecycle_pipes(lifecycle)
+    join_lifecycle_drains(lifecycle)
+    if lifecycle.job_handle is not None:
+        try:
+            close_lifecycle_job(lifecycle)
+        except BaseException as error:  # noqa: BLE001
+            append_cleanup_failure(lifecycle, "Job close", error)
+    lifecycle.advance(IsolatedLifecyclePhase.STOPPED)
+
+
+def normal_restore_eligible(lifecycle: IsolatedLifecycle, normal_server_resolution: str) -> bool:
+    if normal_server_resolution == "uncertain" or lifecycle.primary_error is not None or lifecycle.cleanup_errors:
+        return False
+    if lifecycle.process is None:
+        return lifecycle.job_handle is None or lifecycle.job_close_succeeded
+    if not lifecycle.job_assign_succeeded:
+        return (
+            lifecycle.prebind_root_stop_succeeded
+            and lifecycle.root_waited
+            and lifecycle.prebind_baseline_clean
+            and lifecycle.pipes_closed
+            and lifecycle.drains_joined
+            and lifecycle.job_close_succeeded
+        )
+    return (
+        lifecycle.job_terminate_succeeded
+        and lifecycle.root_waited
+        and lifecycle.job_zero_window_confirmed
+        and lifecycle.pipes_closed
+        and lifecycle.drains_joined
+        and lifecycle.job_close_succeeded
+        and lifecycle.root_thread_handle_close_succeeded
+    )
 
 
 def restore_normal(
@@ -1620,6 +2288,7 @@ def run_capture() -> None:
     helpers = verify_tracked_helpers(manifest)
     cim_helper = helpers["tools/read_v5_process_identity.ps1"]
     verify_isolated_runtime_and_store(manifest)
+    verify_v4_failure_binding(manifest)
     assert_regular(NORMAL_APP, "normal app")
     assert_regular(NORMAL_SERVER, "normal server")
     normal_hashes = {"app": sha256_file(NORMAL_APP), "server": sha256_file(NORMAL_SERVER)}
@@ -1637,13 +2306,14 @@ def run_capture() -> None:
     def mark_server_signal_issued() -> None:
         nonlocal normal_server_signal_issued
         normal_server_signal_issued = True
-    isolated: IsolatedRuntime | None = None
+    lifecycle = IsolatedLifecycle()
     failure: BaseException | None = None
     baseline_version = b""
     baseline_tags = b""
     capture_prepared = False
     restoration_started = False
     restore_succeeded = False
+    restoration_eligible = False
     started_at_utc = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
     try:
@@ -1665,55 +2335,53 @@ def run_capture() -> None:
             normal_server_stop_resolution = "signaled-error" if normal_server_signal_issued else "uncertain"
             raise
         wait_for_listener_free()
-        isolated = start_isolated_process()
-        bind_isolated_identity(isolated, cim_helper)
-        start_isolated_drains(isolated, IDENTITY_ROOT / "isolated-stdout.log", IDENTITY_ROOT / "isolated-stderr.log")
-        if isolated.stdout_drain is None or isolated.stderr_drain is None:
+        create_lifecycle_job(lifecycle)
+        launch_suspended_isolated_root(lifecycle)
+        assign_suspended_root_to_job(lifecycle)
+        bind_suspended_root_identity(lifecycle, cim_helper)
+        start_lifecycle_drains(lifecycle, IDENTITY_ROOT / "isolated-stdout.log", IDENTITY_ROOT / "isolated-stderr.log")
+        if lifecycle.stdout_drain is None or lifecycle.stderr_drain is None or lifecycle.process is None:
             raise CaptureError("isolated log drains are incomplete")
-        wait_for_isolated_listener(isolated.process.pid, isolated.stdout_drain.overflow, isolated.stderr_drain.overflow)
-        assert_no_log_overflow(isolated)
-        assert_isolated_state(isolated.process.pid, cim_helper)
+        resume_suspended_root(lifecycle)
+        wait_for_isolated_listener(
+            lifecycle.process.pid,
+            lifecycle.stdout_drain.overflow,
+            lifecycle.stderr_drain.overflow,
+            lifecycle,
+            cim_helper,
+        )
+        assert_no_log_overflow(lifecycle)
+        assert_isolated_state(lifecycle, cim_helper)
         write_create_only_receipt(IDENTITY_ROOT / "isolated-processes.json", runtime_snapshot(cim_helper))
         isolated_version_path = IDENTITY_ROOT / "isolated-version.response.json"
         isolated_tags_path = IDENTITY_ROOT / "isolated-tags.response.json"
+        assert_isolated_state(lifecycle, cim_helper)
         stream_loopback_get(PORT, "/api/version", isolated_version_path)
+        assert_isolated_state(lifecycle, cim_helper)
         stream_loopback_get(PORT, "/api/tags", isolated_tags_path)
-        assert_no_log_overflow(isolated)
+        assert_no_log_overflow(lifecycle)
         isolated_version = read_json(isolated_version_path, "isolated version")
         if isolated_version.get("version") != "0.33.2":
             raise CaptureError("isolated version differs")
         assert_exact_tags(read_json(isolated_tags_path, "isolated tags"))
-        assert_isolated_state(isolated.process.pid, cim_helper)
+        assert_isolated_state(lifecycle, cim_helper)
         write_create_only_bytes(IDENTITY_ROOT / "runtime_identity.json", RUNTIME_IDENTITY_BYTES)
         assert_runtime_identity(IDENTITY_ROOT / "runtime_identity.json")
         capture_prepared = True
     except BaseException as error:  # noqa: BLE001
         failure = error
+        lifecycle.primary_error = lifecycle_failure(lifecycle, "capture", error)
     finally:
         if normal_app_signal_issued or normal_server_signal_issued:
             try:
-                if isolated is not None and isolated.identity is not None:
-                    force_stop_exact(isolated.identity, os.getpid(), "isolated server", retained_child=isolated.process, cim_helper=cim_helper)
-                elif isolated is not None and isolated.process.poll() is None:
-                    isolated.process.kill()
-                    isolated.process.wait(timeout=CONNECT_HEADER_SECONDS)
+                stop_isolated_lifecycle(lifecycle, cim_helper)
             except BaseException as error:  # noqa: BLE001
                 cleanup_errors.append(f"isolated-stop: {error}")
-            if isolated is not None:
-                for pipe, label in ((isolated.process.stdout, "isolated stdout pipe"), (isolated.process.stderr, "isolated stderr pipe")):
-                    try:
-                        if pipe is not None:
-                            pipe.close()
-                    except BaseException as error:  # noqa: BLE001
-                        cleanup_errors.append(f"{label}-close: {error}")
-                for drain, label in ((isolated.stdout_drain, "isolated stdout"), (isolated.stderr_drain, "isolated stderr")):
-                    try:
-                        if drain is not None:
-                            join_bounded_drain(drain, label)
-                    except BaseException as error:  # noqa: BLE001
-                        cleanup_errors.append(f"{label}-drain: {error}")
-                if isolated_log_overflow(isolated):
-                    cleanup_errors.append("isolated-log-overflow")
+            cleanup_errors.extend(
+                f"{receipt.operation}: {receipt.message}" for receipt in lifecycle.cleanup_errors
+            )
+            if isolated_log_overflow(lifecycle):
+                cleanup_errors.append("isolated-log-overflow")
             try:
                 if normal_server_stop_resolution == "unattempted":
                     if force_stop_exact(server, app.pid, "normal server", on_signal_issued=mark_server_signal_issued, cim_helper=cim_helper):
@@ -1722,25 +2390,57 @@ def run_capture() -> None:
                         normal_server_stop_resolution = "absent"
                 if normal_server_stop_resolution == "uncertain":
                     raise CaptureError("normal server ownership is uncertain before restoration")
+                restoration_eligible = normal_restore_eligible(lifecycle, normal_server_stop_resolution)
+                if not restoration_eligible:
+                    raise CaptureError("isolated teardown is unsafe before restoration")
                 restoration_started = True
                 restore_normal(baseline_version, baseline_tags, normal_hashes, cim_helper)
                 restore_succeeded = True
             except BaseException as error:  # noqa: BLE001
                 cleanup_errors.append(f"normal-restore: {error}")
+                append_cleanup_failure(lifecycle, "normal restore", error)
         write_create_only_receipt(
             IDENTITY_ROOT / "operation_status.json",
             {
                 "capture_prepared": capture_prepared,
-                "cleanup_phase_errors": cleanup_errors,
                 "completed_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                "isolated_log_overflow": isolated_log_overflow(isolated),
-                "isolated_pid": isolated.process.pid if isolated is not None else None,
+                "isolated_log_overflow": isolated_log_overflow(lifecycle),
+                "isolated_pid": lifecycle.process.pid if lifecycle.process is not None else None,
+                "phase": lifecycle.phase.value,
+                "job_create_attempted": lifecycle.job_create_attempted,
+                "job_create_succeeded": lifecycle.job_create_succeeded,
+                "root_launch_attempted": lifecycle.root_launch_attempted,
+                "root_launch_succeeded": lifecycle.root_launch_succeeded,
+                "job_assign_attempted": lifecycle.job_assign_attempted,
+                "job_assign_succeeded": lifecycle.job_assign_succeeded,
+                "root_bind_attempted": lifecycle.root_bind_attempted,
+                "root_bind_succeeded": lifecycle.root_bind_succeeded,
+                "drains_started_attempted": lifecycle.drains_started_attempted,
+                "drains_started_succeeded": lifecycle.drains_started_succeeded,
+                "root_resume_attempted": lifecycle.root_resume_attempted,
+                "root_resume_succeeded": lifecycle.root_resume_succeeded,
+                "root_thread_handle_close_attempted": lifecycle.root_thread_handle_close_attempted,
+                "root_thread_handle_close_succeeded": lifecycle.root_thread_handle_close_succeeded,
+                "teardown_path": lifecycle.teardown_path,
+                "job_terminate_attempted": lifecycle.job_terminate_attempted,
+                "job_terminate_succeeded": lifecycle.job_terminate_succeeded,
+                "root_waited": lifecycle.root_waited,
+                "job_zero_window_confirmed": lifecycle.job_zero_window_confirmed,
+                "prebind_root_stop_attempted": lifecycle.prebind_root_stop_attempted,
+                "prebind_root_stop_succeeded": lifecycle.prebind_root_stop_succeeded,
+                "prebind_baseline_clean": lifecycle.prebind_baseline_clean,
+                "pipes_closed": lifecycle.pipes_closed,
+                "drains_joined": lifecycle.drains_joined,
+                "job_close_attempted": lifecycle.job_close_attempted,
+                "job_close_succeeded": lifecycle.job_close_succeeded,
+                "cleanup_errors": [receipt.__dict__ for receipt in lifecycle.cleanup_errors],
+                "normal_restore_eligible": restoration_eligible,
                 "local_host_non_adversarial_limitation": "Loopback and local files are not independent provenance against a host-level adversary.",
                 "model_execution_performed": False,
                 "normal_app_signal_issued": normal_app_signal_issued,
                 "normal_server_signal_issued": normal_server_signal_issued,
                 "normal_server_stop_resolution": normal_server_stop_resolution,
-                "primary_failure": None if failure is None else str(failure),
+                "primary_error": None if lifecycle.primary_error is None else lifecycle.primary_error.__dict__,
                 "restore_succeeded": restore_succeeded,
                 "restoration_started": restoration_started,
                 "started_at_utc": started_at_utc,

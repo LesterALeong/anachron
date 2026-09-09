@@ -23,11 +23,11 @@ class V4CiWorkflowTests(unittest.TestCase):
         for job in ("core", "inspect", "paper", "v4-paper"):
             self.assertIn(f"  {job}:\n", self.workflow)
         self.assertIn(
-            f"branches: [master, main, protocol/v4-recovery-v2, protocol/v5-successor, protocol/v5-successor-v3, {V5_PROTOCOL_BRANCH}]",
+            f"branches: [master, main, protocol/v4-recovery-v2, protocol/v5-successor, protocol/v5-successor-v3, protocol/v5-successor-v4, {V5_PROTOCOL_BRANCH}]",
             self.workflow,
         )
         self.assertIn(
-            f"tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1, v5-measurement-protocol-v2, v5-measurement-protocol-v3, {V5_PROTOCOL_TAG}]",
+            f"tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1, v5-measurement-protocol-v2, v5-measurement-protocol-v3, v5-measurement-protocol-v4, {V5_PROTOCOL_TAG}]",
             self.workflow,
         )
         self.assertIn("workflow_dispatch:", self.workflow)

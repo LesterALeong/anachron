@@ -14,8 +14,8 @@
   },
   "kind": "anachron-v5-authority-binding-contract",
   "protocol": {
-    "branch": "protocol/v5-successor-v4",
-    "tag": "v5-measurement-protocol-v4"
+    "branch": "protocol/v5-successor-v5",
+    "tag": "v5-measurement-protocol-v5"
   },
   "schema_version": 1,
   "scientific_governed_paths": [
@@ -47,6 +47,7 @@
     "research/v5_measurement/compatibility_plan.template.json",
     "research/v5_measurement/conditional_go.template.json",
     "research/v5_measurement/full_plan.template.json",
+    "research/v5_measurement/v4_failure_binding.json",
     "tests/test_v5_carry_forward.py",
     "tests/test_v5_contract.py",
     "tests/test_v5_custody.py",

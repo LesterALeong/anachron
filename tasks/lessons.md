@@ -80,3 +80,58 @@ branch and tag entries in the workflow while the older exact-list assertion
 still omitted them, so all v4-paper lanes failed before tag creation. Every
 workflow trigger edit must run each owning workflow-contract module locally;
 focused successor globs do not cover cross-version CI consumers.
+
+## Observe the complete isolated process tree before endpoint admission
+
+The v4 identity capture admitted the staged isolated root but treated its
+short-lived GPU-discovery descendants as foreign, then attempted restoration
+before that task-owned tree had cleared. A successor controller must bind each
+observed descendant to the retained root by PID, birth token, executable, and
+exact no-model command form; poll to a continuous child-free state before any
+endpoint request; and require the observed task-owned tree and listener to
+remain absent before normal restoration. Run the hostile foreign, malformed,
+model-argument, reappearance, and failure-restoration rows in the controller
+module, not just lifecycle mocks.
+
+## Freeze the observed helper argv and prove cleanup absence continuously
+
+The first V5 successor used a plausible stage-root layout and reversed the
+observed `conhost.exe` relationship. It also treated one empty teardown census
+as enough to restore normal Ollama. Derive the helper library directory from
+the isolated executable's actual runtime directory, retain the complete
+recorded root-to-helper-to-conhost trace, and require every accepted command
+token in order. Before restoration, reconcile every descendant seen before or
+after quiescence and require the retained tree and listener to stay absent for
+the full continuous interval. A failed identity bind still requires the same
+blocker-free absence proof before normal restoration.
+
+## Contain Windows helper descendants before they can be reparented
+
+An ancestry census can admit a helper while the root is live but cannot prove a
+late child remains attributable after root termination. Start the isolated root
+suspended, assign it to a private non-breakaway Windows Job Object before binding
+or resuming it, and use the Job as the only assigned-runtime teardown authority.
+Require its active-member count to stay zero for the complete quiescence interval;
+terminate, query, timeout, or close failures block normal restoration.
+
+## Record cleanup authority before native failure edges
+
+Process cleanup cannot rely on a helper returning a resource to a caller after a
+later native step fails. Allocate a caller-owned lifecycle before `CreateJob`,
+store every acquired handle, root, pipe, and drain immediately, and derive the
+single teardown path from monotonic facts. Preserve the primary failure and add
+each cleanup failure as an append-only receipt; restoration is a pure predicate
+over those facts rather than a mutable success flag.
+
+## Exercise every acquisition edge through the persisted controller receipt
+
+Replacing a returned runtime wrapper with a caller-owned lifecycle left the old
+test harness calling deleted APIs, so it could not prove that failures between
+native acquisition and a helper return retained custody. Keep a literal lifecycle
+row tuple, inject each native boundary through `run_capture`, and assert the
+written status records the acquired facts, timestamped primary or cleanup receipt,
+and zero normal-restoration calls. Direct helper tests supplement this by proving
+the object receives each handle or process before the next injected failure. They
+must also execute the real teardown dispatcher through no-root, unassigned, and
+assigned paths: replacing that dispatcher with a mock cannot prove which facts or
+cleanup receipts reach the restoration predicate.

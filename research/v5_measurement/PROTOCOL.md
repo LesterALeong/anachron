@@ -1,10 +1,10 @@
 # Anachron v5 successor protocol
 
-V4 repairs V3's failed preflight transport request. It requires a clean annotated
-`v5-measurement-protocol-v4` release: the tag object, peeled commit, branch,
-remote references, governed blob IDs, and worktree bytes must agree. V3 remains
-immutable failed-capture evidence, and V2 remains historical technical evidence;
-neither is an execution authorization.
+V5 repairs V4's failed isolated-startup classification. It requires a clean
+annotated `v5-measurement-protocol-v5` release: the tag object, peeled commit,
+branch, remote references, governed blob IDs, and worktree bytes must agree. V4
+remains immutable failed-capture evidence, and V3/V2 remain historical evidence;
+none is an execution authorization.
 
 The tagged closure includes the isolated identity controller, its Authenticode
 helper, and a fixed local CIM process-identity helper. When psutil cannot read
@@ -20,9 +20,36 @@ authorize a capture, model call, process control, outreach, upload, or
 submission.
 
 The controller emits one explicit `Host` header for its fixed loopback requests.
-The frozen V3 controller emitted two `Host` headers and failed before process
-mutation; the V4 regression verifies both the immutable V3 failure and V4's
-single-header request against disposable loopback sockets.
+It creates a private Windows Job Object with `KILL_ON_JOB_CLOSE`, starts the
+isolated root with `DETACHED_PROCESS | CREATE_SUSPENDED`, assigns that root to
+the Job before binding its identity or resuming its sole thread, and never grants
+breakaway. Before either isolated API call, V5 permits only identity-bound,
+no-model startup helpers, then requires two continuous seconds without
+descendants and exactly one active Job member. Cleanup terminates the Job and
+requires its active-member count to remain zero for two seconds; any API,
+termination, query, timeout, or handle-close fault blocks restoration.
+
+The caller allocates one monotonic isolated lifecycle before any native action.
+Each helper records its attempted and succeeded facts and stores acquired handles,
+processes, and drains before another fallible operation. The `finally` path stops
+that lifecycle exactly once from those facts, preserves the primary failure, and
+adds cleanup receipts without replacing it. A pure restoration predicate permits
+normal restoration only for a resource-free, closed Job-only, baseline-clean
+unassigned root, or fully terminated and continuously empty assigned Job row.
+
+The controller harness has 25 literal ID-to-obligation rows. J01--J04 cover
+typed Win32 declarations, detached suspended launch, non-breakaway containment,
+and caller-owned ordering. J05--J10 cover Job creation/configuration, root
+launch/post-launch custody, PID/open/assignment, and assignment-handle-close
+faults. J11--J15 cover binding, drains, thread discovery/open, owner/resume
+validation, and successful `ResumeThread` followed by failed `CloseHandle`.
+J16--J18 execute the actual no-root/Job-only, unassigned suspended-root, and
+assigned-Job teardown dispatches. J19--J21 inject terminate/root-wait,
+accounting/zero-window, and pipe/drain/Job-close cleanup faults; J22 proves the
+monotonic-fact predicate; J23 replays the exact observed production helper tree.
+J24 persists every pre-return failure status under edge-named subtests, and J25
+is the successful assigned-Job capture/restoration row. The test derives IDs and
+count from this literal ordered tuple and requires every row to execute.
 
 The source tag contains templates with placeholders. After it is frozen, the
 external source manifest, carry-forward receipt, captured runtime identity,

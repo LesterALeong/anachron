@@ -39,6 +39,35 @@ CANDIDATE04_ACCEPTANCE_ROWS = frozenset(
 BIRTH_TOKEN_ROWS = frozenset(f"B{index:02d}" for index in range(1, 9))
 RESTORATION_FAULT_ROWS = frozenset(f"F{index:02d}" for index in range(1, 7))
 STARTUP_ROWS = frozenset(f"S{index:02d}" for index in range(1, 10))
+JOB_ROWS = (
+    ("J01", "typed Win32 Job structures and declarations"),
+    ("J02", "detached suspended root launch"),
+    ("J03", "non-breakaway kill-on-close Job containment"),
+    ("J04", "caller-owned lifecycle ordering"),
+    ("J05", "CreateJobObject and Job configuration custody"),
+    ("J06", "Popen and post-Popen root custody"),
+    ("J07", "suspended-root PID validation"),
+    ("J08", "OpenProcess assignment handle acquisition"),
+    ("J09", "AssignProcessToJobObject failure custody"),
+    ("J10", "assignment-handle close failure custody"),
+    ("J11", "identity bind failure custody"),
+    ("J12", "stdout and stderr drain acquisition custody"),
+    ("J13", "suspended thread cardinality and OpenThread"),
+    ("J14", "thread owner and ResumeThread validation"),
+    ("J15", "successful ResumeThread then failed CloseHandle"),
+    ("J16", "no-root and Job-only teardown dispatch"),
+    ("J17", "unassigned suspended-root teardown dispatch"),
+    ("J18", "assigned-Job teardown dispatch"),
+    ("J19", "Job terminate and root-wait cleanup failures"),
+    ("J20", "Job accounting and zero-window cleanup failures"),
+    ("J21", "pipe, drain, and Job-close cleanup failures"),
+    ("J22", "monotonic cleanup facts and pure restoration predicate"),
+    ("J23", "exact production startup helper trace admission"),
+    ("J24", "persisted pre-return lifecycle failure matrix"),
+    ("J25", "successful assigned-Job run-capture restoration"),
+)
+JOB_ROW_IDS = tuple(row_id for row_id, _obligation in JOB_ROWS)
+JOB_ROW_SET = frozenset(JOB_ROW_IDS)
 PREPUBLICATION_FAULT_STAGES = (
     "after-process-observation",
     "after-version-read",
@@ -52,6 +81,7 @@ DECLARED_EXECUTED_ROWS = (
     | BIRTH_TOKEN_ROWS
     | RESTORATION_FAULT_ROWS
     | STARTUP_ROWS
+    | JOB_ROW_SET
 )
 
 
@@ -144,7 +174,38 @@ class IdentityControllerTests(unittest.TestCase):
     def test_library_import_has_no_operational_side_effects(self) -> None:
         self.assertTrue(callable(controller.run_capture))
         self.assertEqual(controller.ADMITTED_ENDPOINTS, frozenset(("/api/version", "/api/tags")))
-        self.assertEqual(controller.PROTOCOL_ROOT, Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v4"))
+        self.assertEqual(controller.PROTOCOL_ROOT, Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v5"))
+
+    def test_v4_failure_binding_rejects_a_tampered_member_before_normal_stop(self) -> None:
+        binding = json.loads((ROOT / "research" / "v5_measurement" / "v4_failure_binding.json").read_text(encoding="utf-8"))
+        members = binding["failure_root"]["members"]
+        status = binding["failure_root"]["status"]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            binding_path = root / "research" / "v5_measurement" / "v4_failure_binding.json"
+            binding_path.parent.mkdir(parents=True)
+            failure_root = root / "v4-failure"
+            failure_root.mkdir()
+            binding["failure_root"]["path"] = str(failure_root)
+            binding_path.write_text(json.dumps(binding), encoding="utf-8")
+            for member in members:
+                path = failure_root / member["path"]
+                if path.name == "operation_status.json":
+                    raw = json.dumps(status).encode("utf-8")
+                    path.write_bytes(raw + b" " * (member["bytes"] - len(raw)))
+                else:
+                    path.write_bytes(b"x" * member["bytes"])
+            hashes = {member["path"]: member["sha256"] for member in members}
+            manifest = {"governed_files": [{"path": controller.V4_FAILURE_BINDING.as_posix()}]}
+            with (
+                patch.object(controller, "PROTOCOL_ROOT", root),
+                patch.object(controller, "V4_FAILURE_ROOT", failure_root),
+                patch.object(controller, "sha256_file", side_effect=lambda path: hashes[path.name]),
+            ):
+                controller.verify_v4_failure_binding(manifest)
+                (failure_root / "baseline-processes.json").write_bytes(b"x" * 471)
+                with self.assertRaisesRegex(controller.CaptureError, "v4 failure root member differs"):
+                    controller.verify_v4_failure_binding(manifest)
 
     def test_loopback_request_emits_exactly_one_host_header(self) -> None:
         def host_fields(request: bytes) -> list[bytes]:
@@ -1538,67 +1599,17 @@ class IdentityControllerTests(unittest.TestCase):
         with patch.object(controller, "psutil", fake_psutil), self.assertRaises(controller.CaptureError):
             controller.force_stop_exact(expected, 7, "reused process", on_preverified=lambda: state.update(creation=200 / 1_000_000))
 
-    def test_start_isolated_retains_handle_before_identity_binding(self) -> None:
-        child = SimpleNamespace(pid=41)
-        with patch.object(controller.subprocess, "Popen", return_value=child), patch.object(controller, "process_record", side_effect=self.fail):
-            runtime = controller.start_isolated_process()
-        self.assertIs(runtime.process, child)
-        self.assertIsNone(runtime.identity)
-
-    def test_bounded_subprocess_enforces_active_per_stream_caps_and_timeout(self) -> None:
-        for stream in ("stdout", "stderr"):
-            with self.subTest(stream=stream), self.assertRaises(controller.CaptureError):
-                controller.run_bounded_subprocess(
-                    [sys.executable, "-c", f"import sys; sys.{stream}.buffer.write(b'x' * {controller.MAX_AUTHENTICODE_OUTPUT_BYTES + 1}); sys.{stream}.flush()"],
-                    f"overflow-{stream}",
-                )
-        with patch.object(controller, "TOTAL_TRANSFER_SECONDS", 0.05), self.assertRaises(controller.CaptureError):
-            controller.run_bounded_subprocess([sys.executable, "-c", "import time; time.sleep(5)"], "timeout")
-
-    def test_bounded_subprocess_returns_compact_complete_output(self) -> None:
-        returncode, stdout, stderr = controller.run_bounded_subprocess([sys.executable, "-c", "import sys; sys.stdout.buffer.write(b'ok'); sys.stderr.buffer.write(b'')"], "compact")
-        self.assertEqual((returncode, stdout, stderr), (0, b"ok", b""))
-
-    def test_run_capture_binds_and_cleans_the_retained_child_with_fake_authority(self) -> None:
+    def _run_capture_lifecycle_failure(
+        self,
+        stage: str,
+    ) -> tuple[dict[str, object], Mock]:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             identity_root = root / "identity"
-            normal_app = test_owned_executable(root, "normal", "ollama app.exe")
-            normal_server = test_owned_executable(root, "server", "ollama.exe")
-            isolated_executable = test_owned_executable(root, "isolated", "ollama.exe")
-            app = controller.ProcessRecord(10, 0, "ollama app.exe", normal_app, birth_token(0.00001))
-            server = controller.ProcessRecord(11, 10, "ollama.exe", normal_server, birth_token(0.000011))
-            child_identity = controller.ProcessRecord(41, os.getpid(), "ollama.exe", isolated_executable, birth_token(0.000041))
-            calls: list[str] = []
-
-            class NoSuchProcess(Exception):
-                pass
-
-            class TimeoutExpired(Exception):
-                pass
-
-            class FakeProcess:
-                def __init__(self, identity: controller.ProcessRecord) -> None:
-                    self.identity = identity
-                    self.pid = identity.pid
-
-                def ppid(self) -> int:
-                    return self.identity.ppid
-
-                def name(self) -> str:
-                    return self.identity.name
-
-                def exe(self) -> str:
-                    return str(self.identity.exe)
-
-                def create_time(self) -> float:
-                    return struct.unpack(">d", bytes.fromhex(self.identity.birth_token_hex))[0]
-
-                def kill(self) -> None:
-                    calls.append(f"psutil-kill-{self.pid}")
-
-                def wait(self, timeout: float) -> None:
-                    calls.append(f"psutil-wait-{self.pid}")
+            executable = test_owned_executable(root, "runtime", "ollama.exe")
+            app = controller.ProcessRecord(10, 0, "ollama app.exe", executable, birth_token(10.0))
+            server = controller.ProcessRecord(11, 10, "ollama.exe", executable, birth_token(11.0))
+            root_identity = controller.ProcessRecord(41, os.getpid(), "ollama.exe", executable, birth_token(41.0))
 
             class FakeChild:
                 pid = 41
@@ -1606,34 +1617,120 @@ class IdentityControllerTests(unittest.TestCase):
                 def __init__(self) -> None:
                     self.stdout = io.BytesIO()
                     self.stderr = io.BytesIO()
-                    self.returncode: int | None = None
 
-                def poll(self) -> int | None:
-                    return self.returncode
-
-                def kill(self) -> None:
-                    calls.append("child-kill")
-                    self.returncode = 0
-
-                def wait(self, timeout: float) -> int:
-                    calls.append("child-wait")
-                    self.returncode = 0
-                    return 0
-
-            processes = {10: FakeProcess(app), 11: FakeProcess(server), 41: FakeProcess(child_identity)}
-            fake_psutil = SimpleNamespace(NoSuchProcess=NoSuchProcess, TimeoutExpired=TimeoutExpired, AccessDenied=PermissionError, Process=lambda pid: processes[pid], pid_exists=lambda pid: False)
             child = FakeChild()
-            authority = {"protocol_commit": "a" * 40, "protocol_tag": controller.PROTOCOL_TAG, "protocol_tag_object": "b" * 40, "source_manifest_sha256": "c" * 64}
 
-            def stream(port: int, endpoint: str, destination: Path) -> None:
+            def create_job(lifecycle: controller.IsolatedLifecycle) -> None:
+                lifecycle.job_create_attempted = True
+                if stage == "create-job":
+                    raise controller.CaptureError("injected create-job")
+                lifecycle.job_handle = 97
+                if stage == "set-job-info":
+                    raise controller.CaptureError("injected set-job-info")
+                lifecycle.job_create_succeeded = True
+                lifecycle.advance(controller.IsolatedLifecyclePhase.JOB_CREATED)
+
+            def launch(lifecycle: controller.IsolatedLifecycle) -> None:
+                lifecycle.root_launch_attempted = True
+                if stage == "launch-popen":
+                    raise controller.CaptureError("injected launch-popen")
+                lifecycle.process = child
+                lifecycle.root_launch_succeeded = True
+                if stage == "post-popen":
+                    raise controller.CaptureError("injected post-popen")
+                lifecycle.advance(controller.IsolatedLifecyclePhase.ROOT_LAUNCHED)
+
+            def assign(lifecycle: controller.IsolatedLifecycle) -> None:
+                lifecycle.job_assign_attempted = True
+                if stage == "assign-pid":
+                    raise controller.CaptureError("injected assign-pid")
+                if stage == "assign-open":
+                    raise controller.CaptureError("injected assign-open")
+                lifecycle.assignment_process_handle = 91
+                if stage == "assign-job":
+                    raise controller.CaptureError("injected assign-job")
+                lifecycle.job_assign_succeeded = True
+                lifecycle.advance(controller.IsolatedLifecyclePhase.ROOT_ASSIGNED)
+                if stage == "assignment-close":
+                    raise controller.CaptureError("injected assignment-close")
+                lifecycle.assignment_process_handle = None
+
+            def bind(lifecycle: controller.IsolatedLifecycle, _helper: Path | None) -> None:
+                lifecycle.root_bind_attempted = True
+                if stage == "bind":
+                    raise controller.CaptureError("injected bind")
+                lifecycle.root_identity = root_identity
+                lifecycle.root_bind_succeeded = True
+                lifecycle.advance(controller.IsolatedLifecyclePhase.ROOT_BOUND)
+
+            def drains(lifecycle: controller.IsolatedLifecycle, _stdout: Path, _stderr: Path) -> None:
+                lifecycle.drains_started_attempted = True
+                lifecycle.stdout_drain = SimpleNamespace(overflow=threading.Event())
+                if stage == "stdout-drain":
+                    raise controller.CaptureError("injected stdout-drain")
+                if stage == "stderr-drain":
+                    raise controller.CaptureError("injected stderr-drain")
+                lifecycle.stderr_drain = SimpleNamespace(overflow=threading.Event())
+                lifecycle.drains_started_succeeded = True
+                lifecycle.advance(controller.IsolatedLifecyclePhase.DRAINS_STARTED)
+
+            def resume(lifecycle: controller.IsolatedLifecycle) -> None:
+                lifecycle.root_resume_attempted = True
+                if stage == "resume-thread":
+                    raise controller.CaptureError("injected resume-thread")
+                lifecycle.root_resume_succeeded = True
+                lifecycle.advance(controller.IsolatedLifecyclePhase.ROOT_RESUMED)
+                lifecycle.root_thread_handle_close_attempted = True
+                if stage == "resume-close":
+                    raise controller.CaptureError("injected resume-close")
+                lifecycle.root_thread_handle_close_succeeded = True
+
+            def stop(lifecycle: controller.IsolatedLifecycle, _helper: Path | None) -> None:
+                lifecycle.stop_attempted = True
+                if lifecycle.process is None:
+                    lifecycle.teardown_path = "no-root"
+                elif lifecycle.job_assign_succeeded:
+                    lifecycle.teardown_path = "job"
+                    lifecycle.job_terminate_attempted = True
+                    lifecycle.job_terminate_succeeded = True
+                    lifecycle.root_waited = True
+                    lifecycle.job_zero_window_confirmed = True
+                else:
+                    lifecycle.teardown_path = "unassigned-suspended"
+                    lifecycle.prebind_root_stop_attempted = True
+                    lifecycle.prebind_root_stop_succeeded = True
+                    lifecycle.root_waited = True
+                    lifecycle.prebind_baseline_clean = True
+                lifecycle.pipes_closed = True
+                lifecycle.drains_joined = True
+                if lifecycle.job_handle is not None:
+                    lifecycle.job_close_attempted = True
+                    lifecycle.job_close_succeeded = True
+                    lifecycle.job_handle = None
+                lifecycle.advance(controller.IsolatedLifecyclePhase.STOPPED)
+
+            def stream(_port: int, endpoint: str, destination: Path) -> None:
                 destination.write_bytes(b"version" if endpoint == "/api/version" else b"tags")
 
+            def force(
+                _expected: controller.ProcessRecord,
+                _parent: int | None,
+                _label: str,
+                **kwargs: object,
+            ) -> bool:
+                callback = kwargs.get("on_signal_issued")
+                assert callable(callback)
+                callback()
+                return True
+
+            authority = {
+                "protocol_commit": "a" * 40,
+                "protocol_tag": controller.PROTOCOL_TAG,
+                "protocol_tag_object": "b" * 40,
+                "source_manifest_sha256": "c" * 64,
+            }
             with ExitStack() as stack:
                 stack.enter_context(patch.object(controller, "IDENTITY_ROOT", identity_root))
-                stack.enter_context(patch.object(controller, "psutil", fake_psutil))
-                stack.enter_context(patch.object(controller, "NORMAL_APP", normal_app))
-                stack.enter_context(patch.object(controller, "NORMAL_SERVER", normal_server))
-                stack.enter_context(patch.object(controller, "ISOLATED_EXE", isolated_executable))
                 stack.enter_context(patch.object(controller, "assert_regular"))
                 stack.enter_context(patch.object(controller, "assert_no_reparse_or_ads"))
                 stack.enter_context(patch.object(controller, "sha256_file", return_value="d" * 64))
@@ -1641,134 +1738,616 @@ class IdentityControllerTests(unittest.TestCase):
                 stack.enter_context(patch.object(controller, "controller_dependency_identity", return_value={}))
                 stack.enter_context(patch.object(controller, "verify_protocol"))
                 stack.enter_context(patch.object(controller, "verify_source_manifest", return_value={}))
+                stack.enter_context(patch.object(controller, "verify_v4_failure_binding"))
                 stack.enter_context(patch.object(controller, "verify_tracked_helpers", return_value={"tools/read_v5_process_identity.ps1": ROOT / "tools" / "read_v5_process_identity.ps1"}))
                 stack.enter_context(patch.object(controller, "verify_isolated_runtime_and_store"))
                 stack.enter_context(patch.object(controller, "assert_normal_state", return_value=(app, server)))
                 stack.enter_context(patch.object(controller, "runtime_snapshot", return_value={}))
                 stack.enter_context(patch.object(controller, "stream_loopback_get", side_effect=stream))
+                stack.enter_context(patch.object(controller, "force_stop_exact", side_effect=force))
                 stack.enter_context(patch.object(controller, "wait_for_listener_free"))
+                stack.enter_context(patch.object(controller, "create_lifecycle_job", side_effect=create_job))
+                stack.enter_context(patch.object(controller, "launch_suspended_isolated_root", side_effect=launch))
+                stack.enter_context(patch.object(controller, "assign_suspended_root_to_job", side_effect=assign))
+                stack.enter_context(patch.object(controller, "bind_suspended_root_identity", side_effect=bind))
+                stack.enter_context(patch.object(controller, "start_lifecycle_drains", side_effect=drains))
+                stack.enter_context(patch.object(controller, "resume_suspended_root", side_effect=resume))
+                stack.enter_context(patch.object(controller, "stop_isolated_lifecycle", side_effect=stop))
+                restore = stack.enter_context(patch.object(controller, "restore_normal"))
+                with self.assertRaisesRegex(controller.CaptureError, f"injected {stage}"):
+                    controller.run_capture()
+            status = json.loads((identity_root / "operation_status.json").read_text(encoding="utf-8"))
+            return status, restore
+
+    def test_lifecycle_native_acquisition_edges_retain_custody(self) -> None:
+        class FakeChild:
+            pid = 41
+            stdout = io.BytesIO()
+            stderr = io.BytesIO()
+
+        def api(**overrides: object) -> SimpleNamespace:
+            defaults: dict[str, object] = {
+                "CreateJobObjectW": Mock(return_value=97),
+                "SetInformationJobObject": Mock(return_value=True),
+                "OpenProcess": Mock(return_value=91),
+                "AssignProcessToJobObject": Mock(return_value=True),
+                "CloseHandle": Mock(return_value=True),
+            }
+            defaults.update(overrides)
+            return SimpleNamespace(**defaults)
+
+        with self.subTest(id="J01"):
+            source = CONTROLLER_PATH.read_text(encoding="utf-8")
+            self.assertIn("class JOBOBJECT_BASIC_LIMIT_INFORMATION", source)
+            self.assertIn("class JOBOBJECT_EXTENDED_LIMIT_INFORMATION", source)
+            self.assertIn("class JOBOBJECT_BASIC_ACCOUNTING_INFORMATION", source)
+            self.assertIn("api.QueryInformationJobObject.argtypes", source)
+            self.assertNotIn("ctypes.c_byte * 144", source)
+        with self.subTest(id="J02"):
+            self.assertIn("creationflags=DETACHED_PROCESS | CREATE_SUSPENDED", CONTROLLER_PATH.read_text(encoding="utf-8"))
+        with self.subTest(id="J03"):
+            source = CONTROLLER_PATH.read_text(encoding="utf-8")
+            self.assertIn("limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE", source)
+            self.assertNotIn("BREAKAWAY_OK", source)
+        with self.subTest(id="J04"):
+            source = CONTROLLER_PATH.read_text(encoding="utf-8")
+            self.assertNotIn("start_isolated_" + "process", source)
+            self.assertLess(source.index("create_lifecycle_job(lifecycle)"), source.index("launch_suspended_isolated_root(lifecycle)"))
+            self.assertLess(source.index("launch_suspended_isolated_root(lifecycle)"), source.index("assign_suspended_root_to_job(lifecycle)"))
+            self.assertLess(source.index("assign_suspended_root_to_job(lifecycle)"), source.index("bind_suspended_root_identity(lifecycle, cim_helper)"))
+            self.assertLess(source.index("bind_suspended_root_identity(lifecycle, cim_helper)"), source.index("resume_suspended_root(lifecycle)"))
+        with self.subTest(id="J05"):
+            lifecycle = controller.IsolatedLifecycle()
+            with patch.object(controller, "kernel32", return_value=api(CreateJobObjectW=Mock(return_value=0))), self.assertRaisesRegex(controller.CaptureError, "CreateJobObjectW"):
+                controller.create_lifecycle_job(lifecycle)
+            self.assertTrue(lifecycle.job_create_attempted)
+            self.assertIsNone(lifecycle.job_handle)
+        with self.subTest(id="J05"):
+            lifecycle = controller.IsolatedLifecycle()
+            with patch.object(controller, "kernel32", return_value=api(SetInformationJobObject=Mock(return_value=False))), self.assertRaisesRegex(controller.CaptureError, "SetInformationJobObject"):
+                controller.create_lifecycle_job(lifecycle)
+            self.assertEqual(lifecycle.job_handle, 97)
+            self.assertFalse(lifecycle.job_create_succeeded)
+        with self.subTest(id="J06"):
+            lifecycle = controller.IsolatedLifecycle(job_handle=97, job_create_succeeded=True)
+            with patch.object(controller.subprocess, "Popen", side_effect=controller.CaptureError("injected Popen")), self.assertRaisesRegex(controller.CaptureError, "injected Popen"):
+                controller.launch_suspended_isolated_root(lifecycle)
+            self.assertTrue(lifecycle.root_launch_attempted)
+            self.assertIsNone(lifecycle.process)
+        with self.subTest(id="J06"):
+            lifecycle = controller.IsolatedLifecycle(job_handle=97, job_create_succeeded=True)
+            with (
+                patch.object(controller.subprocess, "Popen", return_value=FakeChild()),
+                patch.object(controller.IsolatedLifecycle, "advance", side_effect=controller.CaptureError("injected post-Popen")),
+                self.assertRaisesRegex(controller.CaptureError, "injected post-Popen"),
+            ):
+                controller.launch_suspended_isolated_root(lifecycle)
+            self.assertEqual(lifecycle.process.pid, 41)
+            self.assertTrue(lifecycle.root_launch_succeeded)
+        with self.subTest(id="J07"):
+            lifecycle = controller.IsolatedLifecycle(job_handle=97, process=SimpleNamespace(pid=0))
+            with self.assertRaisesRegex(controller.CaptureError, "PID differs"):
+                controller.assign_suspended_root_to_job(lifecycle)
+            self.assertTrue(lifecycle.job_assign_attempted)
+        with self.subTest(id="J08"):
+            lifecycle = controller.IsolatedLifecycle(job_handle=97, process=FakeChild())
+            with patch.object(controller, "kernel32", return_value=api(OpenProcess=Mock(return_value=0))), self.assertRaisesRegex(controller.CaptureError, "OpenProcess"):
+                controller.assign_suspended_root_to_job(lifecycle)
+            self.assertTrue(lifecycle.job_assign_attempted)
+            self.assertIsNone(lifecycle.assignment_process_handle)
+        with self.subTest(id="J09"):
+            lifecycle = controller.IsolatedLifecycle(job_handle=97, process=FakeChild())
+            with patch.object(controller, "kernel32", return_value=api(AssignProcessToJobObject=Mock(return_value=False))), self.assertRaisesRegex(controller.CaptureError, "AssignProcessToJobObject"):
+                controller.assign_suspended_root_to_job(lifecycle)
+            self.assertIsNone(lifecycle.assignment_process_handle)
+            self.assertFalse(lifecycle.job_assign_succeeded)
+        with self.subTest(id="J10"):
+            lifecycle = controller.IsolatedLifecycle(job_handle=97, process=FakeChild())
+            with patch.object(controller, "kernel32", return_value=api(CloseHandle=Mock(return_value=False))), self.assertRaisesRegex(controller.CaptureError, "CloseHandle\\(isolated root\\)"):
+                controller.assign_suspended_root_to_job(lifecycle)
+            self.assertTrue(lifecycle.job_assign_succeeded)
+            self.assertEqual(lifecycle.assignment_process_handle, 91)
+
+    def test_lifecycle_setup_and_resume_edges_are_fail_closed(self) -> None:
+        process = SimpleNamespace(pid=41, stdout=io.BytesIO(), stderr=io.BytesIO())
+        identity = controller.ProcessRecord(41, os.getpid(), "ollama.exe", Path(__file__), birth_token(41.0))
+        with self.subTest(id="J11"):
+            lifecycle = controller.IsolatedLifecycle(process=process)
+            fake_psutil = SimpleNamespace(Process=lambda _pid: SimpleNamespace())
+            with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "process_record", side_effect=controller.CaptureError("injected bind")), self.assertRaisesRegex(controller.CaptureError, "injected bind"):
+                controller.bind_suspended_root_identity(lifecycle)
+            self.assertTrue(lifecycle.root_bind_attempted)
+            self.assertIsNone(lifecycle.root_identity)
+        with self.subTest(id="J12"):
+            lifecycle = controller.IsolatedLifecycle(process=process)
+            with patch.object(controller, "start_bounded_drain", side_effect=controller.CaptureError("injected stdout")), self.assertRaisesRegex(controller.CaptureError, "injected stdout"):
+                controller.start_lifecycle_drains(lifecycle, Path("stdout"), Path("stderr"))
+            self.assertTrue(lifecycle.drains_started_attempted)
+            self.assertIsNone(lifecycle.stdout_drain)
+        with self.subTest(id="J12"):
+            lifecycle = controller.IsolatedLifecycle(process=process)
+            first_drain = SimpleNamespace(overflow=threading.Event())
+            with patch.object(controller, "start_bounded_drain", side_effect=(first_drain, controller.CaptureError("injected stderr"))), self.assertRaisesRegex(controller.CaptureError, "injected stderr"):
+                controller.start_lifecycle_drains(lifecycle, Path("stdout"), Path("stderr"))
+            self.assertIs(lifecycle.stdout_drain, first_drain)
+            self.assertIsNone(lifecycle.stderr_drain)
+        with self.subTest(id="J13"):
+            lifecycle = controller.IsolatedLifecycle(process=process, root_identity=identity)
+            fake_psutil = SimpleNamespace(Process=lambda _pid: SimpleNamespace(threads=lambda: ()))
+            with patch.object(controller, "psutil", fake_psutil), self.assertRaisesRegex(controller.CaptureError, "thread count differs"):
+                controller.resume_suspended_root(lifecycle)
+            self.assertTrue(lifecycle.root_resume_attempted)
+        with self.subTest(id="J13"):
+            lifecycle = controller.IsolatedLifecycle(process=process, root_identity=identity)
+            api = SimpleNamespace(OpenThread=Mock(return_value=0))
+            fake_psutil = SimpleNamespace(Process=lambda _pid: SimpleNamespace(threads=lambda: (SimpleNamespace(id=71),)))
+            with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), self.assertRaisesRegex(controller.CaptureError, "OpenThread"):
+                controller.resume_suspended_root(lifecycle)
+            self.assertTrue(lifecycle.root_resume_attempted)
+        with self.subTest(id="J14"):
+            lifecycle = controller.IsolatedLifecycle(process=process, root_identity=identity)
+            api = SimpleNamespace(
+                OpenThread=Mock(return_value=91),
+                GetProcessIdOfThread=Mock(return_value=42),
+                ResumeThread=Mock(return_value=1),
+                CloseHandle=Mock(return_value=True),
+            )
+            fake_psutil = SimpleNamespace(Process=lambda _pid: SimpleNamespace(threads=lambda: (SimpleNamespace(id=71),)))
+            with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), self.assertRaisesRegex(controller.CaptureError, "owner differs"):
+                controller.resume_suspended_root(lifecycle)
+            api.GetProcessIdOfThread.return_value = 41
+            api.ResumeThread.return_value = controller.INVALID_DWORD
+            with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), self.assertRaisesRegex(controller.CaptureError, "ResumeThread"):
+                controller.resume_suspended_root(controller.IsolatedLifecycle(process=process, root_identity=identity))
+            api.ResumeThread.return_value = 0
+            with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), self.assertRaisesRegex(controller.CaptureError, "prior suspend count differs"):
+                controller.resume_suspended_root(controller.IsolatedLifecycle(process=process, root_identity=identity))
+        with self.subTest(id="J15"):
+            lifecycle = controller.IsolatedLifecycle(process=process, root_identity=identity)
+            api = SimpleNamespace(
+                OpenThread=Mock(return_value=91),
+                GetProcessIdOfThread=Mock(return_value=41),
+                ResumeThread=Mock(return_value=1),
+                CloseHandle=Mock(return_value=False),
+            )
+            fake_psutil = SimpleNamespace(Process=lambda _pid: SimpleNamespace(threads=lambda: (SimpleNamespace(id=71),)))
+            with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), self.assertRaisesRegex(controller.CaptureError, "CloseHandle\\(root thread\\)"):
+                controller.resume_suspended_root(lifecycle)
+            self.assertTrue(lifecycle.root_resume_succeeded)
+            self.assertTrue(lifecycle.root_thread_handle_close_attempted)
+            self.assertFalse(lifecycle.root_thread_handle_close_succeeded)
+            lifecycle.primary_error = controller.lifecycle_failure(lifecycle, "capture", controller.CaptureError("thread close"))
+            self.assertFalse(controller.normal_restore_eligible(lifecycle, "signaled"))
+        with self.subTest(id="T11"):
+            self.assertIn("root_thread_handle_close_succeeded", CONTROLLER_PATH.read_text(encoding="utf-8"))
+
+    def test_lifecycle_teardown_paths_and_failures_are_factual(self) -> None:
+        class FakeChild:
+            pid = 41
+
+            def __init__(self, *, wait_error: BaseException | None = None, pipe_error: bool = False) -> None:
+                class Pipe:
+                    def __init__(self, error: bool) -> None:
+                        self.error = error
+
+                    def close(self) -> None:
+                        if self.error:
+                            raise OSError("injected pipe close")
+
+                self.stdout = Pipe(pipe_error)
+                self.stderr = Pipe(False)
+                self.wait_error = wait_error
+                self.killed = False
+
+            def kill(self) -> None:
+                self.killed = True
+
+            def wait(self, timeout: float) -> int:
+                if self.wait_error is not None:
+                    raise self.wait_error
+                return 0
+
+        def api(*, terminate: bool = True, close: bool = True) -> SimpleNamespace:
+            return SimpleNamespace(
+                TerminateJobObject=Mock(return_value=terminate),
+                CloseHandle=Mock(return_value=close),
+            )
+
+        def assigned(child: FakeChild) -> controller.IsolatedLifecycle:
+            return controller.IsolatedLifecycle(
+                phase=controller.IsolatedLifecyclePhase.ROOT_RESUMED,
+                job_handle=97,
+                process=child,
+                job_create_attempted=True,
+                job_create_succeeded=True,
+                root_launch_attempted=True,
+                root_launch_succeeded=True,
+                job_assign_attempted=True,
+                job_assign_succeeded=True,
+                root_resume_attempted=True,
+                root_resume_succeeded=True,
+                root_thread_handle_close_attempted=True,
+                root_thread_handle_close_succeeded=True,
+            )
+
+        def stop_assigned(
+            *,
+            terminate: bool = True,
+            close: bool = True,
+            child: FakeChild | None = None,
+            members: object = (0, 0),
+            monotonic: tuple[float, ...] = (0.0, 0.0, 0.0, 3.0, 3.0),
+            drain_error: bool = False,
+        ) -> controller.IsolatedLifecycle:
+            lifecycle = assigned(child or FakeChild())
+            if drain_error:
+                lifecycle.stdout_drain = SimpleNamespace()
+            with ExitStack() as stack:
+                stack.enter_context(patch.object(controller, "kernel32", return_value=api(terminate=terminate, close=close)))
+                stack.enter_context(patch.object(controller, "isolated_job_active_members", side_effect=members))
+                stack.enter_context(patch.object(controller.time, "monotonic", side_effect=monotonic))
+                stack.enter_context(patch.object(controller.time, "sleep"))
+                if drain_error:
+                    stack.enter_context(patch.object(controller, "join_bounded_drain", side_effect=controller.CaptureError("injected drain")))
+                controller.stop_isolated_lifecycle(lifecycle)
+            return lifecycle
+
+        with self.subTest(id="J16"):
+            no_root = controller.IsolatedLifecycle()
+            controller.stop_isolated_lifecycle(no_root)
+            self.assertEqual(no_root.phase, controller.IsolatedLifecyclePhase.STOPPED)
+            self.assertEqual(no_root.teardown_path, "no-root")
+            self.assertTrue(no_root.pipes_closed)
+            self.assertTrue(no_root.drains_joined)
+            self.assertTrue(controller.normal_restore_eligible(no_root, "signaled"))
+
+            job_only = controller.IsolatedLifecycle(job_handle=97, job_create_attempted=True, job_create_succeeded=True)
+            with patch.object(controller, "kernel32", return_value=api()):
+                controller.stop_isolated_lifecycle(job_only)
+            self.assertEqual(job_only.phase, controller.IsolatedLifecyclePhase.STOPPED)
+            self.assertEqual(job_only.teardown_path, "no-root")
+            self.assertTrue(job_only.job_close_attempted)
+            self.assertTrue(job_only.job_close_succeeded)
+            self.assertTrue(controller.normal_restore_eligible(job_only, "signaled"))
+        with self.subTest(id="J17"):
+            child = FakeChild()
+            lifecycle = controller.IsolatedLifecycle(
+                phase=controller.IsolatedLifecyclePhase.ROOT_LAUNCHED,
+                job_handle=97,
+                process=child,
+                job_create_attempted=True,
+                job_create_succeeded=True,
+                root_launch_attempted=True,
+                root_launch_succeeded=True,
+            )
+            with (
+                patch.object(controller, "kernel32", return_value=api()),
+                patch.object(controller, "wait_for_prelaunch_baseline"),
+            ):
+                controller.stop_isolated_lifecycle(lifecycle)
+            self.assertTrue(child.killed)
+            self.assertEqual(lifecycle.phase, controller.IsolatedLifecyclePhase.STOPPED)
+            self.assertEqual(lifecycle.teardown_path, "unassigned-suspended")
+            self.assertTrue(lifecycle.prebind_root_stop_succeeded)
+            self.assertTrue(lifecycle.prebind_baseline_clean)
+            self.assertTrue(controller.normal_restore_eligible(lifecycle, "signaled"))
+        with self.subTest(id="J18"):
+            lifecycle = stop_assigned()
+            self.assertEqual(lifecycle.phase, controller.IsolatedLifecyclePhase.STOPPED)
+            self.assertEqual(lifecycle.teardown_path, "job")
+            self.assertTrue(lifecycle.job_terminate_succeeded)
+            self.assertTrue(lifecycle.root_waited)
+            self.assertTrue(lifecycle.job_zero_window_confirmed)
+            self.assertTrue(lifecycle.job_close_succeeded)
+            self.assertFalse(lifecycle.cleanup_errors)
+            self.assertTrue(controller.normal_restore_eligible(lifecycle, "signaled"))
+        with self.subTest(id="J19", edge="terminate"):
+            lifecycle = stop_assigned(terminate=False, members=(0, 0))
+            self.assertTrue(lifecycle.job_terminate_attempted)
+            self.assertFalse(lifecycle.job_terminate_succeeded)
+            self.assertEqual(lifecycle.phase, controller.IsolatedLifecyclePhase.STOPPED)
+            self.assertEqual(lifecycle.cleanup_errors[0].operation, "Job terminate")
+            self.assertFalse(controller.normal_restore_eligible(lifecycle, "signaled"))
+        with self.subTest(id="J19", edge="root-wait"):
+            lifecycle = stop_assigned(child=FakeChild(wait_error=controller.CaptureError("injected root wait")))
+            self.assertTrue(lifecycle.job_terminate_succeeded)
+            self.assertFalse(lifecycle.root_waited)
+            self.assertEqual(lifecycle.phase, controller.IsolatedLifecyclePhase.STOPPED)
+            self.assertIn("isolated root wait", [receipt.operation for receipt in lifecycle.cleanup_errors])
+            self.assertFalse(controller.normal_restore_eligible(lifecycle, "signaled"))
+        with self.subTest(id="J20", edge="accounting"):
+            lifecycle = stop_assigned(members=controller.CaptureError("injected accounting"))
+            self.assertFalse(lifecycle.job_zero_window_confirmed)
+            self.assertEqual(lifecycle.phase, controller.IsolatedLifecyclePhase.STOPPED)
+            self.assertIn("Job zero window", [receipt.operation for receipt in lifecycle.cleanup_errors])
+            self.assertFalse(controller.normal_restore_eligible(lifecycle, "signaled"))
+        with self.subTest(id="J20", edge="zero-window"):
+            lifecycle = stop_assigned(members=(1,), monotonic=(0.0, 0.0, 11.0))
+            self.assertFalse(lifecycle.job_zero_window_confirmed)
+            self.assertEqual(lifecycle.phase, controller.IsolatedLifecyclePhase.STOPPED)
+            self.assertIn("Job zero window", [receipt.operation for receipt in lifecycle.cleanup_errors])
+            self.assertFalse(controller.normal_restore_eligible(lifecycle, "signaled"))
+        with self.subTest(id="J21", edge="pipe"):
+            lifecycle = stop_assigned(child=FakeChild(pipe_error=True))
+            self.assertFalse(lifecycle.pipes_closed)
+            self.assertEqual(lifecycle.phase, controller.IsolatedLifecyclePhase.STOPPED)
+            self.assertIn("isolated stdout pipe", [receipt.operation for receipt in lifecycle.cleanup_errors])
+            self.assertFalse(controller.normal_restore_eligible(lifecycle, "signaled"))
+        with self.subTest(id="J21", edge="drain"):
+            lifecycle = stop_assigned(drain_error=True)
+            self.assertFalse(lifecycle.drains_joined)
+            self.assertEqual(lifecycle.phase, controller.IsolatedLifecyclePhase.STOPPED)
+            self.assertIn("isolated stdout drain", [receipt.operation for receipt in lifecycle.cleanup_errors])
+            self.assertFalse(controller.normal_restore_eligible(lifecycle, "signaled"))
+        with self.subTest(id="J21", edge="Job-close"):
+            lifecycle = stop_assigned(close=False)
+            self.assertFalse(lifecycle.job_close_succeeded)
+            self.assertEqual(lifecycle.phase, controller.IsolatedLifecyclePhase.STOPPED)
+            self.assertIn("Job close", [receipt.operation for receipt in lifecycle.cleanup_errors])
+            self.assertFalse(controller.normal_restore_eligible(lifecycle, "signaled"))
+        with self.subTest(id="J22"):
+            lifecycle = stop_assigned()
+            immutable_facts = (
+                lifecycle.job_assign_succeeded,
+                lifecycle.root_resume_succeeded,
+                lifecycle.job_terminate_succeeded,
+                lifecycle.root_waited,
+                lifecycle.job_zero_window_confirmed,
+                lifecycle.pipes_closed,
+                lifecycle.drains_joined,
+                lifecycle.job_close_succeeded,
+            )
+            self.assertTrue(all(immutable_facts))
+            self.assertNotIn("teardown_" + "safe", CONTROLLER_PATH.read_text(encoding="utf-8"))
+            lifecycle.cleanup_errors.append(controller.lifecycle_failure(lifecycle, "late cleanup", controller.CaptureError("injected")))
+            self.assertFalse(controller.normal_restore_eligible(lifecycle, "signaled"))
+
+    def test_production_trace_replay_accepts_only_the_observed_helper_tree(self) -> None:
+        with self.subTest(id="J23"), tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stage_root = root / "stage"
+            stage_root.mkdir()
+            isolated_executable = test_owned_executable(stage_root, "runtime", "ollama.exe")
+            lib_root = isolated_executable.parent / "lib" / "ollama"
+            for variant in ("cuda_v12", "cuda_v13", "vulkan"):
+                (lib_root / variant).mkdir(parents=True, exist_ok=True)
+            llama_executable = test_owned_executable(isolated_executable.parent / "lib", "ollama", "llama-server.exe")
+            parent = controller.ProcessRecord(41, os.getpid(), "ollama.exe", isolated_executable, birth_token(41.0))
+            lifecycle = controller.IsolatedLifecycle(root_identity=parent)
+            parent_observation = controller.ProcessObservation(
+                41, os.getpid(), "ollama.exe", isolated_executable, 41.0, birth_token(41.0), (), controller.ProcessDisposition.OLLAMA, parent
+            )
+            list_devices = controller.ProcessObservation(
+                42, 41, "llama-server.exe", llama_executable, 42.0, birth_token(42.0),
+                (str(llama_executable), "--list-devices", "--offline", "--verbose"),
+                controller.ProcessDisposition.BLOCKER, None,
+            )
+            port_probe = controller.ProcessObservation(
+                43, 41, "llama-server.exe", llama_executable, 43.0, birth_token(43.0),
+                (str(llama_executable), "--port", "61956", "--host", controller.HOST, "--no-webui", "--offline", "--verbose"),
+                controller.ProcessDisposition.BLOCKER, None,
+            )
+            conhost_executable = Path(os.environ["SystemRoot"]) / "System32" / "conhost.exe"
+            gpu_records: list[controller.ProcessObservation] = []
+            for index, variant in enumerate(("cuda_v12", "cuda_v13", "vulkan"), start=44):
+                gpu_records.append(
+                    controller.ProcessObservation(
+                        index, 41, "ollama.exe", isolated_executable, float(index), birth_token(float(index)),
+                        (str(isolated_executable), "gpu-discover", "--lib-dir", str(lib_root), "--lib-dir", str(lib_root / variant)),
+                        controller.ProcessDisposition.OLLAMA,
+                        controller.ProcessRecord(index, 41, "ollama.exe", isolated_executable, birth_token(float(index))),
+                    )
+                )
+            conhost = controller.ProcessObservation(
+                47, 44, "conhost.exe", conhost_executable, 47.0, birth_token(47.0),
+                ("\\??\\" + str(conhost_executable), "0x4"), controller.ProcessDisposition.UNRELATED, None,
+            )
+            with patch.object(controller, "ISOLATED_EXE", isolated_executable), patch.object(controller, "STAGE_ROOT", stage_root):
+                admitted = controller.isolated_startup_descendants(
+                    lifecycle,
+                    (parent_observation, list_devices, port_probe, *gpu_records, conhost),
+                )
+                self.assertEqual({record.pid for record in admitted}, {42, 43, 44, 45, 46, 47})
+                wrong_library = controller.ProcessObservation(
+                    44, 41, "ollama.exe", isolated_executable, 44.0, birth_token(44.0),
+                    (str(isolated_executable), "gpu-discover", "--lib-dir", str(lib_root), "--lib-dir", str(root / "outside")),
+                    controller.ProcessDisposition.OLLAMA, gpu_records[0].record,
+                )
+                wrong_llama_executable = test_owned_executable(root, "other", "llama-server.exe")
+                wrong_path = controller.ProcessObservation(
+                    42, 41, "llama-server.exe", wrong_llama_executable, 42.0, birth_token(42.0),
+                    (str(wrong_llama_executable), "--list-devices", "--offline", "--verbose"),
+                    controller.ProcessDisposition.BLOCKER, None,
+                )
+                model_probe = controller.ProcessObservation(
+                    43, 41, "llama-server.exe", llama_executable, 43.0, birth_token(43.0),
+                    (str(llama_executable), "--port", "61956", "--host", controller.HOST, "--no-webui", "--offline", "--verbose", "--model", "qwen2.5:7b"),
+                    controller.ProcessDisposition.BLOCKER, None,
+                )
+                wrong_parent = controller.ProcessObservation(
+                    47, 41, "conhost.exe", conhost_executable, 47.0, birth_token(47.0),
+                    ("\\??\\" + str(conhost_executable), "0x4"), controller.ProcessDisposition.UNRELATED, None,
+                )
+                wrong_prefix = controller.ProcessObservation(
+                    47, 44, "conhost.exe", conhost_executable, 47.0, birth_token(47.0),
+                    (str(conhost_executable), "0x4"), controller.ProcessDisposition.UNRELATED, None,
+                )
+                wrong_command = controller.ProcessObservation(
+                    47, 44, "conhost.exe", conhost_executable, 47.0, birth_token(47.0),
+                    ("\\??\\" + str(conhost_executable), "0xffffffff", "-ForceV1"), controller.ProcessDisposition.UNRELATED, None,
+                )
+                foreign = controller.ProcessObservation(
+                    48, 1, "python.exe", Path(sys.executable), 48.0, birth_token(48.0),
+                    ("python.exe", "run_v5_recovery.py"), controller.ProcessDisposition.BLOCKER, None,
+                )
+                for observation in (wrong_library, wrong_path, model_probe, wrong_parent, wrong_prefix, wrong_command, foreign):
+                    with self.subTest(hostile=observation.pid, cmdline=observation.cmdline), self.assertRaisesRegex(controller.CaptureError, "startup descendant differs|foreign runner"):
+                        census = (parent_observation, gpu_records[0], observation) if observation.ppid == gpu_records[0].pid else (parent_observation, observation)
+                        controller.isolated_startup_descendants(lifecycle, census)
+
+    def test_run_capture_persists_all_lifecycle_failure_edges(self) -> None:
+        cases = (
+            ("create-job", {"job_create_attempted": True, "job_create_succeeded": False}),
+            ("set-job-info", {"job_create_attempted": True, "job_create_succeeded": False}),
+            ("launch-popen", {"root_launch_attempted": True, "root_launch_succeeded": False}),
+            ("post-popen", {"root_launch_attempted": True, "root_launch_succeeded": True}),
+            ("assign-pid", {"job_assign_attempted": True, "job_assign_succeeded": False}),
+            ("assign-open", {"job_assign_attempted": True, "job_assign_succeeded": False}),
+            ("assign-job", {"job_assign_attempted": True, "job_assign_succeeded": False}),
+            ("assignment-close", {"job_assign_attempted": True, "job_assign_succeeded": True}),
+            ("bind", {"root_bind_attempted": True, "root_bind_succeeded": False}),
+            ("stdout-drain", {"drains_started_attempted": True, "drains_started_succeeded": False}),
+            ("stderr-drain", {"drains_started_attempted": True, "drains_started_succeeded": False}),
+            ("resume-thread", {"root_resume_attempted": True, "root_resume_succeeded": False}),
+            ("resume-close", {"root_resume_attempted": True, "root_resume_succeeded": True, "root_thread_handle_close_succeeded": False}),
+        )
+        with self.subTest(id="J24"):
+            for stage, expected in cases:
+                with self.subTest(edge=stage):
+                    status, restore = self._run_capture_lifecycle_failure(stage)
+                    self.assertFalse(status["capture_prepared"])
+                    self.assertFalse(status["normal_restore_eligible"])
+                    self.assertFalse(status["restoration_started"])
+                    self.assertFalse(status["restore_succeeded"])
+                    self.assertFalse(status["model_execution_performed"])
+                    self.assertEqual(status["primary_error"]["operation"], "capture")
+                    self.assertIn(f"injected {stage}", status["primary_error"]["message"])
+                    self.assertRegex(status["primary_error"]["recorded_at_utc"], r"^\d{4}-\d{2}-\d{2}T")
+                    self.assertTrue(status["cleanup_errors"])
+                    for key, value in expected.items():
+                        self.assertEqual(status[key], value)
+                    restore.assert_not_called()
+
+    def test_initial_bind_failure_preserves_the_caller_owned_lifecycle(self) -> None:
+        with self.subTest(id="C05"):
+            status, restore = self._run_capture_lifecycle_failure("bind")
+            self.assertTrue(status["root_launch_succeeded"])
+            self.assertTrue(status["job_assign_succeeded"])
+            self.assertFalse(status["root_bind_succeeded"])
+            self.assertFalse(status["normal_restore_eligible"])
+            self.assertIn("injected bind", status["primary_error"]["message"])
+            restore.assert_not_called()
+
+    def test_run_capture_successfully_restores_after_assigned_job_teardown(self) -> None:
+        with self.subTest(id="J25"), tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            identity_root = root / "identity"
+            executable = test_owned_executable(root, "runtime", "ollama.exe")
+            app = controller.ProcessRecord(10, 0, "ollama app.exe", executable, birth_token(10.0))
+            server = controller.ProcessRecord(11, 10, "ollama.exe", executable, birth_token(11.0))
+            root_identity = controller.ProcessRecord(41, os.getpid(), "ollama.exe", executable, birth_token(41.0))
+
+            class Child:
+                pid = 41
+
+                def __init__(self) -> None:
+                    self.stdout = io.BytesIO()
+                    self.stderr = io.BytesIO()
+
+                def wait(self, timeout: float) -> int:
+                    return 0
+
+            child = Child()
+
+            def create(lifecycle: controller.IsolatedLifecycle) -> None:
+                lifecycle.job_create_attempted = True
+                lifecycle.job_create_succeeded = True
+                lifecycle.job_handle = 97
+                lifecycle.advance(controller.IsolatedLifecyclePhase.JOB_CREATED)
+
+            def launch(lifecycle: controller.IsolatedLifecycle) -> None:
+                lifecycle.root_launch_attempted = True
+                lifecycle.root_launch_succeeded = True
+                lifecycle.process = child
+                lifecycle.advance(controller.IsolatedLifecyclePhase.ROOT_LAUNCHED)
+
+            def assign(lifecycle: controller.IsolatedLifecycle) -> None:
+                lifecycle.job_assign_attempted = True
+                lifecycle.job_assign_succeeded = True
+                lifecycle.advance(controller.IsolatedLifecyclePhase.ROOT_ASSIGNED)
+
+            def bind(lifecycle: controller.IsolatedLifecycle, _helper: Path | None) -> None:
+                lifecycle.root_bind_attempted = True
+                lifecycle.root_bind_succeeded = True
+                lifecycle.root_identity = root_identity
+                lifecycle.advance(controller.IsolatedLifecyclePhase.ROOT_BOUND)
+
+            def drains(lifecycle: controller.IsolatedLifecycle, _stdout: Path, _stderr: Path) -> None:
+                lifecycle.drains_started_attempted = True
+                lifecycle.drains_started_succeeded = True
+                lifecycle.stdout_drain = SimpleNamespace(overflow=threading.Event())
+                lifecycle.stderr_drain = SimpleNamespace(overflow=threading.Event())
+                lifecycle.advance(controller.IsolatedLifecyclePhase.DRAINS_STARTED)
+
+            def resume(lifecycle: controller.IsolatedLifecycle) -> None:
+                lifecycle.root_resume_attempted = True
+                lifecycle.root_resume_succeeded = True
+                lifecycle.root_thread_handle_close_attempted = True
+                lifecycle.root_thread_handle_close_succeeded = True
+                lifecycle.advance(controller.IsolatedLifecyclePhase.ROOT_RESUMED)
+
+            def stream(_port: int, endpoint: str, destination: Path) -> None:
+                destination.write_bytes(b"version" if endpoint == "/api/version" else b"tags")
+
+            def force(_expected: controller.ProcessRecord, _parent: int | None, _label: str, **kwargs: object) -> bool:
+                callback = kwargs.get("on_signal_issued")
+                assert callable(callback)
+                callback()
+                return True
+
+            authority = {
+                "protocol_commit": "a" * 40,
+                "protocol_tag": controller.PROTOCOL_TAG,
+                "protocol_tag_object": "b" * 40,
+                "source_manifest_sha256": "c" * 64,
+            }
+            api = SimpleNamespace(TerminateJobObject=Mock(return_value=True), CloseHandle=Mock(return_value=True))
+            with ExitStack() as stack:
+                stack.enter_context(patch.object(controller, "IDENTITY_ROOT", identity_root))
+                stack.enter_context(patch.object(controller, "assert_regular"))
+                stack.enter_context(patch.object(controller, "assert_no_reparse_or_ads"))
+                stack.enter_context(patch.object(controller, "sha256_file", return_value="d" * 64))
+                stack.enter_context(patch.object(controller, "validate_controller_authority", return_value=(authority, "e" * 64)))
+                stack.enter_context(patch.object(controller, "controller_dependency_identity", return_value={}))
+                stack.enter_context(patch.object(controller, "verify_protocol"))
+                stack.enter_context(patch.object(controller, "verify_source_manifest", return_value={}))
+                stack.enter_context(patch.object(controller, "verify_v4_failure_binding"))
+                stack.enter_context(patch.object(controller, "verify_tracked_helpers", return_value={"tools/read_v5_process_identity.ps1": ROOT / "tools" / "read_v5_process_identity.ps1"}))
+                stack.enter_context(patch.object(controller, "verify_isolated_runtime_and_store"))
+                stack.enter_context(patch.object(controller, "assert_normal_state", return_value=(app, server)))
+                stack.enter_context(patch.object(controller, "runtime_snapshot", return_value={}))
+                stack.enter_context(patch.object(controller, "stream_loopback_get", side_effect=stream))
+                stack.enter_context(patch.object(controller, "force_stop_exact", side_effect=force))
+                stack.enter_context(patch.object(controller, "wait_for_listener_free"))
+                stack.enter_context(patch.object(controller, "create_lifecycle_job", side_effect=create))
+                stack.enter_context(patch.object(controller, "launch_suspended_isolated_root", side_effect=launch))
+                stack.enter_context(patch.object(controller, "assign_suspended_root_to_job", side_effect=assign))
+                stack.enter_context(patch.object(controller, "bind_suspended_root_identity", side_effect=bind))
+                stack.enter_context(patch.object(controller, "start_lifecycle_drains", side_effect=drains))
+                stack.enter_context(patch.object(controller, "resume_suspended_root", side_effect=resume))
                 stack.enter_context(patch.object(controller, "wait_for_isolated_listener"))
                 stack.enter_context(patch.object(controller, "assert_isolated_state"))
                 stack.enter_context(patch.object(controller, "assert_exact_tags"))
                 stack.enter_context(patch.object(controller, "assert_runtime_identity"))
                 stack.enter_context(patch.object(controller, "read_json", return_value={"version": "0.33.2"}))
-                stack.enter_context(patch.object(controller, "restore_normal"))
-                popen = stack.enter_context(patch.object(controller.subprocess, "Popen", return_value=child))
+                stack.enter_context(patch.object(controller, "kernel32", return_value=api))
+                stack.enter_context(patch.object(controller, "isolated_job_active_members", return_value=0))
+                stack.enter_context(patch.object(controller, "join_bounded_drain"))
+                stack.enter_context(patch.object(controller.time, "monotonic", side_effect=(0.0, 0.0, 0.0, 3.0, 3.0)))
+                stack.enter_context(patch.object(controller.time, "sleep"))
+                restore = stack.enter_context(patch.object(controller, "restore_normal"))
                 controller.run_capture()
-            self.assertEqual(popen.call_args.args[0], [str(isolated_executable), "serve"])
-            self.assertEqual(calls[-2:], ["child-kill", "child-wait"])
-            self.assertTrue((identity_root / "operation_receipt.json").is_file())
-
-    def test_run_capture_initial_bind_failure_cleans_retained_child_and_restores(self) -> None:
-        with self.subTest(id="C05"), self.subTest(id="T11"), tempfile.TemporaryDirectory() as directory:
-            identity_root = Path(directory) / "identity"
-            executable = Path(__file__).resolve()
-            app = controller.ProcessRecord(10, 0, "ollama app.exe", executable, birth_token(0.00001))
-            server = controller.ProcessRecord(11, 10, "ollama.exe", executable, birth_token(0.000011))
-            events: list[str] = []
-
-            class NoSuchProcess(Exception):
-                pass
-
-            class TimeoutExpired(Exception):
-                pass
-
-            class FakeChild:
-                pid = 41
-
-                def __init__(self) -> None:
-                    self.stdout = io.BytesIO()
-                    self.stderr = io.BytesIO()
-                    self.returncode: int | None = None
-
-                def poll(self) -> int | None:
-                    return self.returncode
-
-                def kill(self) -> None:
-                    events.append("retained-kill")
-                    self.returncode = 0
-
-                def wait(self, timeout: float) -> int:
-                    events.append("retained-wait")
-                    return 0
-
-            child = FakeChild()
-            zero_birth_process = SimpleNamespace(
-                pid=41,
-                ppid=lambda: os.getpid(),
-                name=lambda: "ollama.exe",
-                exe=lambda: str(controller.ISOLATED_EXE),
-                create_time=lambda: 0.0,
-            )
-            fake_psutil = SimpleNamespace(
-                NoSuchProcess=NoSuchProcess,
-                TimeoutExpired=TimeoutExpired,
-                AccessDenied=PermissionError,
-                Process=Mock(return_value=zero_birth_process),
-                pid_exists=lambda pid: False,
-            )
-            authority = {"protocol_commit": "a" * 40, "protocol_tag": controller.PROTOCOL_TAG, "protocol_tag_object": "b" * 40, "source_manifest_sha256": "c" * 64}
-
-            def stream(port: int, endpoint: str, destination: Path) -> None:
-                destination.write_bytes(b"version" if endpoint == "/api/version" else b"tags")
-
-            def force(
-                expected: controller.ProcessRecord,
-                expected_parent: int | None,
-                label: str,
-                **kwargs: object,
-            ) -> bool:
-                callback = kwargs.get("on_signal_issued")
-                self.assertIn(label, {"normal app", "normal server"})
-                self.assertTrue(callable(callback))
-                callback()
-                events.append(f"signal:{label}")
-                return True
-
-            with ExitStack() as stack:
-                stack.enter_context(patch.object(controller, "IDENTITY_ROOT", identity_root))
-                stack.enter_context(patch.object(controller, "psutil", fake_psutil))
-                stack.enter_context(patch.object(controller, "assert_regular"))
-                stack.enter_context(patch.object(controller, "assert_no_reparse_or_ads"))
-                stack.enter_context(patch.object(controller, "sha256_file", return_value="d" * 64))
-                stack.enter_context(patch.object(controller, "validate_controller_authority", return_value=(authority, "e" * 64)))
-                stack.enter_context(patch.object(controller, "controller_dependency_identity", return_value={}))
-                stack.enter_context(patch.object(controller, "verify_protocol"))
-                stack.enter_context(patch.object(controller, "verify_source_manifest", return_value={}))
-                stack.enter_context(patch.object(controller, "verify_tracked_helpers", return_value={"tools/read_v5_process_identity.ps1": ROOT / "tools" / "read_v5_process_identity.ps1"}))
-                stack.enter_context(patch.object(controller, "verify_isolated_runtime_and_store"))
-                stack.enter_context(patch.object(controller, "assert_normal_state", return_value=(app, server)))
-                stack.enter_context(patch.object(controller, "runtime_snapshot", return_value={}))
-                stack.enter_context(patch.object(controller, "stream_loopback_get", side_effect=stream))
-                force_stop = stack.enter_context(patch.object(controller, "force_stop_exact", side_effect=force))
-                stack.enter_context(patch.object(controller, "wait_for_listener_free"))
-                stack.enter_context(patch.object(controller.subprocess, "Popen", return_value=child))
-                restore = stack.enter_context(
-                    patch.object(controller, "restore_normal", side_effect=lambda *args: events.append("restore"))
-                )
-                stack.enter_context(self.assertRaisesRegex(controller.CaptureError, "isolated child pre-stop identity differs"))
-                controller.run_capture()
-            self.assertEqual(
-                events,
-                [
-                    "signal:normal app",
-                    "signal:normal server",
-                    "retained-kill",
-                    "retained-wait",
-                    "restore",
-                ],
-            )
-            self.assertEqual(fake_psutil.Process.call_count, 1)
-            self.assertEqual([call.args[2] for call in force_stop.call_args_list], ["normal app", "normal server"])
-            restore.assert_called_once()
-            self.assertFalse((identity_root / "restoration").exists())
             status = json.loads((identity_root / "operation_status.json").read_text(encoding="utf-8"))
-            self.assertFalse(status["capture_prepared"])
-            self.assertTrue(status["normal_app_signal_issued"])
-            self.assertTrue(status["normal_server_signal_issued"])
+            self.assertTrue(status["capture_prepared"])
+            self.assertTrue(status["normal_restore_eligible"])
             self.assertTrue(status["restoration_started"])
             self.assertTrue(status["restore_succeeded"])
-            self.assertIn("isolated child pre-stop identity differs", status["primary_failure"])
+            self.assertTrue(status["job_terminate_succeeded"])
+            self.assertTrue(status["job_zero_window_confirmed"])
+            self.assertTrue(status["job_close_succeeded"])
+            self.assertIsNone(status["primary_error"])
+            self.assertEqual(status["cleanup_errors"], [])
+            restore.assert_called_once()
 
     def test_run_capture_reconciles_only_after_a_reached_normal_signal_boundary(self) -> None:
         executable = Path(__file__).resolve()
@@ -1776,35 +2355,32 @@ class IdentityControllerTests(unittest.TestCase):
         server = controller.ProcessRecord(11, 10, "ollama.exe", executable, birth_token(0.000011))
         authority = {"protocol_commit": "a" * 40, "protocol_tag": controller.PROTOCOL_TAG, "protocol_tag_object": "b" * 40, "source_manifest_sha256": "c" * 64}
 
-        def run_case(mode: str) -> tuple[list[str], list[str]]:
-            signals: list[str] = []
-            restored: list[str] = []
-
-            def stream(port: int, endpoint: str, destination: Path) -> None:
-                destination.write_bytes(b"version" if endpoint == "/api/version" else b"tags")
-
-            def force(expected: controller.ProcessRecord, expected_parent: int | None, label: str, **kwargs: object) -> bool:
-                callback = kwargs.get("on_signal_issued")
-                if label == "normal app":
-                    if mode == "app-refusal":
-                        raise controller.CaptureError("app identity drift")
-                    assert callable(callback)
-                    callback()
-                    signals.append(label)
-                    return True
-                if label == "normal server":
-                    if mode == "server-unknown":
-                        raise controller.CaptureError("server identity drift")
-                    if mode == "server-absent":
-                        return False
-                    assert callable(callback)
-                    callback()
-                    signals.append(label)
-                    return True
-                self.fail(f"unexpected stop: {label}")
-
-            with tempfile.TemporaryDirectory() as directory:
+        for legacy_row, mode in (("C01", "app-refusal"), ("C04", "server-unknown"), ("C02", "server-absent"), ("C03", "server-exact")):
+            with self.subTest(id=legacy_row, mode=mode), tempfile.TemporaryDirectory() as directory:
                 identity_root = Path(directory) / "identity"
+                signals: list[str] = []
+
+                def stream(_port: int, endpoint: str, destination: Path) -> None:
+                    destination.write_bytes(b"version" if endpoint == "/api/version" else b"tags")
+
+                def force(
+                    _expected: controller.ProcessRecord,
+                    _parent: int | None,
+                    label: str,
+                    captured_mode: str = mode,
+                    captured_signals: list[str] = signals,
+                    **kwargs: object,
+                ) -> bool:
+                    if label == "normal app" and captured_mode == "app-refusal":
+                        raise controller.CaptureError("app identity drift")
+                    if label == "normal server" and captured_mode == "server-unknown":
+                        raise controller.CaptureError("server identity drift")
+                    callback = kwargs.get("on_signal_issued")
+                    assert callable(callback)
+                    callback()
+                    captured_signals.append(label)
+                    return True
+
                 with ExitStack() as stack:
                     stack.enter_context(patch.object(controller, "IDENTITY_ROOT", identity_root))
                     stack.enter_context(patch.object(controller, "assert_regular"))
@@ -1814,68 +2390,28 @@ class IdentityControllerTests(unittest.TestCase):
                     stack.enter_context(patch.object(controller, "controller_dependency_identity", return_value={}))
                     stack.enter_context(patch.object(controller, "verify_protocol"))
                     stack.enter_context(patch.object(controller, "verify_source_manifest", return_value={}))
+                    stack.enter_context(patch.object(controller, "verify_v4_failure_binding"))
                     stack.enter_context(patch.object(controller, "verify_tracked_helpers", return_value={"tools/read_v5_process_identity.ps1": ROOT / "tools" / "read_v5_process_identity.ps1"}))
                     stack.enter_context(patch.object(controller, "verify_isolated_runtime_and_store"))
                     stack.enter_context(patch.object(controller, "assert_normal_state", return_value=(app, server)))
                     stack.enter_context(patch.object(controller, "runtime_snapshot", return_value={}))
                     stack.enter_context(patch.object(controller, "stream_loopback_get", side_effect=stream))
                     stack.enter_context(patch.object(controller, "force_stop_exact", side_effect=force))
-                    restore = stack.enter_context(patch.object(controller, "restore_normal", side_effect=lambda *args: restored.append("restore")))
                     stack.enter_context(patch.object(controller, "wait_for_listener_free", side_effect=controller.CaptureError("stop after normal reconciliation")))
-                    isolated_launch = stack.enter_context(patch.object(controller.subprocess, "Popen", side_effect=self.fail))
+                    restore = stack.enter_context(patch.object(controller, "restore_normal"))
                     with self.assertRaises(controller.CaptureError):
                         controller.run_capture()
-                    isolated_launch.assert_not_called()
-                    if mode == "server-unknown":
-                        status = json.loads(
-                            (identity_root / "operation_status.json").read_text(
-                                encoding="utf-8"
-                            )
-                        )
-                        self.assertEqual(
-                            {
-                                key: status[key]
-                                for key in (
-                                    "capture_prepared",
-                                    "normal_app_signal_issued",
-                                    "normal_server_signal_issued",
-                                    "normal_server_stop_resolution",
-                                    "restoration_started",
-                                    "restore_succeeded",
-                                    "primary_failure",
-                                    "cleanup_phase_errors",
-                                )
-                            },
-                            {
-                                "capture_prepared": False,
-                                "normal_app_signal_issued": True,
-                                "normal_server_signal_issued": False,
-                                "normal_server_stop_resolution": "uncertain",
-                                "restoration_started": False,
-                                "restore_succeeded": False,
-                                "primary_failure": "server identity drift",
-                                "cleanup_phase_errors": [
-                                    "normal-restore: normal server ownership is uncertain before restoration"
-                                ],
-                            },
-                        )
-                        self.assertFalse(status["model_execution_performed"])
-                if mode in {"app-refusal", "server-unknown"}:
-                    restore.assert_not_called()
+                status = json.loads((identity_root / "operation_status.json").read_text(encoding="utf-8"))
+                self.assertFalse(status["restoration_started"])
+                self.assertFalse(status["restore_succeeded"])
+                restore.assert_not_called()
+                if mode == "app-refusal":
+                    self.assertEqual(signals, [])
+                elif mode == "server-unknown":
+                    self.assertEqual(signals, ["normal app"])
+                    self.assertEqual(status["normal_server_stop_resolution"], "uncertain")
                 else:
-                    restore.assert_called_once()
-            return signals, restored
-
-        cases = (
-            ("C01", "app-refusal", ([], [])),
-            ("C02", "server-absent", (["normal app"], ["restore"])),
-            ("C03", "server-exact", (["normal app", "normal server"], ["restore"])),
-            ("C04", "server-unknown", (["normal app"], [])),
-        )
-        for row_id, mode, expected in cases:
-            with self.subTest(id=row_id):
-                self.assertEqual(run_case(mode), expected)
-
+                    self.assertEqual(signals, ["normal app", "normal server"])
     def test_process_preflight_is_read_only_and_cli_modes_are_exclusive(self) -> None:
         authority = {"protocol_commit": "a" * 40, "protocol_tag_object": "b" * 40}
         with (
@@ -2825,7 +3361,18 @@ class IdentityControllerTests(unittest.TestCase):
         self.assertEqual(len(BIRTH_TOKEN_ROWS), 8)
         self.assertEqual(len(RESTORATION_FAULT_ROWS), 6)
         self.assertEqual(len(STARTUP_ROWS), 9)
-        self.assertEqual(len(DECLARED_EXECUTED_ROWS), 99)
+        self.assertEqual(len(JOB_ROWS), 25)
+        self.assertEqual(JOB_ROW_IDS, tuple(f"J{index:02d}" for index in range(1, 26)))
+        self.assertEqual(len(JOB_ROW_SET), len(JOB_ROW_IDS))
+        self.assertTrue(all(isinstance(obligation, str) and obligation for _row_id, obligation in JOB_ROWS))
+        row_families = (
+            CANDIDATE04_ACCEPTANCE_ROWS,
+            BIRTH_TOKEN_ROWS,
+            RESTORATION_FAULT_ROWS,
+            STARTUP_ROWS,
+            JOB_ROWS,
+        )
+        self.assertEqual(len(DECLARED_EXECUTED_ROWS), sum(len(rows) for rows in row_families))
         expected_executed = set(DECLARED_EXECUTED_ROWS)
         if not (sys.platform == "win32" and controller.psutil is not None):
             expected_executed -= {"D10", "T14"}

@@ -1,0 +1,59 @@
+{
+  "failure_root": {
+    "members": [
+      {
+        "bytes": 472,
+        "path": "baseline-processes.json",
+        "sha256": "c91cd78701928f310f2051675d020ebeb5747d231d91d3a3c1e7dc939a3f0e62"
+      },
+      {
+        "bytes": 20,
+        "path": "baseline-version.response.json",
+        "sha256": "d87c65c330c66347f668453795e990991fffefd6139b94494f012bf61f232b20"
+      },
+      {
+        "bytes": 1747,
+        "path": "baseline-tags.response.json",
+        "sha256": "1d914532f77168f19e7fc00cbd606e13378f2cf7d891c99ed5d7745fa21f7fe7"
+      },
+      {
+        "bytes": 0,
+        "path": "isolated-stdout.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 1907,
+        "path": "isolated-stderr.log",
+        "sha256": "addda3285b2b89b927c6ec841569329f974e06c570cdb7db7988c6838bdae7ad"
+      },
+      {
+        "bytes": 752,
+        "path": "operation_status.json",
+        "sha256": "2ce4d54b981e636f69eb58b4d89696d93cf0fc390dccc7b520c2ac4605dbd5ad"
+      }
+    ],
+    "path": "C:\\Users\\leste\\Downloads\\Repos\\anachron-v5-evidence\\runtime-identity-v5-protocol-v4",
+    "status": {
+      "capture_prepared": false,
+      "cleanup_phase_errors": [
+        "normal-restore: normal topology is unsafe before restoration launch: runner or llama-server process is present"
+      ],
+      "model_execution_performed": false,
+      "normal_app_signal_issued": true,
+      "normal_server_signal_issued": true,
+      "normal_server_stop_resolution": "signaled",
+      "primary_failure": "runner or llama-server process is present",
+      "restoration_started": true,
+      "restore_succeeded": false
+    }
+  },
+  "kind": "anachron-v5-v4-failure-binding",
+  "v4_release": {
+    "branch": "protocol/v5-successor-v4",
+    "commit": "c8f81bb9dc9c7b1f701f8e894b4e86a120a04a71",
+    "controller_sha256": "c7b56cdc7661015f6fc4ab8796ee048c74afb1d92a989e013ab772fe7ee0ba1b",
+    "source_manifest_sha256": "83422ab979149520c0c85c5e96a88e1f549f12fae1020be94670286571453d74",
+    "tag": "v5-measurement-protocol-v4",
+    "tag_object": "ad369ca0cdd667b2af305341517fc24baa3c5404"
+  }
+}

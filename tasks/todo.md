@@ -181,6 +181,26 @@ The single v3 capture failed safely before process mutation because its raw HTTP
 - [x] Freeze PM acceptance criteria and architecture for the minimal transport fix and v4 identity bindings.
 - [x] Reproduce the exact duplicate-`Host` request as the original RED and add a disposable loopback regression that requires exactly one `Host` header.
 - [x] Update the branch, tag, external path, template, wrapper, documentation, test, and workflow identities to the v4 successor without changing measurement science.
-- [ ] Run the complete unchanged-candidate local matrix, independent review, and QA.
-- [ ] Commit and push `protocol/v5-successor-v4`; require branch CI green, create annotated `v5-measurement-protocol-v4`, and require tag CI green.
-- [ ] Build and validate the detached v4 source manifest and external controller authority, then stop for fresh authorization before any second capture.
+- [x] Run the complete unchanged-candidate local matrix, independent review, and QA.
+- [x] Commit and push `protocol/v5-successor-v4`; require branch CI green, create annotated `v5-measurement-protocol-v4`, and require tag CI green.
+- [x] Build and validate the detached v4 source manifest and external controller authority, then stop for fresh authorization before any second capture.
+
+The single authorized v4 capture then failed closed after stopping normal Ollama. The isolated 0.33.2 server spawned legitimate startup-only GPU discovery descendants, which v4 rejected as foreign `llama-server` processes. `capture_prepared` and `model_execution_performed` are false. The controller's immediate restoration attempt was blocked by the same short-lived descendants; root restored the exact governed normal app afterward and verified its topology and raw `/api/version` and `/api/tags` bytes against the v4 baseline. Preserve the six-file v4 failure root unchanged.
+
+## Successor v5 isolated-startup recovery, 2026-09-09
+
+- [x] Preserve and hash the v4 failure root; restore and verify the normal Ollama topology without retrying the consumed capture.
+- [x] Reproduce the isolated startup tree on a separate port without model calls; establish that GPU discovery ends by 3.906 seconds, `DETACHED_PROCESS` removes the persistent console child, and exact descendants clear within 0.203 seconds after parent termination.
+- [x] Freeze PM acceptance criteria and architecture: 15-second startup ceiling, 0.25-second census cadence, 2-second continuous child-free gate, and 10-second teardown ceiling.
+- [x] Add the canonical v4 failure binding and successor-v5 release identities while preserving measurement science, models, seeds, schemas, and `v4_included_count = 0`.
+- [x] Implement identity-bound startup-descendant admission, detached launch, continuous quiescence before either isolated API call, and restoration only after exact task-owned teardown.
+- [x] Add v4 RED/v5 GREEN process-tree regressions, hostile descendant/foreign runner cases, failure-before-quiescence restoration cases, exact workflow triggers, and governed-closure validation.
+- [x] Complete the Architecture Reset Job Object containment repair: typed Win32 structures and signatures, suspended assignment before binding/resume, Job-only teardown, continuous zero-member gate, and J01-J14 regressions. No controller mode or endpoint was executed.
+- [x] Complete the second Architecture Reset caller-owned lifecycle migration: replace mutable teardown-success state with monotonic acquisition and cleanup facts, a pure restoration truth table, and persisted primary/cleanup failure receipts. The literal 25-row lifecycle harness injects every CreateJob-to-launch-return boundary and successful `ResumeThread` followed by failed `CloseHandle`, directly executes every teardown dispatcher and cleanup-fault class, replays the exact helper tree, and proves both fail-closed receipts and one clean assigned-Job restoration.
+- [x] Run the full local acceptance matrix, freeze the candidate, and obtain independent review and QA on the same bytes.
+- [ ] Commit and push `protocol/v5-successor-v5`; require branch CI green, create annotated `v5-measurement-protocol-v5`, and require tag CI green.
+- [ ] Build and independently validate the detached v5 source manifest and external controller authority. Stop before any v5 capture without a new explicit one-shot authorization.
+
+### Review
+
+- Frozen candidate tree `4d92c55bce837e28cdcdc954bb93dfdd1499d73d` passed the full local matrix, independent code review, independent strategic review, and final QA. Remote CI, tag, and external release artifacts remain pending.

@@ -1,6 +1,6 @@
 # Anachron v5 measurement
 
-V4 repairs V3's failed preflight loopback transport request. It remains offline and does not authorize model execution, process control, outreach, upload, or submission. V3 is preserved failed-capture evidence, and V2 is preserved historical evidence; neither is relabeled or retagged.
+V5 repairs V4's failed isolated-startup classification. It remains offline and does not authorize model execution, process control, outreach, upload, or submission. V4 is preserved failed-capture evidence, and V3/V2 are preserved historical evidence; none is relabeled or retagged.
 
 ```text
 python -m tools.validate_v5_contract --repository-root <repo>
