@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
+import os
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -16,6 +19,7 @@ from anachron.v5_custody import ByteBudget, V5CustodyError
 from anachron.v5_measurement import (
     _MAX_AUTHORITY_BYTES,
     _MAX_RESPONSE_BYTES,
+    _PENDING_STATEMENT,
     FAILURE_MAX_BYTES,
     REPETITION_SEED_NAMESPACE,
     REPETITION_SEEDS,
@@ -32,6 +36,8 @@ from anachron.v5_measurement import (
     classify_first_response,
     run_measurement,
     sha256_bytes,
+    validate_pending_inputs,
+    validate_run_inputs,
 )
 from anachron.v5_registry import canonical_json_bytes, load_v5_registry
 
@@ -62,7 +68,7 @@ def measurement_plan_and_go(repository_root: Path, cards: dict[str, dict[str, ob
     (plans / "source_manifest.json").write_bytes(source_raw)
     runtime_raw = canonical_json_bytes({"models": models, "version": "0.33.2"})
     (plans / "runtime_identity.json").write_bytes(runtime_raw)
-    plan = plans / "full.json"
+    plan = plans / "full_plan.json"
     go = directory / "go.json"
     authority_raw = (repository_root / "research/v5_measurement/authority_binding_contract.json").read_bytes()
     acceptance_raw = (repository_root / "research/v5_measurement/ACCEPTANCE_MATRIX.md").read_bytes()
@@ -72,7 +78,8 @@ def measurement_plan_and_go(repository_root: Path, cards: dict[str, dict[str, ob
     plan_raw = canonical_json_bytes(plan_value)
     plan.write_bytes(plan_raw)
     schedule_raw = canonical_json_bytes({"rows": plan_value["schedule"], "v4_included_count": 0})
-    receipt_raw = canonical_json_bytes({"authority_contract_sha256": sha256_bytes(authority_raw), "carry_forward_sha256": sha256_bytes(carry_raw), "compatibility_plan_sha256": sha256_bytes(compatibility_raw), "full_plan_sha256": sha256_bytes(plan_raw), "runtime_identity_sha256": sha256_bytes(runtime_raw), "schedule_sha256": sha256_bytes(schedule_raw), "schema_version": "anachron-v5-materialization-receipt-v2", "v4_included_count": 0, "v5_source_manifest_sha256": sha256_bytes(source_raw)})
+    (plans / "schedule.json").write_bytes(schedule_raw)
+    receipt_raw = canonical_json_bytes({"authority_contract_sha256": sha256_bytes(authority_raw), "carry_forward_sha256": sha256_bytes(carry_raw), "compatibility_plan_sha256": sha256_bytes(compatibility_raw), "full_plan_sha256": sha256_bytes(plan_raw), "runtime_identity_sha256": sha256_bytes(runtime_raw), "schedule_sha256": sha256_bytes(schedule_raw), "schema_version": "anachron-v5-materialization-receipt-v3", "v4_included_count": 0, "v5_source_manifest_sha256": sha256_bytes(source_raw)})
     (plans / "materialization_receipt.json").write_bytes(receipt_raw)
     go.write_bytes(canonical_json_bytes({"acceptance_matrix_sha256": sha256_bytes(acceptance_raw), "analyzer_sha256": component["analyzer"], "authority_contract_sha256": sha256_bytes(authority_raw), "authorized_at_utc": "2026-09-06T00:00:00Z", "authorized_by": "Test", "carry_forward_sha256": sha256_bytes(carry_raw), "compatibility_plan_sha256": sha256_bytes(compatibility_raw), "decision": "GO", "expected_runtime": plan_value["expected_runtime"], "full_plan_sha256": sha256_bytes(plan_raw), "kind": "anachron-v5-conditional-measurement-authorization", "materialization_receipt_sha256": sha256_bytes(receipt_raw), "output_root": str(output.resolve()), "protocol_commit": "1" * 40, "protocol_tag": V5_PROTOCOL_TAG, "protocol_tag_object": "2" * 40, "runner_sha256": component["runner"], "source_manifest_sha256": sha256_bytes(source_raw), "statement": "fixture authorization", "v4_included_count": 0, "wrapper_sha256": component["wrapper"]}))
     return plan, go
@@ -89,6 +96,23 @@ class V5MeasurementTests(unittest.TestCase):
         self.assertEqual(REPETITION_SEED_NAMESPACE, V5_SEED_NAMESPACE)
         self.assertEqual(REPETITION_SEEDS, expected)
         self.assertEqual(REPETITION_SEEDS, (1477205243, 106139663))
+
+    def test_checked_in_pending_template_matches_validator_expectations(self) -> None:
+        template = json.loads((self.root / "research/v5_measurement/conditional_go.template.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            {
+                "authorized_at_utc": template["authorized_at_utc"],
+                "authorized_by": template["authorized_by"],
+                "decision": template["decision"],
+                "statement": template["statement"],
+            },
+            {
+                "authorized_at_utc": "",
+                "authorized_by": "",
+                "decision": "PENDING",
+                "statement": _PENDING_STATEMENT,
+            },
+        )
 
     def test_schedule_has_64_unique_ordinal_rows(self) -> None:
         rows = build_schedule(self.cards, ("qwen2.5:7b", "qwen3:14b-q4_K_M"))
@@ -154,6 +178,122 @@ class V5MeasurementTests(unittest.TestCase):
 
     def _plan_and_go(self, directory: Path) -> tuple[Path, Path]:
         return measurement_plan_and_go(self.root, self.cards, directory)
+
+    def _pending(self, go: Path, destination: Path) -> Path:
+        value = json.loads(go.read_text(encoding="utf-8"))
+        value.update(
+            {
+                "authorized_at_utc": "",
+                "authorized_by": "",
+                "decision": "PENDING",
+                "statement": _PENDING_STATEMENT,
+            }
+        )
+        destination.write_bytes(canonical_json_bytes(value))
+        return destination
+
+    def test_materialization_closure_binds_all_seven_raw_members_before_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_root = Path(temporary)
+            plan, go = self._plan_and_go(temporary_root)
+            pending = self._pending(go, temporary_root / "pending.json")
+            output = temporary_root / "evidence"
+            validate_run_inputs(plan, go, output, repository_root=self.root)
+            validate_pending_inputs(plan, pending, output, repository_root=self.root)
+            self.assertFalse(output.exists())
+
+            baseline_runtime = (plan.parent / "runtime_identity.json").read_bytes()
+            (plan.parent / "runtime_identity.json").write_bytes(json.dumps(json.loads(baseline_runtime), sort_keys=True).encode("utf-8"))
+            with self.assertRaisesRegex(V5MeasurementError, "materialization receipt binding differs"):
+                validate_run_inputs(plan, go, output, repository_root=self.root)
+            (plan.parent / "runtime_identity.json").write_bytes(baseline_runtime)
+
+            receipt = json.loads((plan.parent / "materialization_receipt.json").read_text(encoding="utf-8"))
+            receipt["schema_version"] = "anachron-v5-materialization-receipt-v2"
+            (plan.parent / "materialization_receipt.json").write_bytes(canonical_json_bytes(receipt))
+            with self.assertRaisesRegex(V5MeasurementError, "materialization receipt binding differs"):
+                validate_run_inputs(plan, go, output, repository_root=self.root)
+            self.assertFalse(output.exists())
+
+    def test_materialization_closure_rejects_rehashed_schedule_drift_and_topology_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_root = Path(temporary)
+            plan, go = self._plan_and_go(temporary_root)
+            output = temporary_root / "evidence"
+            schedule = json.loads((plan.parent / "schedule.json").read_text(encoding="utf-8"))
+            schedule["rows"][0]["seed"] += 1
+            schedule_raw = canonical_json_bytes(schedule)
+            (plan.parent / "schedule.json").write_bytes(schedule_raw)
+            receipt = json.loads((plan.parent / "materialization_receipt.json").read_text(encoding="utf-8"))
+            receipt["schedule_sha256"] = sha256_bytes(schedule_raw)
+            receipt_raw = canonical_json_bytes(receipt)
+            (plan.parent / "materialization_receipt.json").write_bytes(receipt_raw)
+            authorization = json.loads(go.read_text(encoding="utf-8"))
+            authorization["materialization_receipt_sha256"] = sha256_bytes(receipt_raw)
+            go.write_bytes(canonical_json_bytes(authorization))
+            with self.assertRaisesRegex(V5MeasurementError, "materialization receipt binding differs"):
+                validate_run_inputs(plan, go, output, repository_root=self.root)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_root = Path(temporary)
+            for name in ("missing", "extra", "cap"):
+                with self.subTest(name=name):
+                    fixture_root = temporary_root / name
+                    fixture_root.mkdir()
+                    plan, go = self._plan_and_go(fixture_root)
+                    if name == "missing":
+                        (plan.parent / "schedule.json").unlink()
+                    elif name == "extra":
+                        (plan.parent / "unexpected.json").write_bytes(b"{}\n")
+                    else:
+                        (plan.parent / "schedule.json").write_bytes(b"x" * (_MAX_AUTHORITY_BYTES + 1))
+                    with self.assertRaises(V5MeasurementError):
+                        validate_run_inputs(plan, go, fixture_root / "evidence", repository_root=self.root)
+
+    @unittest.skipUnless(os.name == "nt", "alternate data streams are Windows-specific")
+    def test_materialization_closure_rejects_alternate_data_streams(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_root = Path(temporary)
+            plan, go = self._plan_and_go(temporary_root)
+            Path(f"{plan.parent / 'runtime_identity.json'}:unexpected").write_text("stream", encoding="utf-8")
+            with self.assertRaisesRegex(V5MeasurementError, "alternate data stream"):
+                validate_run_inputs(plan, go, temporary_root / "evidence", repository_root=self.root)
+
+    def test_go_and_pending_are_disjoint_and_pending_is_side_effect_free(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_root = Path(temporary)
+            plan, go = self._plan_and_go(temporary_root)
+            pending = self._pending(go, temporary_root / "pending.json")
+            output = temporary_root / "evidence"
+            with self.assertRaises(V5MeasurementError):
+                validate_pending_inputs(plan, go, output, repository_root=self.root)
+            with self.assertRaises(V5MeasurementError):
+                validate_run_inputs(plan, pending, output, repository_root=self.root)
+            for key, value in (("authorized_by", "Test"), ("authorized_at_utc", "2026-09-06T00:00:00Z"), ("statement", "placeholder")):
+                with self.subTest(key=key):
+                    invalid = json.loads(pending.read_text(encoding="utf-8"))
+                    invalid[key] = value
+                    pending.write_bytes(canonical_json_bytes(invalid))
+                    with self.assertRaises(V5MeasurementError):
+                        validate_pending_inputs(plan, pending, output, repository_root=self.root)
+                    self._pending(go, pending)
+            self.assertFalse(output.exists())
+
+    def test_pending_cli_does_not_reach_measurement_and_flags_are_exclusive(self) -> None:
+        from tools import run_v5_recovery
+
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary_root = Path(temporary)
+            plan, go = self._plan_and_go(temporary_root)
+            pending = self._pending(go, temporary_root / "pending.json")
+            arguments = ["--repository-root", str(self.root), "--full-plan", str(plan), "--conditional-go", str(pending), "--output", str(temporary_root / "evidence")]
+            stdout = io.StringIO()
+            with patch.object(run_v5_recovery, "run_measurement", side_effect=AssertionError("PENDING must not execute")), redirect_stdout(stdout):
+                self.assertEqual(run_v5_recovery.main([*arguments, "--pending-only"]), 0)
+            self.assertEqual(stdout.getvalue(), '{"status": "PENDING_VALID"}\n')
+            with self.assertRaises(SystemExit):
+                run_v5_recovery.main([*arguments, "--pending-only", "--preflight-only"])
+            self.assertFalse((temporary_root / "evidence").exists())
 
     def test_cap_plus_one_full_plan_rejects_before_transport_or_staging(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

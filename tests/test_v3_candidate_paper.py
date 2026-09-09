@@ -13,7 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-TECTONIC = Path(os.environ.get("ANACHRON_V3_TECTONIC", r"C:\Users\leste\.codex\tools\tectonic-0.17.0\bin\tectonic.exe"))
+TECTONIC = Path(os.environ["ANACHRON_V3_TECTONIC"]) if "ANACHRON_V3_TECTONIC" in os.environ else None
 REQUIRE_PAPER_QA = os.environ.get("ANACHRON_V3_REQUIRE_PAPER_QA") == "1"
 BUILDER_PATH = ROOT / "tools" / "build_v3_measurement_candidate_paper.py"
 SPEC = importlib.util.spec_from_file_location("v3_candidate_paper", BUILDER_PATH)
@@ -75,6 +75,13 @@ def _projection(sign: str = "positive") -> dict:
 
 
 class TestV3CandidatePaper(unittest.TestCase):
+    def require_paper_resources(self) -> Path:
+        if TECTONIC is not None and TECTONIC.is_file():
+            return TECTONIC
+        if REQUIRE_PAPER_QA:
+            self.fail("required pinned Tectonic executable is unavailable")
+        self.skipTest("explicit pinned Tectonic executable is unavailable")
+
     def test_paper_ci_establishes_master_from_verified_remote_before_worktree(self):
         workflow = (ROOT / ".github/workflows/tests.yml").read_text(encoding="utf-8")
         origin = 'git remote get-url origin'
@@ -213,15 +220,13 @@ class TestV3CandidatePaper(unittest.TestCase):
                 builder.verify_tectonic(wrong)
 
     def test_source_archive_and_pdf_are_deterministic_and_visible(self):
-        if not TECTONIC.is_file() and not REQUIRE_PAPER_QA:
-            self.skipTest("pinned Tectonic is unavailable")
-        self.assertTrue(TECTONIC.is_file(), "required pinned Tectonic executable is unavailable")
+        tectonic = self.require_paper_resources()
         template = builder.validate_template(ROOT)
         projection = _projection()
-        builder.verify_tectonic(TECTONIC)
+        builder.verify_tectonic(tectonic)
         with tempfile.TemporaryDirectory() as first_root, tempfile.TemporaryDirectory() as second_root:
-            first = builder._build_once(TECTONIC, template, projection, Path(first_root))
-            second = builder._build_once(TECTONIC, template, projection, Path(second_root))
+            first = builder._build_once(tectonic, template, projection, Path(first_root))
+            second = builder._build_once(tectonic, template, projection, Path(second_root))
             self.assertEqual(builder.sha256_path(first["archive"]), builder.sha256_path(second["archive"]))
             self.assertEqual(builder.sha256_path(first["pdf"]), builder.sha256_path(second["pdf"]))
             with zipfile.ZipFile(first["archive"]) as archive:

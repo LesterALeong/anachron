@@ -14,8 +14,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-PROTOCOL_ROOT = Path(os.environ.get("ANACHRON_V3_PROTOCOL_ROOT", r"C:\Users\leste\Downloads\Repos\anachron-v3-protocol-v1"))
-PROTOCOL_PYTHON = Path(os.environ.get("ANACHRON_V3_PROTOCOL_PYTHON", sys.executable))
+PROTOCOL_ROOT = Path(os.environ["ANACHRON_V3_PROTOCOL_ROOT"]) if "ANACHRON_V3_PROTOCOL_ROOT" in os.environ else None
+PROTOCOL_PYTHON = Path(os.environ["ANACHRON_V3_PROTOCOL_PYTHON"]) if "ANACHRON_V3_PROTOCOL_PYTHON" in os.environ else None
 COMMON_PATH = ROOT / "tools" / "v3_candidate_common.py"
 PAPER_BUILDER_PATH = ROOT / "tools" / "build_v3_measurement_candidate_paper.py"
 SPEC = importlib.util.spec_from_file_location("v3_candidate_common", COMMON_PATH)
@@ -26,7 +26,7 @@ PAPER_SPEC = importlib.util.spec_from_file_location("v3_candidate_paper", PAPER_
 assert PAPER_SPEC and PAPER_SPEC.loader
 paper_builder = importlib.util.module_from_spec(PAPER_SPEC)
 PAPER_SPEC.loader.exec_module(paper_builder)
-TECTONIC = Path(os.environ.get("ANACHRON_V3_TECTONIC", r"C:\Users\leste\.codex\tools\tectonic-0.17.0\bin\tectonic.exe"))
+TECTONIC = Path(os.environ["ANACHRON_V3_TECTONIC"]) if "ANACHRON_V3_TECTONIC" in os.environ else None
 REQUIRE_PAPER_QA = os.environ.get("ANACHRON_V3_REQUIRE_PAPER_QA") == "1"
 _PROTOCOL_ENVIRONMENT_KEYS = ("LD_LIBRARY_PATH", "PYTHONHOME", "PYTHONPATH")
 
@@ -39,6 +39,8 @@ def _protocol_environment() -> dict[str, str]:
 
 
 def _run_protocol_python(arguments: list[str], **kwargs) -> subprocess.CompletedProcess:
+    if PROTOCOL_PYTHON is None:
+        raise RuntimeError("explicit protocol interpreter is unavailable")
     return subprocess.run(
         [str(PROTOCOL_PYTHON), *arguments],
         env=_protocol_environment(),
@@ -98,6 +100,20 @@ def _analysis() -> dict:
 
 
 class TestV3CandidateProjection(unittest.TestCase):
+    def require_protocol_resources(self) -> tuple[Path, Path]:
+        if PROTOCOL_ROOT is not None and PROTOCOL_PYTHON is not None and PROTOCOL_ROOT.is_dir() and PROTOCOL_PYTHON.is_file():
+            identity = subprocess.run(
+                [str(PROTOCOL_PYTHON), "-I", "-c", "import platform; print(platform.python_implementation(), platform.python_version())"],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+            if identity.returncode == 0 and identity.stdout == "CPython 3.12.10\n":
+                return PROTOCOL_ROOT, PROTOCOL_PYTHON
+        if REQUIRE_PAPER_QA:
+            self.fail("required detached v3 protocol root or CPython 3.12.10 producer is unavailable")
+        self.skipTest("explicit detached v3 protocol resources are unavailable")
+
     def test_candidate_contract_binds_the_frozen_matrix_and_protocol(self):
         contract = json.loads((ROOT / "paper/v3_measurement/candidate_contract.json").read_text())
         self.assertEqual(common.validate_candidate_contract(ROOT), contract)
@@ -144,19 +160,17 @@ class TestV3CandidateProjection(unittest.TestCase):
             common.build_projection(_rows(), analysis)
 
     def test_answer_free_worker_needs_no_terminal_artifacts(self):
-        if not PROTOCOL_ROOT.is_dir() and not REQUIRE_PAPER_QA:
-            self.skipTest("frozen protocol worktree is unavailable")
-        self.assertTrue(PROTOCOL_ROOT.is_dir(), "required frozen protocol worktree is unavailable")
-        common.verify_detached_protocol_root(PROTOCOL_ROOT)
+        protocol_root, _ = self.require_protocol_resources()
+        common.verify_detached_protocol_root(protocol_root)
         protocol_spec = importlib.util.spec_from_file_location(
-            "frozen_v3_measurement", PROTOCOL_ROOT / "anachron/v3_measurement.py"
+            "frozen_v3_measurement", protocol_root / "anachron/v3_measurement.py"
         )
         assert protocol_spec and protocol_spec.loader
         frozen = importlib.util.module_from_spec(protocol_spec)
         protocol_spec.loader.exec_module(frozen)
         with tempfile.TemporaryDirectory() as temporary:
             evidence = Path(temporary)
-            plan = json.loads((PROTOCOL_ROOT / "research/v3_measurement/full_plan.json").read_text())
+            plan = json.loads((protocol_root / "research/v3_measurement/full_plan.json").read_text())
             (evidence / "plan.json").write_bytes(frozen._canonical_json(plan))
             raw = evidence / "raw"
             raw.mkdir()
@@ -184,7 +198,7 @@ class TestV3CandidateProjection(unittest.TestCase):
                 (raw / f"{identifier}.first.response.json").write_bytes(frozen._canonical_json(response))
                 items = frozen.search_v3(query, trajectory["sample"].as_of if trajectory["mode"] == "enforced" else None)
                 (raw / f"{identifier}.tool_result.txt").write_text(frozen.format_search_results(items), encoding="utf-8")
-            rows = common.answer_free_rows(PROTOCOL_ROOT, evidence)
+            rows = common.answer_free_rows(protocol_root, evidence)
             plan = common._load_snapshot_plan(evidence)
         self.assertEqual(len(rows), 336)
         self.assertTrue(all("score" in row for row in rows))
@@ -240,38 +254,35 @@ class TestV3CandidateProjection(unittest.TestCase):
                 common._read_regular_file(admitted, "injected admitted file")
 
     def test_native_analyzer_cli_is_called_from_the_frozen_root(self):
-        if not PROTOCOL_ROOT.is_dir() and not REQUIRE_PAPER_QA:
-            self.skipTest("frozen protocol worktree is unavailable")
-        self.assertTrue(PROTOCOL_ROOT.is_dir(), "required frozen protocol worktree is unavailable")
+        protocol_root, _ = self.require_protocol_resources()
         with tempfile.TemporaryDirectory() as temporary, self.assertRaisesRegex(
             common.CandidateProjectionError, "frozen analyzer failed"
         ):
-            common.invoke_frozen_analyzer(PROTOCOL_ROOT, Path(temporary))
+            common.invoke_frozen_analyzer(protocol_root, Path(temporary))
 
     def test_candidate_workers_do_not_use_the_protocol_generation_interpreter(self):
-        if not PROTOCOL_ROOT.is_dir() and not REQUIRE_PAPER_QA:
-            self.skipTest("frozen protocol worktree is unavailable")
-        self.assertTrue(PROTOCOL_ROOT.is_dir(), "required frozen protocol worktree is unavailable")
+        protocol_root, _ = self.require_protocol_resources()
         completed = subprocess.CompletedProcess([], 0, stdout=b"{}", stderr=b"")
         with patch.dict(os.environ, {"ANACHRON_V3_PROTOCOL_PYTHON": str(ROOT / "wrong-python")}), patch.object(
             common.subprocess, "run", return_value=completed
         ) as run:
-            common.invoke_frozen_analyzer(PROTOCOL_ROOT, ROOT)
+            common.invoke_frozen_analyzer(protocol_root, ROOT)
             self.assertEqual(run.call_args.args[0][0], sys.executable)
 
         with tempfile.TemporaryDirectory() as temporary:
             evidence = Path(temporary)
             (evidence / "plan.json").write_bytes(
-                (PROTOCOL_ROOT / "research/v3_measurement/full_plan.json").read_bytes()
+                (protocol_root / "research/v3_measurement/full_plan.json").read_bytes()
             )
             completed = subprocess.CompletedProcess([], 0, stdout=b'{"rows":[]}', stderr=b"")
             with patch.dict(os.environ, {"ANACHRON_V3_PROTOCOL_PYTHON": str(ROOT / "wrong-python")}), patch.object(
                 common.subprocess, "run", return_value=completed
             ) as run, self.assertRaisesRegex(common.CandidateProjectionError, "wrong trajectory count"):
-                common.answer_free_rows(PROTOCOL_ROOT, evidence)
+                common.answer_free_rows(protocol_root, evidence)
             self.assertEqual(run.call_args.args[0][0], sys.executable)
 
     def test_protocol_generation_interpreter_does_not_inherit_python_library_overrides(self):
+        _, protocol_python = self.require_protocol_resources()
         completed = subprocess.CompletedProcess([], 0, stdout=b"", stderr=b"")
         polluted = {
             "LD_LIBRARY_PATH": "/wrong/lib",
@@ -281,16 +292,13 @@ class TestV3CandidateProjection(unittest.TestCase):
         with patch.dict(os.environ, polluted), patch.object(subprocess, "run", return_value=completed) as run:
             _run_protocol_python(["-I", "-c", "pass"], capture_output=True, check=False)
 
-        self.assertEqual(run.call_args.args[0][0], str(PROTOCOL_PYTHON))
+        self.assertEqual(run.call_args.args[0][0], str(protocol_python))
         for name in _PROTOCOL_ENVIRONMENT_KEYS:
             self.assertNotIn(name, run.call_args.kwargs["env"])
 
     def test_complete_synthetic_study_projects_through_the_frozen_snapshot(self):
-        if not PROTOCOL_ROOT.is_dir() and not REQUIRE_PAPER_QA:
-            self.skipTest("frozen protocol worktree is unavailable")
-        self.assertTrue(PROTOCOL_ROOT.is_dir(), "required frozen protocol worktree is unavailable")
-        self.assertTrue(PROTOCOL_PYTHON.is_absolute(), "protocol generation interpreter must be absolute")
-        self.assertTrue(PROTOCOL_PYTHON.is_file(), "protocol generation interpreter must exist")
+        protocol_root, protocol_python = self.require_protocol_resources()
+        self.assertTrue(protocol_python.is_absolute(), "protocol generation interpreter must be absolute")
         identity = _run_protocol_python(
             [
                 "-I",
@@ -359,14 +367,14 @@ go.write_bytes(_canonical_json({"schema_version": 1, "kind": _FULL_GO_KIND, "dec
 run_measurement(full_plan, output, transport=transport, repository_root=root, falsifier_evidence=falsifier, falsifier_receipt=receipt, full_go=go)
 '''
             result = _run_protocol_python(
-                ["-I", "-c", driver, str(PROTOCOL_ROOT), str(output)],
-                cwd=PROTOCOL_ROOT,
+                ["-I", "-c", driver, str(protocol_root), str(output)],
+                cwd=protocol_root,
                 capture_output=True,
                 check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", errors="replace"))
-            projection = common.project_candidate(PROTOCOL_ROOT, output)
-            if TECTONIC.is_file():
+            projection = common.project_candidate(protocol_root, output)
+            if TECTONIC is not None and TECTONIC.is_file():
                 candidates = []
                 builder_driver = r'''
 import sys
@@ -383,7 +391,7 @@ build_candidate(Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4]), Path(sy
                     environment = os.environ.copy()
                     environment["PYTHONHASHSEED"] = seed
                     result = subprocess.run(
-                        [sys.executable, "-I", "-c", builder_driver, str(ROOT), str(PROTOCOL_ROOT), str(output), str(candidate), str(TECTONIC)],
+                        [sys.executable, "-I", "-c", builder_driver, str(ROOT), str(protocol_root), str(output), str(candidate), str(TECTONIC)],
                         cwd=ROOT,
                         env=environment,
                         capture_output=True,

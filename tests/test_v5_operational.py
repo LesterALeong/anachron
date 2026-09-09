@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -96,7 +98,11 @@ class V5OperationalTests(unittest.TestCase):
 
     def test_wrapper_binds_all_post_tag_authorities_without_a_tag_cycle(self) -> None:
         for required in (
+            '"v5-measurement-protocol-v3"',
+            '"anachron-v5-materialization-receipt-v3"',
             "materialization_receipt_sha256",
+            "runtime_identity_sha256",
+            "schedule_sha256",
             "wrapper_sha256",
             "runner_sha256",
             "analyzer_sha256",
@@ -106,6 +112,7 @@ class V5OperationalTests(unittest.TestCase):
             "full_plan_sha256",
             "Assert-FrozenProtocol",
             "--preflight-only",
+            "python.exe -B @runnerArguments",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, self.source)
@@ -120,6 +127,117 @@ class V5OperationalTests(unittest.TestCase):
         self.assertIn("finally", self.source)
         self.assertIn("Restore-NormalOllama", self.source)
         self.assertIn("restored normal identity bytes differ from baseline", self.source)
+
+    def test_wrapper_requires_the_exact_seven_member_materialization_closure(self) -> None:
+        for member in (
+            "compatibility_plan.json",
+            "carry_forward.json",
+            "full_plan.json",
+            "materialization_receipt.json",
+            "runtime_identity.json",
+            "schedule.json",
+            "source_manifest.json",
+        ):
+            with self.subTest(member=member):
+                self.assertIn(member, self.source)
+        self.assertIn("$members.Count -ne 7", self.source)
+        self.assertIn("materialization root topology or byte budget differs", self.source)
+        self.assertIn('Assert-ExistingDirectory $MaterializationRoot "materialization root"', self.source)
+        self.assertNotIn("runtime identity path differs", self.source)
+        self.assertIn('Assert-Sha256 $topology.runtime (Get-JsonString $receipt "runtime_identity_sha256" "materialization receipt") "materialized runtime identity"', self.source)
+        self.assertIn('Assert-Sha256 $RuntimeIdentity (Get-JsonString $receipt "runtime_identity_sha256" "materialization receipt") "captured runtime identity"', self.source)
+        self.assertIn("materialized schedule", self.source)
+
+    def test_wrapper_bounds_external_json_without_recursing_through_git_or_output_parents(self) -> None:
+        self.assertIn("function Assert-SafePathComponents", self.source)
+        self.assertIn("function Assert-SafeTree", self.source)
+        self.assertIn("function Get-CanonicalJson", self.source)
+        self.assertIn('$item.Length -gt $MaximumLogBytes', self.source)
+        self.assertIn('$capturedRuntime = Get-CanonicalJson $RuntimeIdentity "runtime identity"', self.source)
+        self.assertIn('$go = Get-CanonicalJson $ConditionalGo "conditional GO"', self.source)
+        self.assertIn('$receipt = Get-CanonicalJson $MaterializationReceipt "materialization receipt"', self.source)
+        self.assertNotIn("Assert-SafeTree $ProtocolRoot", self.source)
+        self.assertNotIn("Assert-SafeTree $EvidenceRoot", self.source)
+        self.assertLess(
+            self.source.index('Assert-SafeTree $ExpectedIsolatedModels "isolated model store"'),
+            self.source.index("$before = Get-OllamaProcessSnapshot"),
+        )
+        self.assertGreater(
+            self.source.index('Assert-SafeTree $ExpectedIsolatedModels "isolated model store"'),
+            self.source.index("if (-not $Execute.IsPresent)"),
+        )
+
+    def test_wrapper_compares_equal_model_arrays_without_strict_mode_scalar_failures(self) -> None:
+        self.assertIn("@(Compare-Object $observed $expected).Count", self.source)
+        self.assertIn("@(Compare-Object @($fullPlan.expected_runtime.models", self.source)
+
+    def test_wrapper_hashes_with_disposed_dotnet_streams(self) -> None:
+        self.assertNotIn("Get-FileHash", self.source)
+        self.assertIn("[IO.File]::Open((Normalize-FullPath $Path)", self.source)
+        self.assertIn("[IO.FileAccess]::Read", self.source)
+        self.assertIn("[IO.FileShare]::Read", self.source)
+        self.assertIn("[Security.Cryptography.SHA256]::Create()", self.source)
+        self.assertIn("finally", self.source)
+        self.assertIn("$hasher.Dispose()", self.source)
+        self.assertIn("$stream.Dispose()", self.source)
+
+    @unittest.skipUnless(os.name == "nt", "requires Windows PowerShell validation")
+    def test_wrapper_hash_function_matches_known_empty_and_nonempty_digests(self) -> None:
+        windows_powershell = Path(os.environ.get("SystemRoot", r"C:\\Windows")) / "System32/WindowsPowerShell/v1.0/powershell.exe"
+        shells = [("Windows PowerShell", windows_powershell)]
+        if pwsh := shutil.which("pwsh"):
+            shells.append(("pwsh", Path(pwsh)))
+        normalize_start = self.source.index("function Normalize-FullPath")
+        safe_entry_start = self.source.index("function Assert-SafeEntry", normalize_start)
+        hash_start = self.source.index("function Get-Sha256")
+        assert_hash_start = self.source.index("function Assert-Sha256", hash_start)
+        hash_functions = self.source[normalize_start:safe_entry_start] + self.source[hash_start:assert_hash_start]
+
+        with tempfile.TemporaryDirectory(prefix="anachron-v5-hash-") as temporary:
+            workspace = Path(temporary)
+            empty = workspace / "empty.bin"
+            nonempty = workspace / "nonempty.bin"
+            harness = workspace / "hash-harness.ps1"
+            empty.write_bytes(b"")
+            nonempty.write_bytes(b"anachron-v5\n")
+            harness.write_text(
+                hash_functions + "\nWrite-Output (Get-Sha256 -Path $args[0])\nWrite-Output (Get-Sha256 -Path $args[1])\n",
+                encoding="utf-8",
+            )
+            expected = [hashlib.sha256(empty.read_bytes()).hexdigest(), hashlib.sha256(nonempty.read_bytes()).hexdigest()]
+            for shell_label, shell in shells:
+                with self.subTest(shell=shell_label):
+                    if not shell.is_file():
+                        self.skipTest(f"{shell_label} is unavailable")
+                    result = subprocess.run(
+                        [str(shell), "-NoProfile", "-File", str(harness), str(empty), str(nonempty)],
+                        capture_output=True,
+                        check=False,
+                        text=True,
+                        timeout=30,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+                    self.assertEqual(result.stdout.splitlines(), expected)
+
+    def test_validate_only_checks_shared_closure_before_host_specific_execution_guards(self) -> None:
+        validate_only = self.source.index("if ($ValidateOnly.IsPresent)")
+        execute = self.source.index("if (-not $Execute.IsPresent)")
+        first_operation = self.source.index("$before = Get-OllamaProcessSnapshot")
+        for guard in (
+            'Assert-ExistingFile $ExpectedIsolatedExe "isolated executable"',
+            'Assert-ExistingDirectory $ExpectedIsolatedModels "isolated model store"',
+            'Assert-ExistingFile $ExpectedNormalApp "normal Ollama app"',
+            'Assert-ExistingFile $ExpectedNormalServer "normal Ollama server"',
+            'Assert-ImmediateCreateOnlyChild $EvidenceRoot "evidence root"',
+            'Assert-ImmediateCreateOnlyChild $OperationRoot "operation root"',
+        ):
+            with self.subTest(guard=guard):
+                position = self.source.rindex(guard)
+                self.assertGreater(position, validate_only)
+                self.assertGreater(position, execute)
+                self.assertLess(position, first_operation)
+        self.assertLess(self.source.index("Assert-ExternalCreateOnlyChild $EvidenceRoot"), validate_only)
+        self.assertLess(self.source.index("Assert-ExternalCreateOnlyChild $OperationRoot"), validate_only)
 
     @unittest.skipUnless(os.name == "nt", "PowerShell wrapper semantics are Windows-specific")
     def test_validate_only_path_is_present_for_harmless_preflight_fixture(self) -> None:

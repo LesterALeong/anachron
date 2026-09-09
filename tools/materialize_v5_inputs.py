@@ -74,6 +74,7 @@ _MATERIALIZATION_MEMBERS = (
     "compatibility_plan.json",
     "full_plan.json",
     "materialization_receipt.json",
+    "runtime_identity.json",
     "schedule.json",
     "source_manifest.json",
 )
@@ -93,6 +94,15 @@ def _write(destination: Path, value: object, label: str, budget: ByteBudget, max
     except V5CustodyError as error:
         raise V5MaterializationError(f"{label} cannot be written") from error
     return raw
+
+
+def _write_raw(destination: Path, raw: bytes, label: str, budget: ByteBudget, maximum: int) -> None:
+    if len(raw) > maximum:
+        raise V5MaterializationError(f"{label} exceeds the contract byte cap")
+    try:
+        write_create_only(destination, raw, label, budget)
+    except V5CustodyError as error:
+        raise V5MaterializationError(f"{label} cannot be written") from error
 
 
 def materialize(
@@ -173,6 +183,7 @@ def materialize(
             "v5_source_manifest_sha256": _sha(source_raw),
         }
         full_raw = _write(staging / "full_plan.json", full, "full plan", budget, profile.member_cap("full_plan.json"))
+        _write_raw(staging / "runtime_identity.json", runtime_raw, "runtime identity", budget, profile.member_cap("runtime_identity.json"))
         schedule_raw = _write(staging / "schedule.json", {"rows": schedule, "v4_included_count": 0}, "schedule", budget, profile.member_cap("schedule.json"))
         _write(staging / "source_manifest.json", source, "source manifest", budget, profile.member_cap("source_manifest.json"))
         _write(staging / "carry_forward.json", carry, "carry-forward receipt", budget, profile.member_cap("carry_forward.json"))
@@ -183,7 +194,7 @@ def materialize(
             "full_plan_sha256": _sha(full_raw),
             "runtime_identity_sha256": _sha(runtime_raw),
             "schedule_sha256": _sha(schedule_raw),
-            "schema_version": "anachron-v5-materialization-receipt-v2",
+            "schema_version": "anachron-v5-materialization-receipt-v3",
             "v4_included_count": 0,
             "v5_source_manifest_sha256": _sha(source_raw),
         }
@@ -195,11 +206,11 @@ def materialize(
         fsync_directory(destination.parent, "materialization output parent")
     except (OSError, V5CustodyError, V5PathError) as error:
         if "staging" in locals() and staging.exists():
-            discard_staging_root(staging, "materialization staging", maximum_entries=6, maximum_depth=0)
+            discard_staging_root(staging, "materialization staging", maximum_entries=7, maximum_depth=0)
         raise V5MaterializationError("materialization output cannot be finalized") from error
     except Exception:
         if "staging" in locals() and staging.exists():
-            discard_staging_root(staging, "materialization staging", maximum_entries=6, maximum_depth=0)
+            discard_staging_root(staging, "materialization staging", maximum_entries=7, maximum_depth=0)
         raise
     return receipt
 

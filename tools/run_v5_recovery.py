@@ -10,6 +10,7 @@ from anachron.v5_measurement import (
     V5MeasurementError,
     V5OperationalFailure,
     run_measurement,
+    validate_pending_inputs,
     validate_run_inputs,
 )
 
@@ -21,7 +22,9 @@ def main(arguments: list[str] | None = None) -> int:
     parser.add_argument("--conditional-go", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--endpoint", default="http://127.0.0.1:11434")
-    parser.add_argument("--preflight-only", action="store_true")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--preflight-only", action="store_true")
+    modes.add_argument("--pending-only", action="store_true")
     values = parser.parse_args(arguments)
     try:
         if values.preflight_only:
@@ -32,6 +35,15 @@ def main(arguments: list[str] | None = None) -> int:
                 repository_root=values.repository_root,
             )
             print(json.dumps({"status": "PREFLIGHT_OK"}, sort_keys=True))
+            return 0
+        if values.pending_only:
+            validate_pending_inputs(
+                values.full_plan,
+                values.conditional_go,
+                values.output,
+                repository_root=values.repository_root,
+            )
+            print(json.dumps({"status": "PENDING_VALID"}, sort_keys=True))
             return 0
         result = run_measurement(values.full_plan, values.conditional_go, values.output, repository_root=values.repository_root, endpoint=values.endpoint)
     except V5OperationalFailure as error:

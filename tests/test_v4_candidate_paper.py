@@ -375,8 +375,10 @@ class V4CandidatePaperTests(unittest.TestCase):
         library = Mock()
         renameat2 = Mock(return_value=-1)
         library.renameat2 = renameat2
+        staging = Path("staging")
+        output = Path("output")
         with patch.object(builder.os, "name", "posix"), patch.object(builder.ctypes, "CDLL", return_value=library), patch.object(builder.ctypes, "get_errno", return_value=builder.errno.EEXIST), self.assertRaises(FileExistsError):
-            builder._publish_no_replace(Path("staging"), Path("output"))
+            builder._publish_no_replace(staging, output)
         self.assertEqual(renameat2.call_args.args[-1], 1)
 
     def test_bounded_compiler_timeout_nonzero_and_log_output_caps(self) -> None:

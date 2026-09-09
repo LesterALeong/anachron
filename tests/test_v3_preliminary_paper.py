@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,7 +12,9 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILDER_PATH = ROOT / "tools" / "build_v3_measurement_preliminary_paper.py"
-TECTONIC = Path(r"C:\Users\leste\.codex\tools\tectonic-0.17.0\bin\tectonic.exe")
+TECTONIC = Path(os.environ["ANACHRON_V3_TECTONIC"]) if "ANACHRON_V3_TECTONIC" in os.environ else None
+REQUIRE_PAPER_QA = os.environ.get("ANACHRON_V3_REQUIRE_PAPER_QA") == "1"
+PREVALIDATION_TECTONIC = TECTONIC or ROOT / "unconfigured-pinned-tectonic.exe"
 SPEC = importlib.util.spec_from_file_location("v3_preliminary_builder", BUILDER_PATH)
 assert SPEC and SPEC.loader
 builder = importlib.util.module_from_spec(SPEC)
@@ -19,6 +22,21 @@ SPEC.loader.exec_module(builder)
 
 
 class TestV3PreliminaryPaper(unittest.TestCase):
+    def require_preliminary_build_resources(self) -> Path:
+        try:
+            import fitz  # noqa: F401
+            import pdfplumber  # noqa: F401
+            import reportlab  # noqa: F401
+        except ImportError:
+            if REQUIRE_PAPER_QA:
+                self.fail("required PDF preview dependencies are unavailable")
+            self.skipTest("PDF preview dependencies are unavailable")
+        if TECTONIC is not None and TECTONIC.is_file():
+            return TECTONIC
+        if REQUIRE_PAPER_QA:
+            self.fail("required pinned Tectonic executable is unavailable")
+        self.skipTest("explicit pinned Tectonic executable is unavailable")
+
     def test_frozen_contract_and_canonical_manuscript_validate(self):
         contract = builder.validate_contract(ROOT)
         manuscript = builder.validate_manuscript(ROOT)
@@ -73,7 +91,7 @@ class TestV3PreliminaryPaper(unittest.TestCase):
                 mock.patch.object(builder, "ensure_build_directory") as ensure_build_directory,
                 self.assertRaisesRegex(builder.PreliminaryPaperError, "forbidden empirical or external-action claim"),
             ):
-                builder.build_preliminary(ROOT, TECTONIC)
+                builder.build_preliminary(ROOT, PREVALIDATION_TECTONIC)
             temporary_directory.assert_not_called()
             ensure_build_directory.assert_not_called()
 
@@ -129,9 +147,7 @@ class TestV3PreliminaryPaper(unittest.TestCase):
         self.assertNotIn(r"\subsection*{References}", tex)
 
     def test_even_pages_report_an_intact_banner_rectangle(self):
-        if not TECTONIC.is_file():
-            self.skipTest("pinned Tectonic executable is unavailable")
-        receipt = builder.build_preliminary(ROOT, TECTONIC)
+        receipt = builder.build_preliminary(ROOT, self.require_preliminary_build_resources())
         reportlab_banners = receipt["preview"]["pdf_verification"]["banner_rectangles"]
         tectonic_banners = receipt["preview"]["tex_verification"]["verification"]["banner_rectangles"]
         for banners in (reportlab_banners, tectonic_banners):
@@ -142,13 +158,9 @@ class TestV3PreliminaryPaper(unittest.TestCase):
         self.assertEqual(receipt["preview"]["tex_verification"]["verification"]["references_heading_count"], 1)
 
     def test_even_page_banner_occlusion_is_rejected(self):
-        try:
-            import fitz
-        except ImportError:
-            self.skipTest("PyMuPDF is unavailable")
-        if not TECTONIC.is_file():
-            self.skipTest("pinned Tectonic executable is unavailable")
-        builder.build_preliminary(ROOT, TECTONIC)
+        tectonic = self.require_preliminary_build_resources()
+        import fitz
+        builder.build_preliminary(ROOT, tectonic)
         source = ROOT / "paper/v3_measurement/build/anachron_v3_preliminary.pdf"
         with tempfile.TemporaryDirectory() as temporary:
             altered = Path(temporary) / "occluded.pdf"
@@ -169,15 +181,7 @@ class TestV3PreliminaryPaper(unittest.TestCase):
                 builder.verify_tectonic(executable)
 
     def test_full_preview_build_is_deterministic_and_visible(self):
-        try:
-            import fitz  # noqa: F401
-            import pdfplumber  # noqa: F401
-            import reportlab  # noqa: F401
-        except ImportError:
-            self.skipTest("PDF preview dependencies are unavailable")
-        if not TECTONIC.is_file():
-            self.skipTest("pinned Tectonic executable is unavailable")
-        receipt = builder.build_preliminary(ROOT, TECTONIC)
+        receipt = builder.build_preliminary(ROOT, self.require_preliminary_build_resources())
         output = ROOT / "paper/v3_measurement/build"
         self.assertTrue(receipt["deterministic_double_build"])
         self.assertEqual(receipt["preview"]["pdf_verification"]["page_count"], 7)

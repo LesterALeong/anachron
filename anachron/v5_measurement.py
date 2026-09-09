@@ -27,12 +27,14 @@ from anachron.v5_custody import (
     SUCCESS_MAX_ENTRIES,
     SUCCESS_MAX_FILES,
     ByteBudget,
+    RootProfile,
     V5CustodyError,
     bounded_regular_files,
     capture_regular,
     discard_staging_root,
     physical_inventory,
     publish_staging_root,
+    scandir_exact,
     write_create_only,
 )
 from anachron.v5_paths import (
@@ -64,6 +66,26 @@ _MAX_AUTHORITY_BYTES = AUTHORITY_MEMBER_MAX_BYTES
 _MAX_REPLAY_METADATA_BYTES = 1_048_576
 _PRIMARY_TRAJECTORY_COUNT = 64
 _COMPATIBILITY_TRACE_COUNT = 2
+_MATERIALIZATION_MEMBERS = (
+    "carry_forward.json",
+    "compatibility_plan.json",
+    "full_plan.json",
+    "materialization_receipt.json",
+    "runtime_identity.json",
+    "schedule.json",
+    "source_manifest.json",
+)
+_MATERIALIZATION_PROFILE = RootProfile(
+    _MATERIALIZATION_MEMBERS,
+    len(_MATERIALIZATION_MEMBERS) * _MAX_AUTHORITY_BYTES,
+    len(_MATERIALIZATION_MEMBERS),
+    {member: _MAX_AUTHORITY_BYTES for member in _MATERIALIZATION_MEMBERS},
+)
+_PENDING_STATEMENT = (
+    "This PENDING record does not authorize model execution. Fresh explicit GO authorization is "
+    "required for any campaign, including compatibility chats. It does not authorize outreach, "
+    "uploads, or submission."
+)
 _AUTHORITY_FILE_COUNT = 9
 _REPLAY_METADATA_FILE_COUNT = 4
 _MAX_REPLAY_EVIDENCE_BYTES = (
@@ -729,25 +751,75 @@ def _go(value: object, plan: Mapping[str, Any], full_plan_raw: bytes, compatibil
         raise V5MeasurementError("conditional GO binding differs")
 
 
-def validate_run_inputs(full_plan: Path, conditional_go: Path, output: Path, *, repository_root: Path) -> dict[str, Any]:
-    """Validate the GO-bound offline closure without opening a network connection."""
+def _pending(value: object, plan: Mapping[str, Any], full_plan_raw: bytes, compatibility_raw: bytes, carry_raw: bytes, source_raw: bytes, authority_raw: bytes, acceptance_raw: bytes, output: Path) -> None:
+    required = {"acceptance_matrix_sha256", "analyzer_sha256", "authority_contract_sha256", "authorized_at_utc", "authorized_by", "carry_forward_sha256", "compatibility_plan_sha256", "decision", "expected_runtime", "full_plan_sha256", "kind", "materialization_receipt_sha256", "output_root", "protocol_commit", "protocol_tag", "protocol_tag_object", "runner_sha256", "source_manifest_sha256", "statement", "v4_included_count", "wrapper_sha256"}
+    if type(value) is not dict or set(value) != required or value.get("kind") != "anachron-v5-conditional-measurement-authorization" or value.get("decision") != "PENDING" or value.get("v4_included_count") != 0:
+        raise V5MeasurementError("conditional PENDING differs")
+    expected = {
+        "acceptance_matrix_sha256": sha256_bytes(acceptance_raw),
+        "analyzer_sha256": plan["component_sha256"]["analyzer"],
+        "authority_contract_sha256": sha256_bytes(authority_raw),
+        "carry_forward_sha256": sha256_bytes(carry_raw),
+        "compatibility_plan_sha256": sha256_bytes(compatibility_raw),
+        "expected_runtime": plan["expected_runtime"],
+        "full_plan_sha256": sha256_bytes(full_plan_raw),
+        "output_root": str(Path(output).resolve()),
+        "protocol_commit": plan["protocol_release"]["commit"],
+        "protocol_tag": plan["protocol_release"]["tag"],
+        "protocol_tag_object": plan["protocol_release"]["tag_object"],
+        "runner_sha256": plan["component_sha256"]["runner"],
+        "source_manifest_sha256": sha256_bytes(source_raw),
+        "wrapper_sha256": plan["component_sha256"]["wrapper"],
+    }
+    if (
+        any(value[key] != expected_value for key, expected_value in expected.items())
+        or type(value["materialization_receipt_sha256"]) is not str
+        or len(value["materialization_receipt_sha256"]) != 64
+        or value["authorized_at_utc"] != ""
+        or value["authorized_by"] != ""
+        or value["statement"] != _PENDING_STATEMENT
+    ):
+        raise V5MeasurementError("conditional PENDING binding differs")
+
+
+def _capture_materialization(full_plan: Path) -> tuple[Path, dict[str, bytes]]:
+    if full_plan.name != "full_plan.json":
+        raise V5MeasurementError("full plan must be the materialized full_plan.json member")
+    root = full_plan.parent
+    scandir_exact(root, _MATERIALIZATION_MEMBERS, _MATERIALIZATION_PROFILE.member_limit, "materialization root")
+    assert_no_alternate_data_streams(root)
+    budget = _MATERIALIZATION_PROFILE.budget()
+    members: dict[str, bytes] = {}
+    for member in _MATERIALIZATION_MEMBERS:
+        label = "full plan" if member == "full_plan.json" else f"materialization {member}"
+        captured = capture_regular(root / member, label, _MATERIALIZATION_PROFILE.member_cap(member))
+        budget.reserve(captured.size_bytes, label)
+        members[member] = captured.raw
+    return root, members
+
+
+def _validate_input_closure(full_plan: Path, conditional_authorization: Path, output: Path, *, repository_root: Path) -> dict[str, Any]:
+    """Capture and validate the exact materialization closure without side effects."""
 
     try:
         root = Path(repository_root)
         output = admit_create_only_external_output(output, root, "evidence output")
-        full_plan_raw = capture_regular(full_plan, "full plan", _MAX_AUTHORITY_BYTES).raw
-        go_raw = capture_regular(conditional_go, "conditional GO", _MAX_AUTHORITY_BYTES).raw
+        _, materialized = _capture_materialization(full_plan)
+        full_plan_raw = materialized["full_plan.json"]
+        authorization_raw = capture_regular(conditional_authorization, "conditional authorization", _MAX_AUTHORITY_BYTES).raw
         plan = strict_json_loads(full_plan_raw, "full plan")
-        go = strict_json_loads(go_raw, "conditional GO")
-        plan_root = full_plan.parent
-        compatibility_raw = capture_regular(plan_root / "compatibility_plan.json", "compatibility plan", _MAX_AUTHORITY_BYTES).raw
-        carry_raw = capture_regular(plan_root / "carry_forward.json", "carry-forward receipt", _MAX_AUTHORITY_BYTES).raw
-        source_raw = capture_regular(plan_root / "source_manifest.json", "source manifest", _MAX_AUTHORITY_BYTES).raw
+        authorization = strict_json_loads(authorization_raw, "conditional authorization")
+        if authorization_raw != canonical_json_bytes(authorization):
+            raise V5MeasurementError("conditional authorization is not canonical JSON")
+        compatibility_raw = materialized["compatibility_plan.json"]
+        carry_raw = materialized["carry_forward.json"]
+        source_raw = materialized["source_manifest.json"]
         snapshot = _validate_scientific_source_manifest(root, source_raw)
         _, cards = load_v5_registry_snapshot(snapshot)
         schedule, models = _plan(plan, cards)
-        runtime_raw = capture_regular(plan_root / "runtime_identity.json", "runtime identity", _MAX_AUTHORITY_BYTES).raw
-        materialization_raw = capture_regular(plan_root / "materialization_receipt.json", "materialization receipt", _MAX_AUTHORITY_BYTES).raw
+        runtime_raw = materialized["runtime_identity.json"]
+        schedule_raw = materialized["schedule.json"]
+        materialization_raw = materialized["materialization_receipt.json"]
         authority_raw = capture_regular(root / AUTHORITY_CONTRACT_PATH, "authority contract", _MAX_AUTHORITY_BYTES).raw
         acceptance_raw = capture_regular(root / "research/v5_measurement/ACCEPTANCE_MATRIX.md", "acceptance matrix", _MAX_AUTHORITY_BYTES).raw
         if (
@@ -760,31 +832,42 @@ def validate_run_inputs(full_plan: Path, conditional_go: Path, output: Path, *, 
             raise V5MeasurementError("full plan input binding differs")
         materialization = strict_json_loads(materialization_raw, "materialization receipt")
         runtime = strict_json_loads(runtime_raw, "runtime identity")
+        schedule_member = strict_json_loads(schedule_raw, "materialized schedule")
         expected_materialization = {
             "authority_contract_sha256": sha256_bytes(authority_raw),
             "carry_forward_sha256": sha256_bytes(carry_raw),
             "compatibility_plan_sha256": sha256_bytes(compatibility_raw),
             "full_plan_sha256": sha256_bytes(full_plan_raw),
-            "runtime_identity_sha256": materialization.get("runtime_identity_sha256") if type(materialization) is dict else None,
-            "schedule_sha256": materialization.get("schedule_sha256") if type(materialization) is dict else None,
-            "schema_version": "anachron-v5-materialization-receipt-v2",
+            "runtime_identity_sha256": sha256_bytes(runtime_raw),
+            "schedule_sha256": sha256_bytes(schedule_raw),
+            "schema_version": "anachron-v5-materialization-receipt-v3",
             "v4_included_count": 0,
             "v5_source_manifest_sha256": sha256_bytes(source_raw),
         }
-        if runtime != plan["expected_runtime"] or materialization != expected_materialization or go["materialization_receipt_sha256"] != sha256_bytes(materialization_raw):
+        if (
+            runtime != plan["expected_runtime"]
+            or runtime_raw != canonical_json_bytes(runtime)
+            or schedule_member != {"rows": schedule, "v4_included_count": 0}
+            or schedule_raw != canonical_json_bytes(schedule_member)
+            or materialization != expected_materialization
+            or type(authorization) is not dict
+            or authorization.get("materialization_receipt_sha256") != sha256_bytes(materialization_raw)
+        ):
             raise V5MeasurementError("materialization receipt binding differs")
-        _go(go, plan, full_plan_raw, compatibility_raw, carry_raw, source_raw, authority_raw, acceptance_raw, output)
         compatibility_card = load_compatibility_case_snapshot(snapshot, cards)
     except V5CustodyError as error:
         raise V5MeasurementError(str(error)) from error
-    except (OSError, V5PathError, V5RegistryError) as error:
+    except V5PathError as error:
+        raise V5MeasurementError(str(error)) from error
+    except (OSError, V5RegistryError) as error:
         raise V5MeasurementError("runner inputs differ") from error
     return {
         "cards": cards,
         "compatibility_card": compatibility_card,
         "compatibility_raw": compatibility_raw,
         "full_plan_raw": full_plan_raw,
-        "go_raw": go_raw,
+        "authorization": authorization,
+        "authorization_raw": authorization_raw,
         "materialization_raw": materialization_raw,
         "runtime_raw": runtime_raw,
         "plan": plan,
@@ -795,6 +878,24 @@ def validate_run_inputs(full_plan: Path, conditional_go: Path, output: Path, *, 
         "models": models,
         "schedule": schedule,
     }
+
+
+def validate_run_inputs(full_plan: Path, conditional_go: Path, output: Path, *, repository_root: Path) -> dict[str, Any]:
+    """Validate the GO-bound offline closure without opening a network connection."""
+
+    inputs = _validate_input_closure(full_plan, conditional_go, output, repository_root=repository_root)
+    _go(inputs["authorization"], inputs["plan"], inputs["full_plan_raw"], inputs["compatibility_raw"], inputs["carry_raw"], inputs["source_raw"], inputs["authority_raw"], inputs["acceptance_raw"], output)
+    inputs["go_raw"] = inputs.pop("authorization_raw")
+    inputs.pop("authorization")
+    return inputs
+
+
+def validate_pending_inputs(full_plan: Path, conditional_pending: Path, output: Path, *, repository_root: Path) -> dict[str, Any]:
+    """Validate the PENDING-bound offline closure without authorizing measurement."""
+
+    inputs = _validate_input_closure(full_plan, conditional_pending, output, repository_root=repository_root)
+    _pending(inputs["authorization"], inputs["plan"], inputs["full_plan_raw"], inputs["compatibility_raw"], inputs["carry_raw"], inputs["source_raw"], inputs["authority_raw"], inputs["acceptance_raw"], output)
+    return inputs
 
 
 def run_measurement(full_plan: Path, conditional_go: Path, output: Path, *, repository_root: Path, endpoint: str = _FIXED_ENDPOINT, transport: Callable[[str, str, bytes | None, int], object] | None = None) -> dict[str, Any]:

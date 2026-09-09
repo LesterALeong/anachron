@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from anachron.v5_carry_forward import V5CarryForwardError, derive_carry_forward
-from anachron.v5_contract import V5_PROTOCOL_TAG
+from anachron.v5_contract import V5_PROTOCOL_BRANCH, V5_PROTOCOL_TAG
 from anachron.v5_registry import canonical_json_bytes
 from tools import materialize_v5_inputs as materializer
 from tools.materialize_v5_inputs import V5MaterializationError, materialize
@@ -88,7 +88,7 @@ class V5CarryForwardTests(unittest.TestCase):
         registry = json.loads((self.root / "research/v5_measurement/case_registry.json").read_text(encoding="utf-8"))
         paths.extend(f"research/v5_measurement/{row['case_card']}" for row in registry["cases"])
         release = {
-            "branch": "protocol/v5-successor",
+            "branch": V5_PROTOCOL_BRANCH,
             "branch_ref": "1" * 40,
             "commit": "1" * 40,
             "origin": "https://github.com/LesterALeong/anachron.git",
@@ -158,6 +158,7 @@ class V5CarryForwardTests(unittest.TestCase):
 
     def test_materialization_stages_all_members_and_refuses_raced_final(self) -> None:
         runtime = {"models": [{"digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e", "name": "qwen2.5:7b"}, {"digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8", "name": "qwen3:14b-q4_K_M"}], "version": "0.33.2"}
+        runtime_raw = canonical_json_bytes(runtime)
         source = {"release": {"commit": "1" * 40, "tag": V5_PROTOCOL_TAG, "tag_object": "2" * 40}}
         carry = {"schema_version": "fixture", "v4_included_count": 0}
         hashes = {"tools/analyze_v5_measurement.py": "1" * 64, "tools/run_v5_recovery.py": "2" * 64, "tools/run_v5_conditional_campaign.ps1": "3" * 64}
@@ -166,20 +167,25 @@ class V5CarryForwardTests(unittest.TestCase):
             (parent / "v5.json").write_bytes(canonical_json_bytes(source))
             output = parent / "materialized"
             with (
-                patch.object(materializer, "_load_external", return_value=(runtime, canonical_json_bytes(runtime))),
+                patch.object(materializer, "_load_external", return_value=(runtime, runtime_raw)),
                 patch.object(materializer, "validate_source_manifest", return_value=source),
                 patch.object(materializer, "derive_carry_forward", return_value=carry),
                 patch.object(materializer, "validate_authority_contract", return_value=hashes),
             ):
                 receipt = materialize(self.root, accepted_audit=parent / "audit.json", v4_source_manifest=parent / "v4.json", v5_source_manifest=parent / "v5.json", runtime_identity=parent / "runtime.json", output=output, evidence_output_root=parent / "evidence")
-            self.assertEqual(receipt["schema_version"], "anachron-v5-materialization-receipt-v2")
-            self.assertEqual({path.name for path in output.iterdir()}, {"carry_forward.json", "compatibility_plan.json", "full_plan.json", "materialization_receipt.json", "schedule.json", "source_manifest.json"})
+            self.assertEqual(receipt["schema_version"], "anachron-v5-materialization-receipt-v3")
+            self.assertEqual(
+                {path.name for path in output.iterdir()},
+                {"carry_forward.json", "compatibility_plan.json", "full_plan.json", "materialization_receipt.json", "runtime_identity.json", "schedule.json", "source_manifest.json"},
+            )
+            self.assertEqual((output / "runtime_identity.json").read_bytes(), runtime_raw)
+            self.assertEqual(receipt["runtime_identity_sha256"], hashlib.sha256(runtime_raw).hexdigest())
             raced = parent / "raced"
             def create_final() -> None:
                 raced.mkdir()
                 (raced / "user.txt").write_text("preserve", encoding="utf-8")
             with (
-                patch.object(materializer, "_load_external", return_value=(runtime, canonical_json_bytes(runtime))),
+                patch.object(materializer, "_load_external", return_value=(runtime, runtime_raw)),
                 patch.object(materializer, "validate_source_manifest", return_value=source),
                 patch.object(materializer, "derive_carry_forward", return_value=carry),
                 patch.object(materializer, "validate_authority_contract", return_value=hashes),
@@ -188,6 +194,78 @@ class V5CarryForwardTests(unittest.TestCase):
                 materialize(self.root, accepted_audit=parent / "audit.json", v4_source_manifest=parent / "v4.json", v5_source_manifest=parent / "v5.json", runtime_identity=parent / "runtime.json", output=raced, evidence_output_root=parent / "evidence-raced", before_publish=create_final)
             self.assertEqual((raced / "user.txt").read_text(encoding="utf-8"), "preserve")
             self.assertFalse(any(path.name.startswith(".raced.staging-") for path in parent.iterdir()))
+
+    def test_materialization_runtime_member_uses_shared_cap_and_cleans_partial_staging(self) -> None:
+        runtime = {"models": [{"digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e", "name": "qwen2.5:7b"}, {"digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8", "name": "qwen3:14b-q4_K_M"}], "version": "0.33.2"}
+        source = {"release": {"commit": "1" * 40, "tag": V5_PROTOCOL_TAG, "tag_object": "2" * 40}}
+        carry = {"schema_version": "fixture", "v4_included_count": 0}
+        hashes = {"tools/analyze_v5_measurement.py": "1" * 64, "tools/run_v5_recovery.py": "2" * 64, "tools/run_v5_conditional_campaign.ps1": "3" * 64}
+        profile = materializer._materialization_profile()
+        self.assertEqual(profile.allowed_members, ("carry_forward.json", "compatibility_plan.json", "full_plan.json", "materialization_receipt.json", "runtime_identity.json", "schedule.json", "source_manifest.json"))
+        self.assertEqual(profile.member_limit, 7)
+        self.assertEqual(profile.byte_limit, 7 * 1_048_576)
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            (parent / "v5.json").write_bytes(canonical_json_bytes(source))
+            output = parent / "materialized"
+            with (
+                patch.object(materializer, "_load_external", return_value=(runtime, b"x" * 1_048_577)),
+                patch.object(materializer, "validate_source_manifest", return_value=source),
+                patch.object(materializer, "derive_carry_forward", return_value=carry),
+                patch.object(materializer, "validate_authority_contract", return_value=hashes),
+                self.assertRaises(V5MaterializationError),
+            ):
+                materialize(self.root, accepted_audit=parent / "audit.json", v4_source_manifest=parent / "v4.json", v5_source_manifest=parent / "v5.json", runtime_identity=parent / "runtime.json", output=output, evidence_output_root=parent / "evidence")
+            self.assertFalse(output.exists())
+            self.assertFalse(any(path.name.startswith(".materialized.staging-") for path in parent.iterdir()))
+
+    def test_materialization_rejects_missing_or_extra_staged_members(self) -> None:
+        runtime = {"models": [{"digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e", "name": "qwen2.5:7b"}, {"digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8", "name": "qwen3:14b-q4_K_M"}], "version": "0.33.2"}
+        source = {"release": {"commit": "1" * 40, "tag": V5_PROTOCOL_TAG, "tag_object": "2" * 40}}
+        carry = {"schema_version": "fixture", "v4_included_count": 0}
+        hashes = {"tools/analyze_v5_measurement.py": "1" * 64, "tools/run_v5_recovery.py": "2" * 64, "tools/run_v5_conditional_campaign.ps1": "3" * 64}
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            (parent / "v5.json").write_bytes(canonical_json_bytes(source))
+
+            def missing_write(destination: Path, value: object, label: str, budget: object, maximum: int) -> bytes:
+                if label == "carry-forward receipt":
+                    return canonical_json_bytes(value)
+                return original_write(destination, value, label, budget, maximum)
+
+            original_write = materializer._write
+            with (
+                patch.object(materializer, "_load_external", return_value=(runtime, canonical_json_bytes(runtime))),
+                patch.object(materializer, "validate_source_manifest", return_value=source),
+                patch.object(materializer, "derive_carry_forward", return_value=carry),
+                patch.object(materializer, "validate_authority_contract", return_value=hashes),
+                patch.object(materializer, "_write", side_effect=missing_write),
+                self.assertRaises(V5MaterializationError),
+            ):
+                materialize(self.root, accepted_audit=parent / "audit.json", v4_source_manifest=parent / "v4.json", v5_source_manifest=parent / "v5.json", runtime_identity=parent / "runtime.json", output=parent / "missing", evidence_output_root=parent / "missing-evidence")
+
+            original_scandir_exact = materializer.scandir_exact
+
+            def extra_member(root: Path, allowed: tuple[str, ...], count: int, label: str) -> None:
+                unexpected = root / "unexpected.json"
+                unexpected.write_bytes(b"unexpected")
+                try:
+                    original_scandir_exact(root, allowed, count, label)
+                finally:
+                    unexpected.unlink(missing_ok=True)
+
+            with (
+                patch.object(materializer, "_load_external", return_value=(runtime, canonical_json_bytes(runtime))),
+                patch.object(materializer, "validate_source_manifest", return_value=source),
+                patch.object(materializer, "derive_carry_forward", return_value=carry),
+                patch.object(materializer, "validate_authority_contract", return_value=hashes),
+                patch.object(materializer, "scandir_exact", side_effect=extra_member),
+                self.assertRaises(V5MaterializationError),
+            ):
+                materialize(self.root, accepted_audit=parent / "audit.json", v4_source_manifest=parent / "v4.json", v5_source_manifest=parent / "v5.json", runtime_identity=parent / "runtime.json", output=parent / "extra", evidence_output_root=parent / "extra-evidence")
+            self.assertFalse((parent / "missing").exists())
+            self.assertFalse((parent / "extra").exists())
+            self.assertFalse(any(path.name.startswith(".missing.staging-") or path.name.startswith(".extra.staging-") for path in parent.iterdir()))
 
 
 if __name__ == "__main__":

@@ -27,12 +27,13 @@ class V5ContractTests(unittest.TestCase):
             len(V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS),
             len(set(V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS)),
         )
-        self.assertEqual(V5_PROTOCOL_TAG, "v5-measurement-protocol-v2")
+        self.assertEqual(V5_PROTOCOL_TAG, "v5-measurement-protocol-v3")
+        self.assertEqual(len(V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS), 47)
         self.assertEqual(V5_SEED_NAMESPACE, "anachron-v5-measurement-protocol-v1")
 
     def test_governed_closure_contains_every_a1_runtime_and_tool(self) -> None:
         root = Path(__file__).resolve().parents[1]
-        required = {".gitattributes", "anachron/v5_registry.py", "tests/test_v5_operational.py", "tools/.gitattributes", "tools/analyze_v5_measurement.py", "tools/build_v5_source_manifest.py", "tools/finalize_v5_carry_forward.py", "tools/materialize_v5_inputs.py", "tools/run_v5_conditional_campaign.ps1", "tools/run_v5_recovery.py"}
+        required = {".gitattributes", "anachron/__init__.py", "anachron/v5_registry.py", "tests/test_v5_identity_controller.py", "tests/test_v5_operational.py", "tools/.gitattributes", "tools/analyze_v5_measurement.py", "tools/build_v5_source_manifest.py", "tools/capture_read_only_v5_identity.py", "tools/finalize_v5_carry_forward.py", "tools/materialize_v5_inputs.py", "tools/read_v5_authenticode_identity.ps1", "tools/read_v5_process_identity.ps1", "tools/run_v5_conditional_campaign.ps1", "tools/run_v5_recovery.py"}
         self.assertTrue(required.issubset(V5_GOVERNED_SOURCE_PATHS))
         self.assertEqual(set(validate_authority_contract(root)), set(V5_GOVERNED_SOURCE_PATHS))
 

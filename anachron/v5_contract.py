@@ -11,8 +11,8 @@ from anachron.v5_custody import V5CustodyError, capture_regular
 from anachron.v5_paths import V5PathError, admit_existing, admit_repository_root
 
 AUTHORITY_CONTRACT_PATH = "research/v5_measurement/authority_binding_contract.json"
-V5_PROTOCOL_BRANCH = "protocol/v5-successor"
-V5_PROTOCOL_TAG = "v5-measurement-protocol-v2"
+V5_PROTOCOL_BRANCH = "protocol/v5-successor-v3"
+V5_PROTOCOL_TAG = "v5-measurement-protocol-v3"
 V5_SEED_NAMESPACE = "anachron-v5-measurement-protocol-v1"
 EXPECTED_RUNTIME_IDENTITY = {
     "models": (
@@ -29,6 +29,7 @@ EXPECTED_RUNTIME_IDENTITY = {
 }
 V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS = (
     ".gitattributes",
+    "anachron/__init__.py",
     "anachron/data/v5_registry.py",
     "anachron/v5_carry_forward.py",
     "anachron/v5_contract.py",
@@ -58,6 +59,7 @@ V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS = (
     "tests/test_v5_carry_forward.py",
     "tests/test_v5_contract.py",
     "tests/test_v5_custody.py",
+    "tests/test_v5_identity_controller.py",
     "tests/test_v5_measurement.py",
     "tests/test_v5_operational.py",
     "tests/test_v5_paths.py",
@@ -65,8 +67,11 @@ V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS = (
     "tools/.gitattributes",
     "tools/analyze_v5_measurement.py",
     "tools/build_v5_source_manifest.py",
+    "tools/capture_read_only_v5_identity.py",
     "tools/finalize_v5_carry_forward.py",
     "tools/materialize_v5_inputs.py",
+    "tools/read_v5_authenticode_identity.ps1",
+    "tools/read_v5_process_identity.ps1",
     "tools/run_v5_conditional_campaign.ps1",
     "tools/run_v5_recovery.py",
     "tools/validate_v5_contract.py",

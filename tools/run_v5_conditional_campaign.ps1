@@ -27,7 +27,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$ExpectedProtocolTag = "v5-measurement-protocol-v2"
+$ExpectedProtocolTag = "v5-measurement-protocol-v3"
 $ExpectedNormalApp = "C:\Users\leste\AppData\Local\Programs\Ollama\ollama app.exe"
 $ExpectedNormalServer = "C:\Users\leste\AppData\Local\Programs\Ollama\ollama.exe"
 $ExpectedIsolatedExe = "C:\Users\leste\Downloads\Repos\anachron-v4-evidence\ollama-0.33.2-isolated\runtime\ollama.exe"
@@ -58,24 +58,31 @@ function Normalize-FullPath([string]$Path) {
     return $trimmed
 }
 
-function Assert-NoReparseOrStreams([string]$Path, [string]$Label) {
+function Assert-SafeEntry([string]$Path, [string]$Label) {
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "$Label contains a reparse point: $Path"
+    }
+    $streams = @(Get-Item -LiteralPath $Path -Force -Stream * -ErrorAction Stop | Select-Object -ExpandProperty Stream)
+    if (@($streams | Where-Object { $_ -notin @(':$DATA', '$DATA') }).Count -ne 0) {
+        throw "$Label contains an alternate data stream: $Path"
+    }
+}
+
+function Assert-SafePathComponents([string]$Path, [string]$Label) {
     $full = Normalize-FullPath $Path
     $root = [IO.Path]::GetPathRoot($full)
     $current = $root
     foreach ($component in $full.Substring($root.Length).Split([char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar), [StringSplitOptions]::RemoveEmptyEntries)) {
         $current = Join-Path $current $component
-        $item = Get-Item -LiteralPath $current -Force
-        if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
-            throw "$Label contains a reparse point: $current"
-        }
+        Assert-SafeEntry $current $Label
     }
-    $item = Get-Item -LiteralPath $full -Force
-    $candidates = if ($item.PSIsContainer) { @($item) + @(Get-ChildItem -LiteralPath $full -Force -Recurse) } else { @($item) }
-    foreach ($candidate in $candidates) {
-        $streams = @(Get-Item -LiteralPath $candidate.FullName -Stream * -ErrorAction Stop | Select-Object -ExpandProperty Stream)
-        if (@($streams | Where-Object { $_ -notin @(':$DATA', '$DATA') }).Count -ne 0) {
-            throw "$Label contains an alternate data stream: $($candidate.FullName)"
-        }
+}
+
+function Assert-SafeTree([string]$Path, [string]$Label) {
+    Assert-SafePathComponents $Path $Label
+    foreach ($candidate in @(Get-ChildItem -LiteralPath $Path -Force -Recurse -ErrorAction Stop)) {
+        Assert-SafeEntry $candidate.FullName $Label
     }
 }
 
@@ -83,18 +90,32 @@ function Assert-ExistingFile([string]$Path, [string]$Label) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
         throw "$Label is missing: $Path"
     }
-    Assert-NoReparseOrStreams $Path $Label
+    Assert-SafePathComponents $Path $Label
 }
 
 function Assert-ExistingDirectory([string]$Path, [string]$Label) {
     if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
         throw "$Label is missing: $Path"
     }
-    Assert-NoReparseOrStreams $Path $Label
+    Assert-SafePathComponents $Path $Label
 }
 
 function Get-Sha256([string]$Path) {
-    return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant()
+    $stream = $null
+    $hasher = $null
+    try {
+        $stream = [IO.File]::Open((Normalize-FullPath $Path), [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+        $hasher = [Security.Cryptography.SHA256]::Create()
+        return [BitConverter]::ToString($hasher.ComputeHash($stream)).Replace("-", "").ToLowerInvariant()
+    }
+    finally {
+        if ($null -ne $hasher) {
+            $hasher.Dispose()
+        }
+        if ($null -ne $stream) {
+            $stream.Dispose()
+        }
+    }
 }
 
 function Assert-Sha256([string]$Path, [string]$Expected, [string]$Label) {
@@ -104,6 +125,10 @@ function Assert-Sha256([string]$Path, [string]$Expected, [string]$Label) {
 }
 
 function Get-CanonicalJson([string]$Path, [string]$Label) {
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if ($item.Length -gt $MaximumLogBytes) {
+        throw "$Label exceeds the fixed byte cap"
+    }
     try {
         return Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json -ErrorAction Stop
     }
@@ -128,7 +153,19 @@ function Assert-ImmediateCreateOnlyChild([string]$Path, [string]$Label) {
     if (-not [string]::Equals($parent, $ExpectedOperationParent, [StringComparison]::OrdinalIgnoreCase)) {
         throw "$Label must be an immediate child of the approved evidence parent"
     }
-    Assert-NoReparseOrStreams $parent "approved evidence parent"
+    Assert-SafePathComponents $parent "approved evidence parent"
+}
+
+function Assert-ExternalCreateOnlyChild([string]$Path, [string]$Label) {
+    if (Test-Path -LiteralPath $Path) {
+        throw "$Label must be absent: $Path"
+    }
+    $parent = Normalize-FullPath ([IO.Path]::GetDirectoryName($Path))
+    Assert-ExistingDirectory $parent "$Label parent"
+    $protocolPrefix = (Normalize-FullPath $ProtocolRoot) + [IO.Path]::DirectorySeparatorChar
+    if ($Path.StartsWith($protocolPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "$Label must be external to the protocol checkout"
+    }
 }
 
 function Assert-MaterializationTopology {
@@ -136,7 +173,14 @@ function Assert-MaterializationTopology {
         compatibility = Join-Path $MaterializationRoot "compatibility_plan.json"
         carry = Join-Path $MaterializationRoot "carry_forward.json"
         full = Join-Path $MaterializationRoot "full_plan.json"
+        receipt = Join-Path $MaterializationRoot "materialization_receipt.json"
+        runtime = Join-Path $MaterializationRoot "runtime_identity.json"
+        schedule = Join-Path $MaterializationRoot "schedule.json"
         source = Join-Path $MaterializationRoot "source_manifest.json"
+    }
+    $members = @(Get-ChildItem -LiteralPath $MaterializationRoot -Force)
+    if ($members.Count -ne 7 -or @($members | Where-Object { -not $_.PSIsContainer -and $_.Length -le 1048576 }).Count -ne 7 -or (@($members | Measure-Object -Property Length -Sum).Sum -gt 7340032)) {
+        throw "materialization root topology or byte budget differs"
     }
     foreach ($entry in $expected.GetEnumerator()) {
         Assert-ExistingFile $entry.Value "materialized $($entry.Key)"
@@ -148,18 +192,40 @@ function Assert-MaterializationTopology {
 }
 
 function Assert-FrozenProtocol([object]$Go, [object]$SourceManifest) {
-    if (& git.exe -C $ProtocolRoot status --porcelain --untracked-files=all) {
+    $status = & git.exe -C $ProtocolRoot status --porcelain --untracked-files=all
+    $statusExitCode = $LASTEXITCODE
+    if ($statusExitCode -ne 0) {
+        throw "protocol git status failed"
+    }
+    if ($status) {
         throw "protocol checkout is dirty"
     }
-    if (& git.exe -C $ProtocolRoot branch --show-current) {
+    $branch = & git.exe -C $ProtocolRoot branch --show-current
+    $branchExitCode = $LASTEXITCODE
+    if ($branchExitCode -ne 0) {
+        throw "protocol git branch query failed"
+    }
+    if ($branch) {
         throw "protocol checkout must be detached"
     }
-    $head = (& git.exe -C $ProtocolRoot rev-parse HEAD).Trim().ToLowerInvariant()
-    $tagObject = (& git.exe -C $ProtocolRoot rev-parse ("refs/tags/" + $ExpectedProtocolTag + "^{tag}")).Trim().ToLowerInvariant()
-    $peeled = (& git.exe -C $ProtocolRoot rev-parse ("refs/tags/" + $ExpectedProtocolTag + "^{}")).Trim().ToLowerInvariant()
-    if ($LASTEXITCODE -ne 0) {
+    $headOutput = & git.exe -C $ProtocolRoot rev-parse HEAD
+    $headExitCode = $LASTEXITCODE
+    if ($headExitCode -ne 0) {
+        throw "protocol git head query failed"
+    }
+    $tagObjectOutput = & git.exe -C $ProtocolRoot rev-parse ("refs/tags/" + $ExpectedProtocolTag + "^{tag}")
+    $tagObjectExitCode = $LASTEXITCODE
+    if ($tagObjectExitCode -ne 0) {
         throw "protocol tag is absent or not annotated"
     }
+    $peeledOutput = & git.exe -C $ProtocolRoot rev-parse ("refs/tags/" + $ExpectedProtocolTag + "^{}")
+    $peeledExitCode = $LASTEXITCODE
+    if ($peeledExitCode -ne 0) {
+        throw "protocol tag peel query failed"
+    }
+    $head = $headOutput.Trim().ToLowerInvariant()
+    $tagObject = $tagObjectOutput.Trim().ToLowerInvariant()
+    $peeled = $peeledOutput.Trim().ToLowerInvariant()
     if ($head -ne (Get-JsonString $Go "protocol_commit" "conditional GO") -or $tagObject -ne (Get-JsonString $Go "protocol_tag_object" "conditional GO") -or $peeled -ne $head) {
         throw "protocol release identity differs"
     }
@@ -259,7 +325,7 @@ function Assert-IsolatedIdentity([object]$ExpectedRuntime, [string]$VersionPath,
     }
     $observed = @($tags.models | ForEach-Object { "$($_.name)|$($_.digest)" } | Sort-Object)
     $expected = @($ExpectedRuntime.models | ForEach-Object { "$($_.name)|$($_.digest)" } | Sort-Object)
-    if ((Compare-Object $observed $expected).Count -ne 0) {
+    if (@(Compare-Object $observed $expected).Count -ne 0) {
         throw "isolated model inventory differs"
     }
 }
@@ -308,27 +374,22 @@ Assert-ExistingDirectory $MaterializationRoot "materialization root"
 Assert-ExistingFile $RuntimeIdentity "runtime identity"
 Assert-ExistingFile $MaterializationReceipt "materialization receipt"
 Assert-ExistingFile $ConditionalGo "conditional GO"
-Assert-ExistingFile $ExpectedIsolatedExe "isolated executable"
-Assert-Sha256 $ExpectedIsolatedExe $ExpectedIsolatedExeSha256 "isolated executable"
-Assert-ExistingDirectory $ExpectedIsolatedModels "isolated model store"
-Assert-ExistingFile $ExpectedNormalApp "normal Ollama app"
-Assert-ExistingFile $ExpectedNormalServer "normal Ollama server"
-Assert-ImmediateCreateOnlyChild $EvidenceRoot "evidence root"
-Assert-ImmediateCreateOnlyChild $OperationRoot "operation root"
+Assert-ExternalCreateOnlyChild $EvidenceRoot "evidence root"
+Assert-ExternalCreateOnlyChild $OperationRoot "operation root"
 if ($EvidenceRoot -eq $OperationRoot) {
     throw "evidence and operation roots must differ"
 }
 
+$capturedRuntime = Get-CanonicalJson $RuntimeIdentity "runtime identity"
+$go = Get-CanonicalJson $ConditionalGo "conditional GO"
+$receipt = Get-CanonicalJson $MaterializationReceipt "materialization receipt"
 $topology = Assert-MaterializationTopology
-$expectedMaterializationReceipt = Normalize-FullPath (Join-Path $MaterializationRoot "materialization_receipt.json")
-if ($MaterializationReceipt -ne $expectedMaterializationReceipt) {
+if ($MaterializationReceipt -ne (Normalize-FullPath $topology.receipt)) {
     throw "materialization receipt path differs"
 }
 $fullPlan = Get-CanonicalJson $topology.full "full plan"
-$go = Get-CanonicalJson $ConditionalGo "conditional GO"
 $sourceManifest = Get-CanonicalJson $topology.source "source manifest"
-$receipt = Get-CanonicalJson $MaterializationReceipt "materialization receipt"
-$runtime = Get-CanonicalJson $RuntimeIdentity "runtime identity"
+$runtime = Get-CanonicalJson $topology.runtime "materialized runtime identity"
 
 if ((Normalize-FullPath $PSCommandPath) -ne (Join-Path $ProtocolRoot "tools\run_v5_conditional_campaign.ps1")) {
     throw "wrapper must execute from the frozen protocol checkout"
@@ -339,19 +400,24 @@ Assert-Sha256 (Join-Path $ProtocolRoot "tools\analyze_v5_measurement.py") (Get-J
 if ($go.wrapper_sha256 -ne $fullPlan.component_sha256.wrapper -or $go.runner_sha256 -ne $fullPlan.component_sha256.runner -or $go.analyzer_sha256 -ne $fullPlan.component_sha256.analyzer) {
     throw "GO component bindings differ"
 }
+if ($go.decision -ne "GO" -or $receipt.schema_version -ne "anachron-v5-materialization-receipt-v3") {
+    throw "GO or materialization receipt decision differs"
+}
 Assert-Sha256 $topology.full (Get-JsonString $go "full_plan_sha256" "conditional GO") "full plan"
 Assert-Sha256 $topology.compatibility (Get-JsonString $go "compatibility_plan_sha256" "conditional GO") "compatibility plan"
 Assert-Sha256 $topology.carry (Get-JsonString $go "carry_forward_sha256" "conditional GO") "carry-forward receipt"
 Assert-Sha256 $topology.source (Get-JsonString $go "source_manifest_sha256" "conditional GO") "source manifest"
 Assert-Sha256 $MaterializationReceipt (Get-JsonString $go "materialization_receipt_sha256" "conditional GO") "materialization receipt"
-Assert-Sha256 $RuntimeIdentity (Get-JsonString $receipt "runtime_identity_sha256" "materialization receipt") "runtime identity"
+Assert-Sha256 $topology.runtime (Get-JsonString $receipt "runtime_identity_sha256" "materialization receipt") "materialized runtime identity"
+Assert-Sha256 $RuntimeIdentity (Get-JsonString $receipt "runtime_identity_sha256" "materialization receipt") "captured runtime identity"
+Assert-Sha256 $topology.schedule (Get-JsonString $receipt "schedule_sha256" "materialization receipt") "materialized schedule"
 Assert-Sha256 $topology.full (Get-JsonString $receipt "full_plan_sha256" "materialization receipt") "materialized full plan"
 Assert-Sha256 $topology.compatibility (Get-JsonString $receipt "compatibility_plan_sha256" "materialization receipt") "materialized compatibility plan"
 Assert-Sha256 $topology.carry (Get-JsonString $receipt "carry_forward_sha256" "materialization receipt") "materialized carry-forward receipt"
 Assert-Sha256 $topology.source (Get-JsonString $receipt "v5_source_manifest_sha256" "materialization receipt") "materialized source manifest"
 Assert-Sha256 (Join-Path $ProtocolRoot "research\v5_measurement\authority_binding_contract.json") (Get-JsonString $go "authority_contract_sha256" "conditional GO") "authority contract"
 Assert-Sha256 (Join-Path $ProtocolRoot "research\v5_measurement\ACCEPTANCE_MATRIX.md") (Get-JsonString $go "acceptance_matrix_sha256" "conditional GO") "acceptance matrix"
-if ($fullPlan.expected_runtime.version -ne $runtime.version -or (Compare-Object @($fullPlan.expected_runtime.models | ConvertTo-Json -Compress) @($runtime.models | ConvertTo-Json -Compress)).Count -ne 0) {
+if ($fullPlan.expected_runtime.version -ne $runtime.version -or @(Compare-Object @($fullPlan.expected_runtime.models | ConvertTo-Json -Compress) @($runtime.models | ConvertTo-Json -Compress)).Count -ne 0) {
     throw "materialized runtime identity differs"
 }
 Assert-FrozenProtocol $go $sourceManifest
@@ -360,7 +426,7 @@ $runnerArguments = @("-m", "tools.run_v5_recovery", "--repository-root", $Protoc
 $analyzerArguments = @("-m", "tools.analyze_v5_measurement", $EvidenceRoot, "--repository-root", $ProtocolRoot, "--phase", "primary")
 Push-Location $ProtocolRoot
 try {
-    & python.exe @runnerArguments "--preflight-only"
+    & python.exe -B @runnerArguments "--preflight-only"
     if ($LASTEXITCODE -ne 0) {
         throw "fixed runner preflight rejected the frozen inputs"
     }
@@ -376,6 +442,15 @@ if ($ValidateOnly.IsPresent) {
 if (-not $Execute.IsPresent) {
     throw "Refusing campaign execution without the explicit -Execute switch"
 }
+
+Assert-ExistingFile $ExpectedIsolatedExe "isolated executable"
+Assert-Sha256 $ExpectedIsolatedExe $ExpectedIsolatedExeSha256 "isolated executable"
+Assert-ExistingDirectory $ExpectedIsolatedModels "isolated model store"
+Assert-SafeTree $ExpectedIsolatedModels "isolated model store"
+Assert-ExistingFile $ExpectedNormalApp "normal Ollama app"
+Assert-ExistingFile $ExpectedNormalServer "normal Ollama server"
+Assert-ImmediateCreateOnlyChild $EvidenceRoot "evidence root"
+Assert-ImmediateCreateOnlyChild $OperationRoot "operation root"
 
 $before = Get-OllamaProcessSnapshot
 $normalTree = Get-NormalTree $before
