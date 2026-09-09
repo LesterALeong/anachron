@@ -102,8 +102,8 @@ def _analysis() -> dict:
 class TestV3CandidateProjection(unittest.TestCase):
     def require_protocol_resources(self) -> tuple[Path, Path]:
         if PROTOCOL_ROOT is not None and PROTOCOL_PYTHON is not None and PROTOCOL_ROOT.is_dir() and PROTOCOL_PYTHON.is_file():
-            identity = subprocess.run(
-                [str(PROTOCOL_PYTHON), "-I", "-c", "import platform; print(platform.python_implementation(), platform.python_version())"],
+            identity = _run_protocol_python(
+                ["-I", "-c", "import platform; print(platform.python_implementation(), platform.python_version())"],
                 capture_output=True,
                 check=False,
                 text=True,
@@ -291,6 +291,30 @@ class TestV3CandidateProjection(unittest.TestCase):
         }
         with patch.dict(os.environ, polluted), patch.object(subprocess, "run", return_value=completed) as run:
             _run_protocol_python(["-I", "-c", "pass"], capture_output=True, check=False)
+
+        self.assertEqual(run.call_args.args[0][0], str(protocol_python))
+        for name in _PROTOCOL_ENVIRONMENT_KEYS:
+            self.assertNotIn(name, run.call_args.kwargs["env"])
+
+    def test_protocol_resource_admission_scrubs_python_library_overrides(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            protocol_python = root / "python"
+            protocol_python.write_bytes(b"test-only")
+            completed = subprocess.CompletedProcess([], 0, stdout="CPython 3.12.10\n", stderr="")
+            polluted = {
+                "LD_LIBRARY_PATH": "/wrong/lib",
+                "PYTHONHOME": "/wrong/home",
+                "PYTHONPATH": "/wrong/path",
+            }
+            module = sys.modules[__name__]
+            with (
+                patch.object(module, "PROTOCOL_ROOT", root),
+                patch.object(module, "PROTOCOL_PYTHON", protocol_python),
+                patch.dict(os.environ, polluted),
+                patch.object(subprocess, "run", return_value=completed) as run,
+            ):
+                self.assertEqual(self.require_protocol_resources(), (root, protocol_python))
 
         self.assertEqual(run.call_args.args[0][0], str(protocol_python))
         for name in _PROTOCOL_ENVIRONMENT_KEYS:

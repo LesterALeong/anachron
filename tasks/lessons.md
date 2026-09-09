@@ -12,6 +12,10 @@ The user clarified that the market-hours question was a mix-up. This task concer
 
 The user corrected a process that was accumulating auxiliary assurance work without moving the v5 product toward its acceptance matrix. Iterate the smallest existing harness in an ordinary scratch workspace first, then freeze formal evidence only after the product path is working. Preserve failed assurance artifacts as history, but do not let their revision chain replace the release path.
 
+## Scrub loader overrides for every pinned-interpreter probe
+
+The v5 release candidate correctly scrubbed loader and Python path overrides for pinned-producer work, but its resource-admission probe bypassed that helper. On Linux Python 3.12, the pinned 3.12.10 executable inherited the candidate 3.12.14 `LD_LIBRARY_PATH` and failed before the paper tests. Route identity probes and production work through the same scrubbed subprocess helper, and test the admission call itself under polluted `LD_LIBRARY_PATH`, `PYTHONHOME`, and `PYTHONPATH`.
+
 ## Exercise generated code in its exact namespace
 
 The H18 compatibility checker compiled successfully but its selected generated module failed before the first row because the restricted builtins intentionally omitted `__import__` while the generated AST still contained a future import. For compile-plus-exec paths, inspect the generated AST and compiler flags against the exact globals and builtins, reject unavailable imports mechanically, and exercise the actual restricted namespace at the first authorized gate. Preserve the failed event and require a complete corrected event; containing-file compilation alone is preparation evidence.

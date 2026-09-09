@@ -166,7 +166,8 @@ The goal remains active and ends before any model endpoint or model execution. M
 This section supersedes the Reset06 controller-successor critical path. Reset05 and Reset06 plans, attempts, reviews, and raw evidence remain immutable history; do not revise or rerun them.
 
 - [x] Align the checked-in conditional PENDING template with the validator.
-- [ ] Exercise the existing offline PENDING-validation and materialization paths in a non-governed scratch directory; fix only defects exposed by the product acceptance matrix.
-- [ ] Run one independent review and the focused acceptance matrix on the working candidate.
+- [x] Exercise the existing offline PENDING-validation and materialization paths in a non-governed scratch directory; fix only defects exposed by the product acceptance matrix.
+- [x] Run one independent review and the focused acceptance matrix on the working candidate.
+- [x] Close the pushed Linux paper-lane regression by routing the pinned-interpreter admission probe through the existing scrubbed subprocess helper; the pushed source is RED, the corrected regression and exact local 25-test paper lane pass, and independent review/QA approve the fix. Branch CI replay is pending.
 - [ ] After fresh authorization, perform the existing read-only identity preflight and at most one capture, then verify restoration.
 - [ ] Materialize the input closure offline and retain the exact PENDING_VALID receipt. Stop before any model endpoint or campaign without fresh explicit GO authorization.
