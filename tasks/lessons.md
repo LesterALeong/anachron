@@ -71,3 +71,12 @@ Ollama server rejected the capture with HTTP 400 before any process mutation. A
 transport gate must use a disposable raw socket that counts the exact serialized
 headers, retain the frozen predecessor request as RED, and require the successor
 to emit exactly one explicit host header before a capture is authorized.
+
+## Run every owning workflow-contract test after changing a trigger
+
+The v4-paper CI lanes consume `tests.test_v4_ci_workflow`, but the v5-only
+focused glob did not run it. Adding V4's successor trigger preserved the v3
+branch and tag entries in the workflow while the older exact-list assertion
+still omitted them, so all v4-paper lanes failed before tag creation. Every
+workflow trigger edit must run each owning workflow-contract module locally;
+focused successor globs do not cover cross-version CI consumers.
