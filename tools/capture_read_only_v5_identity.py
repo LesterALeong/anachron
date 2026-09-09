@@ -51,7 +51,7 @@ IDENTITY_ROOT = Path(
 NORMAL_APP = Path(r"C:\Users\leste\AppData\Local\Programs\Ollama\ollama app.exe")
 NORMAL_SERVER = Path(r"C:\Users\leste\AppData\Local\Programs\Ollama\ollama.exe")
 POWERSHELL_EXE = Path(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe")
-POWERSHELL_EXE_SHA256 = "7600ffe12da441fe89d035b13801e8e91d064bc544a27b19a5cf49f6ab8b18f5"
+POWERSHELL_EXE_SHA256 = "8bb6fa8c283b4d92120b1ef249a9b311b0f804d4cabbe9981159976c8be76a5e"
 EXPECTED_SIGNER_SUBJECT = (
     "CN=Ollama Inc., O=Ollama Inc., L=Toronto, S=Ontario, C=CA, "
     "SERIALNUMBER=2713355, OID.2.5.4.15=Private Organization, "

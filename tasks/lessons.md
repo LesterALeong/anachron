@@ -16,6 +16,10 @@ The user corrected a process that was accumulating auxiliary assurance work with
 
 The v5 release candidate correctly scrubbed loader and Python path overrides for pinned-producer work, but its resource-admission probe bypassed that helper. On Linux Python 3.12, the pinned 3.12.10 executable inherited the candidate 3.12.14 `LD_LIBRARY_PATH` and failed before the paper tests. Route identity probes and production work through the same scrubbed subprocess helper, and test the admission call itself under polluted `LD_LIBRARY_PATH`, `PYTHONHOME`, and `PYTHONPATH`.
 
+## Revalidate host dependency pins immediately before release
+
+The v5 controller's PowerShell hash was correct when designed, but Windows replaced the signed binary on the morning of release. Offline controller tests mocked dependency admission, so the stale pin would have failed only at process preflight. Run the real read-only dependency identity check before tag creation and keep a Windows-only test that compares the current capture host with every pinned interpreter, package, helper, and executable identity.
+
 ## Exercise generated code in its exact namespace
 
 The H18 compatibility checker compiled successfully but its selected generated module failed before the first row because the restricted builtins intentionally omitted `__import__` while the generated AST still contained a future import. For compile-plus-exec paths, inspect the generated AST and compiler flags against the exact globals and builtins, reject unavailable imports mechanically, and exercise the actual restricted namespace at the first authorized gate. Preserve the failed event and require a complete corrected event; containing-file compilation alone is preparation evidence.

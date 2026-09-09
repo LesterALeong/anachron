@@ -128,6 +128,17 @@ class IdentityControllerTests(unittest.TestCase):
             self.executed_rows.add(row_id)
         return super().subTest(msg, **params)
 
+    @unittest.skipUnless(os.name == "nt", "requires the pinned Windows capture host")
+    def test_capture_host_dependencies_match_pinned_identity(self) -> None:
+        identity = controller.controller_dependency_identity()
+        self.assertEqual(identity["powershell_executable"], str(controller.POWERSHELL_EXE))
+        self.assertEqual(identity["powershell_sha256"], controller.POWERSHELL_EXE_SHA256)
+        self.assertEqual(
+            identity["python_version"],
+            ".".join(str(part) for part in controller.EXPECTED_PYTHON_VERSION),
+        )
+        self.assertEqual(identity["psutil_version"], controller.EXPECTED_PSUTIL_VERSION)
+
     def test_library_import_has_no_operational_side_effects(self) -> None:
         self.assertTrue(callable(controller.run_capture))
         self.assertEqual(controller.ADMITTED_ENDPOINTS, frozenset(("/api/version", "/api/tags")))
