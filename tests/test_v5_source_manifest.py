@@ -362,7 +362,7 @@ class V5SourceManifestTests(unittest.TestCase):
             self.assertNotEqual(runtime.resolve(), (materialization / "runtime_identity.json").resolve())
             self.assertEqual(
                 len(json.loads((materialization / "source_manifest.json").read_text(encoding="utf-8"))["governed_files"]),
-                48,
+                49,
             )
             go = self._test_only_go(materialization, evidence, workspace / "test-only-go.json", pending=False)
             wrapper_environment = dict(environment)

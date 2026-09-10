@@ -37,21 +37,25 @@ except ModuleNotFoundError:
     psutil = None  # type: ignore[assignment]
 
 
-PROTOCOL_ROOT = Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v5")
-PROTOCOL_TAG = "v5-measurement-protocol-v5"
+PROTOCOL_ROOT = Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v6")
+PROTOCOL_TAG = "v5-measurement-protocol-v6"
 SOURCE_MANIFEST = Path(
-    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\source-manifest-v5\source_manifest.json"
+    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\source-manifest-v6\source_manifest.json"
 )
 STAGE_ROOT = Path(r"C:\Users\leste\Downloads\Repos\anachron-v4-evidence\ollama-0.33.2-isolated")
 ISOLATED_EXE = STAGE_ROOT / "runtime" / "ollama.exe"
 ISOLATED_EXE_SHA256 = "c79df1e0c1bfa10ed813c7030ac4c3ba38bb0e350bd7322d9bb58320343235c6"
 ISOLATED_MODELS = STAGE_ROOT / "models"
 IDENTITY_ROOT = Path(
-    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\runtime-identity-v5-protocol-v5"
+    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\runtime-identity-v5-protocol-v6"
 )
 V4_FAILURE_BINDING = Path("research/v5_measurement/v4_failure_binding.json")
 V4_FAILURE_ROOT = Path(
     r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\runtime-identity-v5-protocol-v4"
+)
+V5_FAILURE_BINDING = Path("research/v5_measurement/v5_failure_binding.json")
+V5_FAILURE_ROOT = Path(
+    r"C:\Users\leste\Downloads\Repos\anachron-v5-evidence\runtime-identity-v5-protocol-v5"
 )
 NORMAL_APP = Path(r"C:\Users\leste\AppData\Local\Programs\Ollama\ollama app.exe")
 NORMAL_SERVER = Path(r"C:\Users\leste\AppData\Local\Programs\Ollama\ollama.exe")
@@ -119,6 +123,7 @@ PROCESS_TERMINATE = 0x0001
 PROCESS_SET_QUOTA = 0x0100
 PROCESS_JOB_ASSIGN_ACCESS = PROCESS_TERMINATE | PROCESS_SET_QUOTA
 THREAD_SUSPEND_RESUME = 0x0002
+THREAD_QUERY_LIMITED_INFORMATION = 0x0800
 JOB_TERMINATION_EXIT_CODE = 1
 INVALID_DWORD = 0xFFFFFFFF
 ISOLATED_STARTUP_SECONDS = 15.0
@@ -240,6 +245,10 @@ class IsolatedLifecycle:
     stderr_drain: BoundedDrain | None = None
     assignment_process_handle: int | None = None
     root_thread_handle: int | None = None
+    root_thread_requested_access_mask: int | None = None
+    root_thread_candidate_id: int | None = None
+    root_thread_owner_pid: int | None = None
+    root_thread_owner_last_error: int | None = None
     job_create_attempted: bool = False
     job_create_succeeded: bool = False
     root_launch_attempted: bool = False
@@ -678,6 +687,110 @@ def verify_v4_failure_binding(manifest: dict[str, Any]) -> None:
     recorded_status = read_json(V4_FAILURE_ROOT / "operation_status.json", "v4 operation status")
     if not isinstance(recorded_status, dict) or any(recorded_status.get(key) != value for key, value in status.items()):
         raise CaptureError("v4 failure status differs")
+
+
+def verify_v5_failure_binding(manifest: dict[str, Any]) -> None:
+    binding_path = PROTOCOL_ROOT / V5_FAILURE_BINDING
+    assert_no_reparse_or_ads(binding_path, "v5 failure binding")
+    raw = read_bounded_bytes(binding_path, "v5 failure binding")
+    try:
+        binding = json.loads(raw.decode("utf-8", errors="strict"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise CaptureError("v5 failure binding is not strict UTF-8 JSON") from error
+    if raw != receipt_bytes(binding):
+        raise CaptureError("v5 failure binding is not canonical")
+    if not isinstance(binding, dict) or set(binding) != {"consumed_attempt", "failure_root", "kind", "v5_release"}:
+        raise CaptureError("v5 failure binding differs")
+    expected_attempt = {"authorization_count": 1, "consumed": True, "retry_allowed": False}
+    expected_release = {
+        "branch": "protocol/v5-successor-v5",
+        "commit": "a24044a3aefcf5344f4a3b9bce3ad6663c8d7571",
+        "controller_sha256": "e032e2d25fa878b3d60065e0b91e5a854758d4bd54bb8ae18a341fb28c5574b0",
+        "source_manifest_sha256": "9dd72cdaffe2b9dc396db97d1cb92c037cc8661b44a952c634b8ef373cd1cfc2",
+        "tag": "v5-measurement-protocol-v5",
+        "tag_object": "c5ec5bb0f89b30a859473cac6c4b9f7248eedfa9",
+    }
+    expected_status = {
+        "capture_prepared": False,
+        "drains_joined": True,
+        "drains_started_attempted": True,
+        "drains_started_succeeded": True,
+        "job_assign_succeeded": True,
+        "job_close_succeeded": True,
+        "job_create_succeeded": True,
+        "job_terminate_succeeded": True,
+        "job_zero_window_confirmed": True,
+        "model_execution_performed": False,
+        "normal_app_signal_issued": True,
+        "normal_restore_eligible": False,
+        "normal_server_signal_issued": True,
+        "normal_server_stop_resolution": "signaled",
+        "pipes_closed": True,
+        "primary_error": {
+            "message": "isolated suspended root thread owner differs",
+            "operation": "capture",
+            "phase": "drains-started",
+        },
+        "restoration_started": False,
+        "restore_succeeded": False,
+        "root_resume_attempted": True,
+        "root_resume_succeeded": False,
+        "root_thread_handle_close_succeeded": True,
+        "root_waited": True,
+        "teardown_path": "job",
+    }
+    failure_root = binding["failure_root"]
+    if (
+        binding["kind"] != "anachron-v5-v5-failure-binding"
+        or binding["consumed_attempt"] != expected_attempt
+        or binding["v5_release"] != expected_release
+        or not isinstance(failure_root, dict)
+        or set(failure_root) != {"members", "path", "status"}
+        or failure_root["path"] != str(V5_FAILURE_ROOT)
+        or failure_root["status"] != expected_status
+        or not isinstance(failure_root["members"], list)
+    ):
+        raise CaptureError("v5 failure binding differs")
+    if V5_FAILURE_BINDING.as_posix() not in {entry.get("path") for entry in manifest.get("governed_files", []) if isinstance(entry, dict)}:
+        raise CaptureError("v5 failure binding is not governed")
+    members = failure_root["members"]
+    if len(members) != 6:
+        raise CaptureError("v5 failure root topology differs")
+    expected_paths: set[str] = set()
+    for member in members:
+        if (
+            not isinstance(member, dict)
+            or set(member) != {"bytes", "path", "sha256"}
+            or type(member["bytes"]) is not int
+            or member["bytes"] < 0
+            or type(member["path"]) is not str
+            or Path(member["path"]).name != member["path"]
+            or type(member["sha256"]) is not str
+            or len(member["sha256"]) != 64
+            or any(character not in "0123456789abcdef" for character in member["sha256"])
+        ):
+            raise CaptureError("v5 failure binding differs")
+        expected_paths.add(member["path"])
+    if len(expected_paths) != len(members):
+        raise CaptureError("v5 failure root topology differs")
+    assert_no_reparse_or_ads(V5_FAILURE_ROOT, "v5 failure root")
+    if {entry.name for entry in V5_FAILURE_ROOT.iterdir()} != expected_paths:
+        raise CaptureError("v5 failure root topology differs")
+    for member in members:
+        path = V5_FAILURE_ROOT / member["path"]
+        assert_regular(path, "v5 failure root member")
+        if path.stat().st_size != member["bytes"] or sha256_file(path) != member["sha256"]:
+            raise CaptureError("v5 failure root member differs")
+    recorded_status = read_json(V5_FAILURE_ROOT / "operation_status.json", "v5 operation status")
+    if not isinstance(recorded_status, dict):
+        raise CaptureError("v5 failure status differs")
+    for key, expected in expected_status.items():
+        actual = recorded_status.get(key)
+        if key == "primary_error":
+            if not isinstance(actual, dict) or any(actual.get(field) != value for field, value in expected.items()):
+                raise CaptureError("v5 failure status differs")
+        elif actual != expected:
+            raise CaptureError("v5 failure status differs")
 
 
 def verify_tracked_helpers(manifest: dict[str, Any]) -> dict[str, Path]:
@@ -1625,6 +1738,8 @@ def kernel32() -> Any:
     api.OpenProcess.restype = wintypes.HANDLE
     api.OpenThread.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
     api.OpenThread.restype = wintypes.HANDLE
+    api.SetLastError.argtypes = (wintypes.DWORD,)
+    api.SetLastError.restype = None
     api.GetProcessIdOfThread.argtypes = (wintypes.HANDLE,)
     api.GetProcessIdOfThread.restype = wintypes.DWORD
     api.ResumeThread.argtypes = (wintypes.HANDLE,)
@@ -1709,13 +1824,24 @@ def resume_suspended_root(lifecycle: IsolatedLifecycle) -> None:
     if len(threads) != 1:
         raise CaptureError("isolated suspended root thread count differs")
     thread_id = threads[0].id
+    lifecycle.root_thread_candidate_id = thread_id
+    lifecycle.root_thread_requested_access_mask = THREAD_SUSPEND_RESUME | THREAD_QUERY_LIMITED_INFORMATION
     api = kernel32()
-    thread_handle = api.OpenThread(THREAD_SUSPEND_RESUME, False, thread_id)
+    thread_handle = api.OpenThread(lifecycle.root_thread_requested_access_mask, False, thread_id)
     if not thread_handle:
         raise win32_error("OpenThread")
     lifecycle.root_thread_handle = int(thread_handle)
     try:
-        if api.GetProcessIdOfThread(lifecycle.root_thread_handle) != lifecycle.root_identity.pid:
+        api.SetLastError(0)
+        owner_pid = api.GetProcessIdOfThread(lifecycle.root_thread_handle)
+        owner_last_error = windows_last_error()
+        lifecycle.root_thread_owner_pid = int(owner_pid)
+        lifecycle.root_thread_owner_last_error = owner_last_error
+        if owner_pid == 0:
+            if owner_last_error:
+                raise CaptureError(f"GetProcessIdOfThread failed: Win32 error {owner_last_error}")
+            raise OperationalUncertainty("isolated suspended root thread owner is unavailable")
+        if owner_pid != lifecycle.root_identity.pid:
             raise CaptureError("isolated suspended root thread owner differs")
         prior_suspend_count = api.ResumeThread(lifecycle.root_thread_handle)
         if prior_suspend_count == INVALID_DWORD:
@@ -2293,10 +2419,11 @@ def run_capture() -> None:
     dependencies = controller_dependency_identity()
     verify_protocol(authority)
     manifest = verify_source_manifest(authority)
+    verify_v4_failure_binding(manifest)
+    verify_v5_failure_binding(manifest)
     helpers = verify_tracked_helpers(manifest)
     cim_helper = helpers["tools/read_v5_process_identity.ps1"]
     verify_isolated_runtime_and_store(manifest)
-    verify_v4_failure_binding(manifest)
     assert_regular(NORMAL_APP, "normal app")
     assert_regular(NORMAL_SERVER, "normal server")
     normal_hashes = {"app": sha256_file(NORMAL_APP), "server": sha256_file(NORMAL_SERVER)}
@@ -2427,6 +2554,10 @@ def run_capture() -> None:
                 "drains_started_succeeded": lifecycle.drains_started_succeeded,
                 "root_resume_attempted": lifecycle.root_resume_attempted,
                 "root_resume_succeeded": lifecycle.root_resume_succeeded,
+                "root_thread_requested_access_mask": lifecycle.root_thread_requested_access_mask,
+                "root_thread_candidate_id": lifecycle.root_thread_candidate_id,
+                "root_thread_owner_pid": lifecycle.root_thread_owner_pid,
+                "root_thread_owner_last_error": lifecycle.root_thread_owner_last_error,
                 "root_thread_handle_close_attempted": lifecycle.root_thread_handle_close_attempted,
                 "root_thread_handle_close_succeeded": lifecycle.root_thread_handle_close_succeeded,
                 "teardown_path": lifecycle.teardown_path,

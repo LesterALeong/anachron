@@ -11,8 +11,8 @@ from anachron.v5_custody import V5CustodyError, capture_regular
 from anachron.v5_paths import V5PathError, admit_existing, admit_repository_root
 
 AUTHORITY_CONTRACT_PATH = "research/v5_measurement/authority_binding_contract.json"
-V5_PROTOCOL_BRANCH = "protocol/v5-successor-v5"
-V5_PROTOCOL_TAG = "v5-measurement-protocol-v5"
+V5_PROTOCOL_BRANCH = "protocol/v5-successor-v6"
+V5_PROTOCOL_TAG = "v5-measurement-protocol-v6"
 V5_SEED_NAMESPACE = "anachron-v5-measurement-protocol-v1"
 EXPECTED_RUNTIME_IDENTITY = {
     "models": (
@@ -57,6 +57,7 @@ V5_SCIENTIFIC_GOVERNED_SOURCE_PATHS = (
     "research/v5_measurement/conditional_go.template.json",
     "research/v5_measurement/full_plan.template.json",
     "research/v5_measurement/v4_failure_binding.json",
+    "research/v5_measurement/v5_failure_binding.json",
     "tests/test_v5_carry_forward.py",
     "tests/test_v5_contract.py",
     "tests/test_v5_custody.py",

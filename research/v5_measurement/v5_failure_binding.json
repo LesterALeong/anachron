@@ -1,0 +1,80 @@
+{
+  "consumed_attempt": {
+    "authorization_count": 1,
+    "consumed": true,
+    "retry_allowed": false
+  },
+  "failure_root": {
+    "members": [
+      {
+        "bytes": 473,
+        "path": "baseline-processes.json",
+        "sha256": "1339336537326a52a8b8f66a1e711b24b08327b594ce6e29b5acfc3db58728d4"
+      },
+      {
+        "bytes": 20,
+        "path": "baseline-version.response.json",
+        "sha256": "d87c65c330c66347f668453795e990991fffefd6139b94494f012bf61f232b20"
+      },
+      {
+        "bytes": 1747,
+        "path": "baseline-tags.response.json",
+        "sha256": "1d914532f77168f19e7fc00cbd606e13378f2cf7d891c99ed5d7745fa21f7fe7"
+      },
+      {
+        "bytes": 0,
+        "path": "isolated-stdout.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "isolated-stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 1874,
+        "path": "operation_status.json",
+        "sha256": "39802dd007298c455e6ae45fc2c4d39a1be21b319245084ec985a19e55268c02"
+      }
+    ],
+    "path": "C:\\Users\\leste\\Downloads\\Repos\\anachron-v5-evidence\\runtime-identity-v5-protocol-v5",
+    "status": {
+      "capture_prepared": false,
+      "drains_joined": true,
+      "drains_started_attempted": true,
+      "drains_started_succeeded": true,
+      "job_assign_succeeded": true,
+      "job_close_succeeded": true,
+      "job_create_succeeded": true,
+      "job_terminate_succeeded": true,
+      "job_zero_window_confirmed": true,
+      "model_execution_performed": false,
+      "normal_app_signal_issued": true,
+      "normal_restore_eligible": false,
+      "normal_server_signal_issued": true,
+      "normal_server_stop_resolution": "signaled",
+      "pipes_closed": true,
+      "primary_error": {
+        "message": "isolated suspended root thread owner differs",
+        "operation": "capture",
+        "phase": "drains-started"
+      },
+      "restoration_started": false,
+      "restore_succeeded": false,
+      "root_resume_attempted": true,
+      "root_resume_succeeded": false,
+      "root_thread_handle_close_succeeded": true,
+      "root_waited": true,
+      "teardown_path": "job"
+    }
+  },
+  "kind": "anachron-v5-v5-failure-binding",
+  "v5_release": {
+    "branch": "protocol/v5-successor-v5",
+    "commit": "a24044a3aefcf5344f4a3b9bce3ad6663c8d7571",
+    "controller_sha256": "e032e2d25fa878b3d60065e0b91e5a854758d4bd54bb8ae18a341fb28c5574b0",
+    "source_manifest_sha256": "9dd72cdaffe2b9dc396db97d1cb92c037cc8661b44a952c634b8ef373cd1cfc2",
+    "tag": "v5-measurement-protocol-v5",
+    "tag_object": "c5ec5bb0f89b30a859473cac6c4b9f7248eedfa9"
+  }
+}

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import ctypes
 import importlib.util
 import io
 import json
@@ -174,7 +175,7 @@ class IdentityControllerTests(unittest.TestCase):
     def test_library_import_has_no_operational_side_effects(self) -> None:
         self.assertTrue(callable(controller.run_capture))
         self.assertEqual(controller.ADMITTED_ENDPOINTS, frozenset(("/api/version", "/api/tags")))
-        self.assertEqual(controller.PROTOCOL_ROOT, Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v5"))
+        self.assertEqual(controller.PROTOCOL_ROOT, Path(r"C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v6"))
 
     def test_v4_failure_binding_rejects_a_tampered_member_before_normal_stop(self) -> None:
         binding = json.loads((ROOT / "research" / "v5_measurement" / "v4_failure_binding.json").read_text(encoding="utf-8"))
@@ -206,6 +207,119 @@ class IdentityControllerTests(unittest.TestCase):
                 (failure_root / "baseline-processes.json").write_bytes(b"x" * 471)
                 with self.assertRaisesRegex(controller.CaptureError, "v4 failure root member differs"):
                     controller.verify_v4_failure_binding(manifest)
+
+    def test_v5_failure_binding_is_canonical_governed_and_exact(self) -> None:
+        raw = (ROOT / controller.V5_FAILURE_BINDING).read_bytes()
+        binding = json.loads(raw)
+        self.assertEqual(raw, controller.receipt_bytes(binding))
+        self.assertEqual(set(binding), {"consumed_attempt", "failure_root", "kind", "v5_release"})
+        self.assertEqual(binding["consumed_attempt"], {"authorization_count": 1, "consumed": True, "retry_allowed": False})
+        self.assertEqual(binding["kind"], "anachron-v5-v5-failure-binding")
+        self.assertEqual(binding["v5_release"], {
+            "branch": "protocol/v5-successor-v5",
+            "commit": "a24044a3aefcf5344f4a3b9bce3ad6663c8d7571",
+            "controller_sha256": "e032e2d25fa878b3d60065e0b91e5a854758d4bd54bb8ae18a341fb28c5574b0",
+            "source_manifest_sha256": "9dd72cdaffe2b9dc396db97d1cb92c037cc8661b44a952c634b8ef373cd1cfc2",
+            "tag": "v5-measurement-protocol-v5",
+            "tag_object": "c5ec5bb0f89b30a859473cac6c4b9f7248eedfa9",
+        })
+        self.assertEqual(
+            [member["path"] for member in binding["failure_root"]["members"]],
+            [
+                "baseline-processes.json",
+                "baseline-version.response.json",
+                "baseline-tags.response.json",
+                "isolated-stdout.log",
+                "isolated-stderr.log",
+                "operation_status.json",
+            ],
+        )
+        self.assertFalse(binding["failure_root"]["status"]["capture_prepared"])
+        self.assertTrue(binding["failure_root"]["status"]["drains_joined"])
+        self.assertTrue(binding["failure_root"]["status"]["job_close_succeeded"])
+        self.assertTrue(binding["failure_root"]["status"]["job_create_succeeded"])
+        self.assertFalse(binding["failure_root"]["status"]["model_execution_performed"])
+        self.assertTrue(binding["failure_root"]["status"]["pipes_closed"])
+        self.assertEqual(binding["failure_root"]["status"]["primary_error"]["message"], "isolated suspended root thread owner differs")
+        self.assertTrue(binding["failure_root"]["status"]["root_thread_handle_close_succeeded"])
+        self.assertTrue(binding["failure_root"]["status"]["root_waited"])
+
+    def test_v5_failure_binding_rejects_noncanonical_topology_status_and_ungoverned_paths(self) -> None:
+        binding = json.loads((ROOT / controller.V5_FAILURE_BINDING).read_text(encoding="utf-8"))
+        members = binding["failure_root"]["members"]
+        status = binding["failure_root"]["status"]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            binding_path = root / controller.V5_FAILURE_BINDING
+            binding_path.parent.mkdir(parents=True)
+            failure_root = root / "v5-failure"
+            failure_root.mkdir()
+            binding["failure_root"]["path"] = str(failure_root)
+            binding_path.write_bytes(controller.receipt_bytes(binding))
+            for member in members:
+                path = failure_root / member["path"]
+                if path.name == "operation_status.json":
+                    raw = controller.receipt_bytes(
+                        status | {"primary_error": status["primary_error"] | {"recorded_at_utc": "2026-09-10T02:06:05Z"}}
+                    )
+                    path.write_bytes(raw + b" " * (member["bytes"] - len(raw)))
+                else:
+                    path.write_bytes(b"x" * member["bytes"])
+            hashes = {member["path"]: member["sha256"] for member in members}
+            manifest = {"governed_files": [{"path": controller.V5_FAILURE_BINDING.as_posix()}]}
+            with (
+                patch.object(controller, "PROTOCOL_ROOT", root),
+                patch.object(controller, "V5_FAILURE_ROOT", failure_root),
+                patch.object(controller, "sha256_file", side_effect=lambda path: hashes[path.name]),
+            ):
+                controller.verify_v5_failure_binding(manifest)
+                binding_path.write_bytes(binding_path.read_bytes() + b" ")
+                with self.assertRaisesRegex(controller.CaptureError, "not canonical"):
+                    controller.verify_v5_failure_binding(manifest)
+                binding_path.write_bytes(controller.receipt_bytes(binding))
+                (failure_root / "unexpected.json").write_bytes(b"x")
+                with self.assertRaisesRegex(controller.CaptureError, "topology differs"):
+                    controller.verify_v5_failure_binding(manifest)
+                (failure_root / "unexpected.json").unlink()
+                manifest["governed_files"] = []
+                with self.assertRaisesRegex(controller.CaptureError, "not governed"):
+                    controller.verify_v5_failure_binding(manifest)
+            with (
+                patch.object(controller, "PROTOCOL_ROOT", root),
+                patch.object(controller, "V5_FAILURE_ROOT", failure_root),
+                patch.object(controller, "assert_no_reparse_or_ads", side_effect=controller.CaptureError("reparse or ADS")),
+                self.assertRaisesRegex(controller.CaptureError, "reparse or ADS"),
+            ):
+                controller.verify_v5_failure_binding({"governed_files": [{"path": controller.V5_FAILURE_BINDING.as_posix()}]})
+
+    def test_v5_failure_binding_rejection_precedes_normal_stop(self) -> None:
+        authority = {
+            "protocol_commit": "a" * 40,
+            "protocol_tag": controller.PROTOCOL_TAG,
+            "protocol_tag_object": "b" * 40,
+            "source_manifest_sha256": "c" * 64,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            identity_root = Path(directory) / "identity"
+            with (
+                patch.object(controller, "IDENTITY_ROOT", identity_root),
+                patch.object(controller, "assert_regular"),
+                patch.object(controller, "assert_no_reparse_or_ads"),
+                patch.object(controller, "sha256_file", return_value="d" * 64),
+                patch.object(controller, "validate_controller_authority", return_value=(authority, "e" * 64)),
+                patch.object(controller, "controller_dependency_identity", return_value={}),
+                patch.object(controller, "verify_protocol"),
+                patch.object(controller, "verify_source_manifest", return_value={}),
+                patch.object(controller, "verify_v4_failure_binding"),
+                patch.object(controller, "verify_tracked_helpers", return_value={"tools/read_v5_process_identity.ps1": ROOT / "tools" / "read_v5_process_identity.ps1"}),
+                patch.object(controller, "verify_isolated_runtime_and_store"),
+                patch.object(controller, "verify_v5_failure_binding", side_effect=controller.CaptureError("v5 binding differs")),
+                patch.object(controller, "force_stop_exact") as normal_stop,
+                self.assertRaisesRegex(controller.CaptureError, "v5 binding differs"),
+            ):
+                controller.run_capture()
+            normal_stop.assert_not_called()
+            self.assertFalse(identity_root.exists())
 
     def test_loopback_request_emits_exactly_one_host_header(self) -> None:
         def host_fields(request: bytes) -> list[bytes]:
@@ -1603,6 +1717,7 @@ class IdentityControllerTests(unittest.TestCase):
         self,
         stage: str,
     ) -> tuple[dict[str, object], Mock]:
+        actual_resume_suspended_root = controller.resume_suspended_root
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             identity_root = root / "identity"
@@ -1675,6 +1790,19 @@ class IdentityControllerTests(unittest.TestCase):
                 lifecycle.advance(controller.IsolatedLifecyclePhase.DRAINS_STARTED)
 
             def resume(lifecycle: controller.IsolatedLifecycle) -> None:
+                if stage == "resume-kernel32":
+                    fake_psutil = SimpleNamespace(
+                        Process=lambda _pid: SimpleNamespace(threads=lambda: (SimpleNamespace(id=71),))
+                    )
+                    with (
+                        patch.object(controller, "psutil", fake_psutil),
+                        patch.object(
+                            controller,
+                            "kernel32",
+                            side_effect=controller.CaptureError("injected resume-kernel32"),
+                        ),
+                    ):
+                        actual_resume_suspended_root(lifecycle)
                 lifecycle.root_resume_attempted = True
                 if stage == "resume-thread":
                     raise controller.CaptureError("injected resume-thread")
@@ -1739,6 +1867,7 @@ class IdentityControllerTests(unittest.TestCase):
                 stack.enter_context(patch.object(controller, "verify_protocol"))
                 stack.enter_context(patch.object(controller, "verify_source_manifest", return_value={}))
                 stack.enter_context(patch.object(controller, "verify_v4_failure_binding"))
+                stack.enter_context(patch.object(controller, "verify_v5_failure_binding"))
                 stack.enter_context(patch.object(controller, "verify_tracked_helpers", return_value={"tools/read_v5_process_identity.ps1": ROOT / "tools" / "read_v5_process_identity.ps1"}))
                 stack.enter_context(patch.object(controller, "verify_isolated_runtime_and_store"))
                 stack.enter_context(patch.object(controller, "assert_normal_state", return_value=(app, server)))
@@ -1894,34 +2023,67 @@ class IdentityControllerTests(unittest.TestCase):
             with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), self.assertRaisesRegex(controller.CaptureError, "OpenThread"):
                 controller.resume_suspended_root(lifecycle)
             self.assertTrue(lifecycle.root_resume_attempted)
-        with self.subTest(id="J14"):
-            lifecycle = controller.IsolatedLifecycle(process=process, root_identity=identity)
-            api = SimpleNamespace(
-                OpenThread=Mock(return_value=91),
-                GetProcessIdOfThread=Mock(return_value=42),
-                ResumeThread=Mock(return_value=1),
-                CloseHandle=Mock(return_value=True),
+            api.OpenThread.assert_called_once_with(
+                controller.THREAD_SUSPEND_RESUME | controller.THREAD_QUERY_LIMITED_INFORMATION,
+                False,
+                71,
             )
+        with self.subTest(id="J14"):
             fake_psutil = SimpleNamespace(Process=lambda _pid: SimpleNamespace(threads=lambda: (SimpleNamespace(id=71),)))
-            with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), self.assertRaisesRegex(controller.CaptureError, "owner differs"):
-                controller.resume_suspended_root(lifecycle)
-            api.GetProcessIdOfThread.return_value = 41
-            api.ResumeThread.return_value = controller.INVALID_DWORD
-            with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), self.assertRaisesRegex(controller.CaptureError, "ResumeThread"):
-                controller.resume_suspended_root(controller.IsolatedLifecycle(process=process, root_identity=identity))
-            api.ResumeThread.return_value = 0
-            with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), self.assertRaisesRegex(controller.CaptureError, "prior suspend count differs"):
-                controller.resume_suspended_root(controller.IsolatedLifecycle(process=process, root_identity=identity))
+            def resume(owner_pid: int, owner_error: int, prior_suspend_count: int = 1) -> tuple[controller.IsolatedLifecycle, SimpleNamespace, list[str]]:
+                lifecycle = controller.IsolatedLifecycle(process=process, root_identity=identity)
+                events: list[str] = []
+                api = SimpleNamespace(
+                    OpenThread=Mock(side_effect=lambda *_args: events.append("open") or 91),
+                    SetLastError=Mock(side_effect=lambda value: events.append(f"clear:{value}")),
+                    GetProcessIdOfThread=Mock(side_effect=lambda _handle: events.append("owner") or owner_pid),
+                    ResumeThread=Mock(side_effect=lambda _handle: events.append("resume") or prior_suspend_count),
+                    CloseHandle=Mock(side_effect=lambda _handle: events.append("close") or True),
+                )
+                with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), patch.object(controller, "windows_last_error", side_effect=lambda: events.append("last-error") or owner_error):
+                    if owner_pid == 0 and owner_error:
+                        with self.assertRaisesRegex(controller.CaptureError, f"GetProcessIdOfThread failed: Win32 error {owner_error}"):
+                            controller.resume_suspended_root(lifecycle)
+                    elif owner_pid == 0:
+                        with self.assertRaisesRegex(controller.OperationalUncertainty, "owner is unavailable"):
+                            controller.resume_suspended_root(lifecycle)
+                    elif owner_pid != identity.pid:
+                        with self.assertRaisesRegex(controller.CaptureError, "owner differs"):
+                            controller.resume_suspended_root(lifecycle)
+                    else:
+                        controller.resume_suspended_root(lifecycle)
+                return lifecycle, api, events
+
+            lifecycle, api, events = resume(0, 5)
+            self.assertEqual(events, ["open", "clear:0", "owner", "last-error", "close"])
+            self.assertEqual(lifecycle.root_thread_candidate_id, 71)
+            self.assertEqual(lifecycle.root_thread_owner_pid, 0)
+            self.assertEqual(lifecycle.root_thread_owner_last_error, 5)
+            lifecycle, _api, _events = resume(0, 0)
+            self.assertEqual(lifecycle.root_thread_owner_pid, 0)
+            self.assertEqual(lifecycle.root_thread_owner_last_error, 0)
+            lifecycle, _api, _events = resume(42, 0)
+            self.assertEqual(lifecycle.root_thread_owner_pid, 42)
+            lifecycle, api, events = resume(41, 0)
+            self.assertEqual(events, ["open", "clear:0", "owner", "last-error", "resume", "close"])
+            self.assertTrue(lifecycle.root_resume_succeeded)
+            self.assertEqual(lifecycle.root_thread_requested_access_mask, 0x0802)
+            self.assertEqual(lifecycle.root_thread_candidate_id, 71)
+            self.assertEqual(lifecycle.root_thread_owner_pid, 41)
+            self.assertEqual(lifecycle.root_thread_owner_last_error, 0)
+            api.SetLastError.assert_called_once_with(0)
+            api.ResumeThread.assert_called_once_with(91)
         with self.subTest(id="J15"):
             lifecycle = controller.IsolatedLifecycle(process=process, root_identity=identity)
             api = SimpleNamespace(
                 OpenThread=Mock(return_value=91),
+                SetLastError=Mock(),
                 GetProcessIdOfThread=Mock(return_value=41),
                 ResumeThread=Mock(return_value=1),
                 CloseHandle=Mock(return_value=False),
             )
             fake_psutil = SimpleNamespace(Process=lambda _pid: SimpleNamespace(threads=lambda: (SimpleNamespace(id=71),)))
-            with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), self.assertRaisesRegex(controller.CaptureError, "CloseHandle\\(root thread\\)"):
+            with patch.object(controller, "psutil", fake_psutil), patch.object(controller, "kernel32", return_value=api), patch.object(controller, "windows_last_error", return_value=0), self.assertRaisesRegex(controller.CaptureError, "CloseHandle\\(root thread\\)"):
                 controller.resume_suspended_root(lifecycle)
             self.assertTrue(lifecycle.root_resume_succeeded)
             self.assertTrue(lifecycle.root_thread_handle_close_attempted)
@@ -1930,6 +2092,57 @@ class IdentityControllerTests(unittest.TestCase):
             self.assertFalse(controller.normal_restore_eligible(lifecycle, "signaled"))
         with self.subTest(id="T11"):
             self.assertIn("root_thread_handle_close_succeeded", CONTROLLER_PATH.read_text(encoding="utf-8"))
+
+    @unittest.skipUnless(os.name == "nt", "requires Windows thread-rights verification")
+    def test_windows_thread_rights_native_red_green_detector(self) -> None:
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.OpenThread.argtypes = (ctypes.wintypes.DWORD, ctypes.wintypes.BOOL, ctypes.wintypes.DWORD)
+        kernel.OpenThread.restype = ctypes.wintypes.HANDLE
+        kernel.SetLastError.argtypes = (ctypes.wintypes.DWORD,)
+        kernel.SetLastError.restype = None
+        kernel.GetProcessIdOfThread.argtypes = (ctypes.wintypes.HANDLE,)
+        kernel.GetProcessIdOfThread.restype = ctypes.wintypes.DWORD
+        kernel.ResumeThread.argtypes = (ctypes.wintypes.HANDLE,)
+        kernel.ResumeThread.restype = ctypes.wintypes.DWORD
+        kernel.CloseHandle.argtypes = (ctypes.wintypes.HANDLE,)
+        kernel.CloseHandle.restype = ctypes.wintypes.BOOL
+
+        child = subprocess.Popen(
+            [sys.executable, "-c", "import time; time.sleep(60)"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=controller.CREATE_NO_WINDOW | controller.CREATE_SUSPENDED,
+        )
+        try:
+            thread_id = controller.psutil.Process(child.pid).threads()[0].id
+            legacy = kernel.OpenThread(controller.THREAD_SUSPEND_RESUME, False, thread_id)
+            self.assertTrue(legacy)
+            try:
+                kernel.SetLastError(0)
+                legacy_owner = kernel.GetProcessIdOfThread(legacy)
+                legacy_error = ctypes.get_last_error()
+            finally:
+                self.assertTrue(kernel.CloseHandle(legacy))
+            self.assertEqual((legacy_owner, legacy_error), (0, 5))
+
+            requested_access = controller.THREAD_SUSPEND_RESUME | controller.THREAD_QUERY_LIMITED_INFORMATION
+            self.assertEqual(requested_access, 0x0802)
+            corrected = kernel.OpenThread(requested_access, False, thread_id)
+            self.assertTrue(corrected)
+            try:
+                kernel.SetLastError(0)
+                corrected_owner = kernel.GetProcessIdOfThread(corrected)
+                corrected_error = ctypes.get_last_error()
+                prior_suspend_count = kernel.ResumeThread(corrected)
+            finally:
+                self.assertTrue(kernel.CloseHandle(corrected))
+            self.assertEqual((corrected_owner, corrected_error, prior_suspend_count), (child.pid, 0, 1))
+        finally:
+            if child.poll() is None:
+                child.terminate()
+            child.wait(timeout=10)
+            self.assertFalse(controller.psutil.pid_exists(child.pid))
 
     def test_lifecycle_teardown_paths_and_failures_are_factual(self) -> None:
         class FakeChild:
@@ -2214,6 +2427,7 @@ class IdentityControllerTests(unittest.TestCase):
             ("bind", {"root_bind_attempted": True, "root_bind_succeeded": False}),
             ("stdout-drain", {"drains_started_attempted": True, "drains_started_succeeded": False}),
             ("stderr-drain", {"drains_started_attempted": True, "drains_started_succeeded": False}),
+            ("resume-kernel32", {"root_resume_attempted": True, "root_resume_succeeded": False, "root_thread_candidate_id": 71, "root_thread_requested_access_mask": 0x0802}),
             ("resume-thread", {"root_resume_attempted": True, "root_resume_succeeded": False}),
             ("resume-close", {"root_resume_attempted": True, "root_resume_succeeded": True, "root_thread_handle_close_succeeded": False}),
         )
@@ -2230,6 +2444,13 @@ class IdentityControllerTests(unittest.TestCase):
                     self.assertIn(f"injected {stage}", status["primary_error"]["message"])
                     self.assertRegex(status["primary_error"]["recorded_at_utc"], r"^\d{4}-\d{2}-\d{2}T")
                     self.assertTrue(status["cleanup_errors"])
+                    for key in (
+                        "root_thread_requested_access_mask",
+                        "root_thread_candidate_id",
+                        "root_thread_owner_pid",
+                        "root_thread_owner_last_error",
+                    ):
+                        self.assertIn(key, status)
                     for key, value in expected.items():
                         self.assertEqual(status[key], value)
                     restore.assert_not_called()
@@ -2328,6 +2549,7 @@ class IdentityControllerTests(unittest.TestCase):
                 stack.enter_context(patch.object(controller, "verify_protocol"))
                 stack.enter_context(patch.object(controller, "verify_source_manifest", return_value={}))
                 stack.enter_context(patch.object(controller, "verify_v4_failure_binding"))
+                stack.enter_context(patch.object(controller, "verify_v5_failure_binding"))
                 stack.enter_context(patch.object(controller, "verify_tracked_helpers", return_value={"tools/read_v5_process_identity.ps1": ROOT / "tools" / "read_v5_process_identity.ps1"}))
                 stack.enter_context(patch.object(controller, "verify_isolated_runtime_and_store"))
                 stack.enter_context(patch.object(controller, "assert_normal_state", return_value=(app, server)))
@@ -2407,6 +2629,7 @@ class IdentityControllerTests(unittest.TestCase):
                     stack.enter_context(patch.object(controller, "verify_protocol"))
                     stack.enter_context(patch.object(controller, "verify_source_manifest", return_value={}))
                     stack.enter_context(patch.object(controller, "verify_v4_failure_binding"))
+                    stack.enter_context(patch.object(controller, "verify_v5_failure_binding"))
                     stack.enter_context(patch.object(controller, "verify_tracked_helpers", return_value={"tools/read_v5_process_identity.ps1": ROOT / "tools" / "read_v5_process_identity.ps1"}))
                     stack.enter_context(patch.object(controller, "verify_isolated_runtime_and_store"))
                     stack.enter_context(patch.object(controller, "assert_normal_state", return_value=(app, server)))

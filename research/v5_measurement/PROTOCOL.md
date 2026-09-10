@@ -1,10 +1,12 @@
-# Anachron v5 successor protocol
+# Anachron v5 successor v6 protocol
 
 V5 repairs V4's failed isolated-startup classification. It requires a clean
-annotated `v5-measurement-protocol-v5` release: the tag object, peeled commit,
+annotated `v5-measurement-protocol-v6` release: the tag object, peeled commit,
 branch, remote references, governed blob IDs, and worktree bytes must agree. V4
-remains immutable failed-capture evidence, and V3/V2 remain historical evidence;
-none is an execution authorization.
+remains immutable failed-capture evidence. The consumed V5 six-file failed
+attempt is also immutable historical evidence, including its release binding and
+successful cleanup facts; V3/V2 remain historical evidence. None is an
+execution authorization.
 
 The tagged closure includes the isolated identity controller, its Authenticode
 helper, and a fixed local CIM process-identity helper. When psutil cannot read
@@ -23,7 +25,10 @@ The controller emits one explicit `Host` header for its fixed loopback requests.
 It creates a private Windows Job Object with `KILL_ON_JOB_CLOSE`, starts the
 isolated root with `DETACHED_PROCESS | CREATE_SUSPENDED`, assigns that root to
 the Job before binding its identity or resuming its sole thread, and never grants
-breakaway. Before either isolated API call, V5 permits only identity-bound,
+breakaway. The root thread opens with `THREAD_SUSPEND_RESUME |
+THREAD_QUERY_LIMITED_INFORMATION` (`0x0802`), clears and immediately records
+the owner-query Win32 error, and fails closed for an unavailable or mismatched
+owner. Before either isolated API call, V5 permits only identity-bound,
 no-model startup helpers, then requires two continuous seconds without
 descendants and exactly one active Job member. Cleanup terminates the Job and
 requires its active-member count to remain zero for two seconds; any API,
@@ -66,6 +71,11 @@ runner/analyzer hashes, and one external evidence root before any future
 campaign. A fully bound PENDING record can be checked offline with
 `--pending-only`; it prints `PENDING_VALID` and cannot run measurement. Execute
 mode remains future work behind fresh explicit GO.
+
+V6 changes only the thread-rights repair and successor release identity. Science,
+schemas, models, seeds, and PENDING semantics are unchanged. A future capture
+requires fresh explicit authorization after implementation, review, QA, CI, tag,
+and external-artifact gates pass.
 
 V5 is a prospective finite-panel measurement following v4's operational
 failure. V4 is an excluded operational pilot: `v4_included_count = 0` in v5

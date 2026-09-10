@@ -2,8 +2,8 @@ name: tests
 
 on:
   push:
-    branches: [master, main, protocol/v4-recovery-v2, protocol/v5-successor, protocol/v5-successor-v3, protocol/v5-successor-v4, protocol/v5-successor-v5]
-    tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1, v5-measurement-protocol-v2, v5-measurement-protocol-v3, v5-measurement-protocol-v4, v5-measurement-protocol-v5]
+    branches: [master, main, protocol/v4-recovery-v2, protocol/v5-successor, protocol/v5-successor-v3, protocol/v5-successor-v4, protocol/v5-successor-v5, protocol/v5-successor-v6]
+    tags: [v4-measurement-protocol-v3, v5-measurement-protocol-v1, v5-measurement-protocol-v2, v5-measurement-protocol-v3, v5-measurement-protocol-v4, v5-measurement-protocol-v5, v5-measurement-protocol-v6]
   pull_request:
   workflow_dispatch:
 

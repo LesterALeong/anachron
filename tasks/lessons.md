@@ -144,3 +144,21 @@ such diagnostics through one adapter that returns zero for a missing or `None` a
 and retain a regression that executes the original missing-accessor failure before proving
 the adapter's missing, `None`, and nonzero cases. Hermetic helper-trace tests must construct
 their own `SystemRoot/System32/conhost.exe` tree and patch the environment for the trace.
+
+## Verify the real thread access rights before trusting a mocked owner query
+
+The suspended-root tests mocked `GetProcessIdOfThread` as successful while opening the
+thread with only `THREAD_SUSPEND_RESUME`. On the capture host, that legacy `0x0002` mask
+returns owner PID zero with `ERROR_ACCESS_DENIED`; `0x0802` adds query-limited-information,
+returns the child PID, and permits the one required resume. Bind `SetLastError`, clear it
+immediately before the owner query, persist the returned owner and immediate error, and
+exercise the legacy RED and corrected GREEN against a disposable suspended child that is
+always terminated and waited.
+
+## Separate successor identity from immutable failure evidence
+
+When retargeting a successor release, update each active branch, tag, detached
+root, manifest target, operation package, output root, wrapper, fixture, and CI
+trigger together. Preserve consumed-attempt bindings verbatim as historical
+evidence, then run an exact stale-identity sweep before granting fresh
+authorization.

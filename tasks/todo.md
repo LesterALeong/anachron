@@ -198,10 +198,35 @@ The single authorized v4 capture then failed closed after stopping normal Ollama
 - [x] Complete the Architecture Reset Job Object containment repair: typed Win32 structures and signatures, suspended assignment before binding/resume, Job-only teardown, continuous zero-member gate, and J01-J14 regressions. No controller mode or endpoint was executed.
 - [x] Complete the second Architecture Reset caller-owned lifecycle migration: replace mutable teardown-success state with monotonic acquisition and cleanup facts, a pure restoration truth table, and persisted primary/cleanup failure receipts. The literal 25-row lifecycle harness injects every CreateJob-to-launch-return boundary and successful `ResumeThread` followed by failed `CloseHandle`, directly executes every teardown dispatcher and cleanup-fault class, replays the exact helper tree, and proves both fail-closed receipts and one clean assigned-Job restoration.
 - [x] Run the full local acceptance matrix, freeze the candidate, and obtain independent review and QA on the same bytes.
-- [ ] Commit and push `protocol/v5-successor-v5`; require branch CI green, create annotated `v5-measurement-protocol-v5`, and require tag CI green.
-- [ ] Build and independently validate the detached v5 source manifest and external controller authority. Stop before any v5 capture without a new explicit one-shot authorization.
+- [x] Commit and push `protocol/v5-successor-v5`; require branch CI green, create annotated `v5-measurement-protocol-v5`, and require tag CI green.
+- [x] Build and independently validate the detached v5 source manifest and external controller authority. Stop before any v5 capture without a new explicit one-shot authorization.
 
 ### Review
 
 - Frozen candidate tree `4d92c55bce837e28cdcdc954bb93dfdd1499d73d` passed the full local matrix, independent code review, independent strategic review, and final QA. Remote CI, tag, and external release artifacts remain pending.
 - Escaped CI portability repair: Linux import exposed reachable direct `ctypes.get_last_error` diagnostics and a host-dependent J23 `SystemRoot` fixture. The correction retains an original missing-accessor RED and adapter/J23 GREEN controls; no controller, endpoint, capture, model, release, or external evidence action ran.
+
+## Successor v6 suspended-thread access recovery, 2026-09-09
+
+The single authorized v5 read-only identity capture failed safely before an isolated API call, model execution, or measurement. The v5 controller recorded the failure, and normal Ollama was manually restored from the governed baseline; the restored normal topology and raw `/api/version` and `/api/tags` bytes match the v5 baseline exactly. Preserve the v5 runtime-identity failure root and the v5 detached release artifacts as immutable history.
+
+Native proof is fixed at `C:\Users\leste\Downloads\Repos\anachron-v5-evidence\native-thread-contract-v6\native_thread_contract.json`, SHA256 `fed557d796a04a80c2fc520b51ce2f066911b1e61219bd733f46d13358426dc5`. Its original RED proves the legacy thread-open access mask yields `owner_pid = 0` and `last_error = 5`; its GREEN proves the corrected access mask yields the owned child PID, `last_error = 0`, and `prior_suspend_count = 1`, with cleanup confirmed. This proof is native-contract evidence only; it did not invoke a controller mode, Ollama endpoint, model, or capture.
+
+The successor release identity is active in the source: branch `protocol/v5-successor-v6`, annotated-tag target `v5-measurement-protocol-v6`, detached checkout `C:\Users\leste\Downloads\Repos\anachron-v5-protocol-v6`, source-manifest target `C:\Users\leste\Downloads\Repos\anachron-v5-evidence\source-manifest-v6\source_manifest.json`, operation package `C:\Users\leste\Downloads\Repos\anachron-v5-evidence\controller-operation-v6`, and future output root `C:\Users\leste\Downloads\Repos\anachron-v5-evidence\runtime-identity-v5-protocol-v6`. The v5 predecessor is verified at branch `protocol/v5-successor-v5`, commit `a24044a3aefcf5344f4a3b9bce3ad6663c8d7571`, annotated tag object `c5ec5bb0f89b30a859473cac6c4b9f7248eedfa9`, and its validated external v5 source-manifest and controller-authority directories.
+
+- [x] V6-01: Reproduce the legacy root-thread access failure as a RED without controller or Ollama activity.
+- [x] V6-02: Require corrected root-thread access to recover the actual child owner PID and a zero Win32 last-error result.
+- [x] V6-03: Require `ResumeThread` to return prior suspend count exactly one before any child execution is admitted.
+- [x] V6-04: Preserve suspended launch, Job Object assignment before resume, and exact task-owned custody.
+- [x] V6-05: Fail closed for missing, foreign, mismatched, or anomalously owned root-thread facts.
+- [x] V6-06: Preserve the 15-second startup limit, 0.25-second census cadence, two-second continuous quiescence gate, and 10-second teardown limit.
+- [x] V6-07: Preserve monotonic lifecycle facts, immutable primary/cleanup failure receipts, and pure restoration eligibility.
+- [x] V6-08: Prove no isolated API call occurs before quiescence and no model/API measurement science changes.
+- [x] V6-09: Run the frozen focused and full local acceptance matrix, including the V6 native-contract RED/GREEN regressions.
+- [ ] V6-10: Obtain independent architecture/code review and QA on one unchanged frozen candidate.
+- [ ] V6-11: Commit and push the successor branch, require branch CI green, create the annotated v6 tag, and require tag CI green.
+- [ ] V6-12: Build and independently validate the detached v6 source manifest and external controller authority before any operational action.
+
+Local evidence: 148 v5 tests passed with 1 expected skip; 3 v4 workflow tests passed; `validate_v5_contract` PASS; Ruff 0.16.0 PASS; compile check 166 files PASS; `git diff --check` PASS.
+
+No v6 controller mode, Ollama/API/model action, or identity capture may run before the implementation, review, QA, CI, tag, and external-artifact gates pass and a fresh explicit one-shot authorization is recorded. The authorization already consumed by the v5 capture does not authorize a v6 capture.
