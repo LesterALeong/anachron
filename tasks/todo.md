@@ -204,3 +204,4 @@ The single authorized v4 capture then failed closed after stopping normal Ollama
 ### Review
 
 - Frozen candidate tree `4d92c55bce837e28cdcdc954bb93dfdd1499d73d` passed the full local matrix, independent code review, independent strategic review, and final QA. Remote CI, tag, and external release artifacts remain pending.
+- Escaped CI portability repair: Linux import exposed reachable direct `ctypes.get_last_error` diagnostics and a host-dependent J23 `SystemRoot` fixture. The correction retains an original missing-accessor RED and adapter/J23 GREEN controls; no controller, endpoint, capture, model, release, or external evidence action ran.

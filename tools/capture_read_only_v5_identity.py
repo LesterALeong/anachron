@@ -389,13 +389,21 @@ INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
 ERROR_HANDLE_EOF = 38
 
 
+def windows_last_error() -> int:
+    get_last_error = getattr(ctypes, "get_last_error", None)
+    if get_last_error is None:
+        return 0
+    error = get_last_error()
+    return 0 if error is None else int(error)
+
+
 def stream_names(path: Path) -> tuple[str, ...]:
     if KERNEL32 is None:
         return ("::$DATA",)
     data = Win32FindStreamData()
     handle = KERNEL32.FindFirstStreamW(str(path), 0, ctypes.byref(data), 0)
     if handle == INVALID_HANDLE_VALUE:
-        error = ctypes.get_last_error()
+        error = windows_last_error()
         if error == ERROR_HANDLE_EOF:
             return ()
         raise CaptureError(f"cannot enumerate streams for {path}: Win32 error {error}")
@@ -403,7 +411,7 @@ def stream_names(path: Path) -> tuple[str, ...]:
     try:
         while KERNEL32.FindNextStreamW(handle, ctypes.byref(data)):
             names.append(data.stream_name)
-        error = ctypes.get_last_error()
+        error = windows_last_error()
         if error != ERROR_HANDLE_EOF:
             raise CaptureError(f"cannot finish stream enumeration for {path}: Win32 error {error}")
     finally:
@@ -1637,7 +1645,7 @@ def kernel32() -> Any:
 
 
 def win32_error(label: str) -> CaptureError:
-    return CaptureError(f"{label} failed: Win32 error {ctypes.get_last_error()}")
+    return CaptureError(f"{label} failed: Win32 error {windows_last_error()}")
 
 
 def create_lifecycle_job(lifecycle: IsolatedLifecycle) -> None:

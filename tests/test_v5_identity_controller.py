@@ -1759,6 +1759,16 @@ class IdentityControllerTests(unittest.TestCase):
             status = json.loads((identity_root / "operation_status.json").read_text(encoding="utf-8"))
             return status, restore
 
+    def test_windows_last_error_is_portable(self) -> None:
+        with self.subTest(case="missing"), patch.object(controller, "ctypes", SimpleNamespace()):
+            with self.assertRaises(AttributeError):
+                controller.ctypes.get_last_error()
+            self.assertEqual(controller.windows_last_error(), 0)
+        with self.subTest(case="none"), patch.object(controller, "ctypes", SimpleNamespace(get_last_error=lambda: None)):
+            self.assertEqual(controller.windows_last_error(), 0)
+        with self.subTest(case="nonzero"), patch.object(controller, "ctypes", SimpleNamespace(get_last_error=lambda: 87)):
+            self.assertEqual(controller.windows_last_error(), 87)
+
     def test_lifecycle_native_acquisition_edges_retain_custody(self) -> None:
         class FakeChild:
             pid = 41
@@ -2108,6 +2118,9 @@ class IdentityControllerTests(unittest.TestCase):
             stage_root = root / "stage"
             stage_root.mkdir()
             isolated_executable = test_owned_executable(stage_root, "runtime", "ollama.exe")
+            system_root = root / "system-root"
+            system_root.mkdir()
+            conhost_executable = test_owned_executable(system_root, "System32", "conhost.exe")
             lib_root = isolated_executable.parent / "lib" / "ollama"
             for variant in ("cuda_v12", "cuda_v13", "vulkan"):
                 (lib_root / variant).mkdir(parents=True, exist_ok=True)
@@ -2127,7 +2140,6 @@ class IdentityControllerTests(unittest.TestCase):
                 (str(llama_executable), "--port", "61956", "--host", controller.HOST, "--no-webui", "--offline", "--verbose"),
                 controller.ProcessDisposition.BLOCKER, None,
             )
-            conhost_executable = Path(os.environ["SystemRoot"]) / "System32" / "conhost.exe"
             gpu_records: list[controller.ProcessObservation] = []
             for index, variant in enumerate(("cuda_v12", "cuda_v13", "vulkan"), start=44):
                 gpu_records.append(
@@ -2142,7 +2154,11 @@ class IdentityControllerTests(unittest.TestCase):
                 47, 44, "conhost.exe", conhost_executable, 47.0, birth_token(47.0),
                 ("\\??\\" + str(conhost_executable), "0x4"), controller.ProcessDisposition.UNRELATED, None,
             )
-            with patch.object(controller, "ISOLATED_EXE", isolated_executable), patch.object(controller, "STAGE_ROOT", stage_root):
+            with (
+                patch.dict(controller.os.environ, {"SystemRoot": str(system_root)}),
+                patch.object(controller, "ISOLATED_EXE", isolated_executable),
+                patch.object(controller, "STAGE_ROOT", stage_root),
+            ):
                 admitted = controller.isolated_startup_descendants(
                     lifecycle,
                     (parent_observation, list_devices, port_probe, *gpu_records, conhost),

@@ -135,3 +135,12 @@ the object receives each handle or process before the next injected failure. The
 must also execute the real teardown dispatcher through no-root, unassigned, and
 assigned paths: replacing that dispatcher with a mock cannot prove which facts or
 cleanup receipts reach the restoration predicate.
+
+## Keep Win32 diagnostics portable when the controller is imported on Linux
+
+The v5 controller passed Windows-focused review and local tests, but Linux CI imported a
+reachable diagnostic path where CPython does not expose `ctypes.get_last_error`. Route
+such diagnostics through one adapter that returns zero for a missing or `None` accessor,
+and retain a regression that executes the original missing-accessor failure before proving
+the adapter's missing, `None`, and nonzero cases. Hermetic helper-trace tests must construct
+their own `SystemRoot/System32/conhost.exe` tree and patch the environment for the trace.
